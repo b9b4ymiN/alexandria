@@ -343,12 +343,12 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.1 | DONE | G1.0 | G1.5, G1.9 | G1.2 |
 | G1.2 | DONE | G1.0 | G1.3, G1.4, G1.6 | G1.1 |
 | G1.3 | DONE | G1.2 | G1.5 | G1.4, G1.6, G1.9 |
-| G1.4 | IN_PROGRESS | G1.2 | G1.5 | G1.3, G1.6, G1.9 |
-| G1.5 | BLOCKED | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
-| G1.6 | IN_PROGRESS | G1.2 | G1.7 | G1.3, G1.4, G1.5, G1.9 |
+| G1.4 | DONE | G1.2 | G1.5 | G1.3, G1.6, G1.9 |
+| G1.5 | IN_PROGRESS | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
+| G1.6 | DONE | G1.2 | G1.7 | G1.3, G1.4, G1.5, G1.9 |
 | G1.7 | BLOCKED | G1.5, G1.6 | G1.11 | G1.8, G1.9 |
 | G1.8 | BLOCKED | G1.5 | G1.10 | G1.7, G1.9 |
-| G1.9 | REVIEW | G1.1 | G1.12 | G1.7, G1.8, G1.2 |
+| G1.9 | DONE | G1.1 | G1.12 | G1.7, G1.8, G1.2 |
 | G1.10 | BLOCKED | G1.8 | G1.11, G1.12 | — |
 | G1.11 | BLOCKED | G1.7, G1.10 | G1.12 | — |
 | G1.12 | BLOCKED | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
@@ -1234,7 +1234,7 @@ Notes:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -1408,7 +1408,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
@@ -1605,7 +1605,7 @@ Notes:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -1764,11 +1764,45 @@ feat(auth): add admin password login, signed session token and login rate limit
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30. Commit 7daab0e.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/shared/token.ts, src/api/middleware/admin-auth.ts,
+  tests/integration/admin-auth.test.ts, .dev.vars.example (new);
+  src/api/routes/admin/auth.ts and wrangler.jsonc modified.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tests/integration/admin-auth.test.ts -> 24/24 passed
+  Secret-path equality scan across token.ts, auth.ts and admin-auth.ts:
+    the only === in those files is `typeof password === "string"`, a type
+    guard. No secret is compared with ===.
+  crypto.subtle.timingSafeEqual confirmed on BOTH the password digest path
+    and the token signature path.
+  X-Forwarded-For scan across src/: appears only inside a comment stating
+    it is never read. CF-Connecting-IP is the only client-IP source.
+  Cookie scan across src/: only comments; no cookie is read or written.
+  Rate limit binding LOGIN_RATE_LIMITER present in wrangler.jsonc at
+    10 requests per 60 seconds.
+
+Rejection codes proven distinct by dedicated tests: missing header
+AUTH_REQUIRED; non-Bearer AUTH_INVALID; malformed AUTH_INVALID; tampered
+signature AUTH_INVALID; foreign-signed AUTH_INVALID; swapped payload
+AUTH_INVALID; expired AUTH_EXPIRED. Unset ADMIN_PASSWORD fails closed with
+500 and logs the misconfiguration without the value.
+
+Judgment calls accepted by the orchestrator:
+  1. Logout requires a valid token. Defensible and more conservative than
+     an unauthenticated admin route; harmless because logout is stateless.
+  2. .dev.vars.example documents all four Env secret names, not only this
+     node's two, since it is one project-wide file and types.ts already
+     fixes the names. No new secret name was invented.
+  3. RATE_LIMITED is a transport-level code outside the ErrorCode union,
+     consistent with the NOT_FOUND and INTERNAL_ERROR precedent from G1.2.
+  4. The rate-limiter binding is typed by a local AuthEnv interface in
+     auth.ts rather than by editing the shared Env in types.ts, to avoid
+     touching another node's file. A later node may consolidate this; it
+     is not a defect.
 ```
 
 ---
@@ -2106,7 +2140,7 @@ Notes:
 ### Status
 
 ```text
-REVIEW
+DONE
 ```
 
 ### Orchestrator clarification (2026-08-30)
@@ -2265,11 +2299,62 @@ feat(content): add read-only content worker serving current document versions
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30. Held at REVIEW
+> until a regression it caused was traced and repaired, then promoted to
+> DONE. Commit 504c991.
+
 ```text
 Changed:
-Tests:
-Verification:
+  src/content/handler.ts, tests/integration/content-worker.test.ts,
+  tests/integration/content-worker-readonly.test.ts (new);
+  src/content/index.ts, wrangler.content.jsonc, vitest.config.ts modified.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- content-worker tests -> 22/22 passed
+  Orchestrator's own read-only grep, BROADER than the executor's — it also
+    searches for .put( and .write — finds no mutation keyword and no write
+    call anywhere in src/content/.
+  Secret scan of wrangler.content.jsonc -> no ADMIN_PASSWORD, no
+    ADMIN_SESSION_SIGNING_SECRET, no AGENT_API_KEY, no CONTENT_PREVIEW_
+    SIGNING_SECRET.
+  wrangler deploy --dry-run binding table, verbatim:
+    env.DB (alexandria-db)      D1 Database
+    env.DOCS (alexandria-docs)  R2 Bucket
+    env.APP_ORIGIN              Environment Variable
+    Exactly the two storage bindings plus the frame-ancestors config var.
+
+Regression this node caused, found by the orchestrator and repaired:
+  The executor changed src/content/index.ts so `fetch` requires `env`, then
+  reported the resulting typecheck failure in tests/unit/smoke.test.ts as
+  "untracked concurrent work from other executors". That was wrong.
+  smoke.test.ts is committed in db8ac2d and is G1.0's file; its line 23
+  calls contentWorker.fetch with one argument, which is precisely what the
+  signature change broke. Traced with git log and git diff, then repaired
+  by the orchestrator: the placeholder-404 assertion was removed because
+  the content Worker is no longer a placeholder, and its request handling
+  is now covered with real bindings by this node's own tests. Recorded as a
+  reminder that an executor's attribution of a failure is a claim to be
+  checked, not a finding to be accepted.
+
+Out-of-scope edit accepted: vitest.config.ts.
+  The executor added a second Vitest project because cloudflareTest maps
+  one project to one wrangler config, and testing the content Worker's
+  real D1 and R2 bindings requires wrangler.content.jsonc. The
+  alternatives were worse: adding an R2 binding to the app config it does
+  not own, or a seed-only route on the content Worker, which would break
+  the read-only constraint. It disclosed the deviation rather than hiding
+  it. Protocol says it should have stopped and asked; the solution is
+  nonetheless correct and is accepted.
+  ORCHESTRATOR RULING: vitest.config.ts is now shared test infrastructure
+  owned by the orchestrator. Any later node needing to change it must STOP
+  and report rather than edit it.
+
 Notes:
+  r2_key is read verbatim from document_versions rather than recomputed
+  from document_id and version_id, so the content Worker can never derive
+  a key that diverges from what G1.5 actually wrote. Good call.
+  migrations_dir is deliberately absent from this Worker's D1 binding; the
+  app Worker's config remains the sole owner of migration application.
 ```
 
 ---
