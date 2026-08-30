@@ -13,6 +13,10 @@ const router = createBrowserRouter([
   { path: "/docs/:slug", element: <Reader /> },
   {
     path: "/admin/*",
+    // A fallback is required for a lazy route; without it React Router
+    // warns on first render and the operator sees a blank frame while the
+    // chunk downloads.
+    hydrateFallbackElement: <div className="p-8 text-sm text-stone-500">Loading…</div>,
     lazy: async () => {
       const module = await import("./routes/admin/index");
       return { element: <module.AdminRoot /> };

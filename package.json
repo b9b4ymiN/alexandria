@@ -10,7 +10,7 @@
     "dev": "vite dev",
     "dev:content": "wrangler dev -c wrangler.content.jsonc",
     "build": "vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.browser-tests.json",
     "lint": "eslint .",
     "test": "vitest run",
     "test:browser": "playwright test",

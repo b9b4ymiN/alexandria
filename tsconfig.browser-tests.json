@@ -9,7 +9,6 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
@@ -19,10 +18,10 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "types": [
-      "vite/client"
+      "node"
     ]
   },
   "include": [
-    "src/app"
+    "tests/browser"
   ]
 }
