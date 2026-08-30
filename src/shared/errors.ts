@@ -36,6 +36,20 @@ export type ErrorCode =
   | "VERSION_IS_CURRENT"
   | "LAST_VERSION_CANNOT_DELETE"
   | "UNCHANGED"
+  // Tag (IMPLEMENTATION_PLAN.md node G2.2, authorized 2026-08-30: SPEC.md
+  // §24 opens with "At minimum," and lists no TAG_* code — these six are
+  // additive extensions the orchestrator approved for G2.2, not codes
+  // invented outside the plan. Names carry the TAG_ prefix like every other
+  // domain, and the statuses follow the same bands as CATEGORY_*: a
+  // not-found is 404, a request that can never succeed regardless of state
+  // (self-merge, a name that is invalid on its face) is 400, and a
+  // conflict that depends on what else currently exists is 409.
+  | "TAG_NOT_FOUND"
+  | "TAG_NAME_REQUIRED"
+  | "TAG_NAME_TOO_LONG"
+  | "TAG_NAME_CONFLICT"
+  | "TAG_SELF_MERGE"
+  | "TAG_LIMIT_EXCEEDED"
   // Storage / infra
   | "R2_WRITE_FAILED"
   | "R2_READ_FAILED"
@@ -72,6 +86,13 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   INVALID_HTML: 400,
   TITLE_REQUIRED: 400,
   CATEGORY_REQUIRED: 400,
+  TAG_NAME_REQUIRED: 400,
+  TAG_NAME_TOO_LONG: 400,
+  // A tag merged into itself can never succeed regardless of what else
+  // exists, so it is 400 (invalid on its face), not 409 (see the TAG block
+  // comment on the ErrorCode union above).
+  TAG_SELF_MERGE: 400,
+  TAG_LIMIT_EXCEEDED: 400,
 
   // 413 — request body exceeds an accepted size
   FILE_TOO_LARGE: 413,
@@ -80,6 +101,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   CATEGORY_NOT_FOUND: 404,
   DOCUMENT_NOT_FOUND: 404,
   VERSION_NOT_FOUND: 404,
+  TAG_NOT_FOUND: 404,
 
   // 403 — request is understood but forbidden by a permission or
   // immutability invariant, not by a missing/invalid credential
@@ -93,6 +115,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   CATEGORY_SLUG_CONFLICT: 409,
   SLUG_CONFLICT: 409,
   UNCHANGED: 409,
+  TAG_NAME_CONFLICT: 409,
 
   // 500 — storage or database failure, not the caller's fault
   R2_WRITE_FAILED: 500,

@@ -8,8 +8,12 @@ import {
 } from "../../src/shared/errors";
 import { ok, fail } from "../../src/shared/envelope";
 
-// SPEC.md §24 "at minimum" list, Phase 1 subset only. DRIA_* and AI_* codes
-// are the Phase 1.5 Dria contract (AGENT.md §3, §19) and must be absent.
+// SPEC.md §24 "at minimum" list, Phase 1 subset, PLUS the six TAG_* codes
+// node G2.2 was authorized to add additively on 2026-08-30 (SPEC.md §24
+// opens with "At minimum," so this is an authorized extension, not a
+// deviation — see the ErrorCode union's TAG block comment in
+// src/shared/errors.ts). DRIA_* and AI_* codes are the Phase 1.5 Dria
+// contract (AGENT.md §3, §19) and must be absent.
 const SPEC_PHASE_1_CODES: ErrorCode[] = [
   "AUTH_REQUIRED",
   "AUTH_INVALID",
@@ -32,6 +36,12 @@ const SPEC_PHASE_1_CODES: ErrorCode[] = [
   "VERSION_IS_CURRENT",
   "LAST_VERSION_CANNOT_DELETE",
   "UNCHANGED",
+  "TAG_NOT_FOUND",
+  "TAG_NAME_REQUIRED",
+  "TAG_NAME_TOO_LONG",
+  "TAG_NAME_CONFLICT",
+  "TAG_SELF_MERGE",
+  "TAG_LIMIT_EXCEEDED",
   "R2_WRITE_FAILED",
   "R2_READ_FAILED",
   "R2_DELETE_FAILED",
@@ -85,12 +95,17 @@ describe("status mapping (total)", () => {
       INVALID_HTML: 400,
       TITLE_REQUIRED: 400,
       CATEGORY_REQUIRED: 400,
+      TAG_NAME_REQUIRED: 400,
+      TAG_NAME_TOO_LONG: 400,
+      TAG_SELF_MERGE: 400,
+      TAG_LIMIT_EXCEEDED: 400,
       // size -> 413
       FILE_TOO_LARGE: 413,
       // not-found -> 404
       CATEGORY_NOT_FOUND: 404,
       DOCUMENT_NOT_FOUND: 404,
       VERSION_NOT_FOUND: 404,
+      TAG_NOT_FOUND: 404,
       // permission / immutability -> 403
       SLUG_IMMUTABLE: 403,
       VERSION_IS_CURRENT: 403,
@@ -101,6 +116,7 @@ describe("status mapping (total)", () => {
       CATEGORY_SLUG_CONFLICT: 409,
       SLUG_CONFLICT: 409,
       UNCHANGED: 409,
+      TAG_NAME_CONFLICT: 409,
       // storage / database failure -> 500
       R2_WRITE_FAILED: 500,
       R2_READ_FAILED: 500,
