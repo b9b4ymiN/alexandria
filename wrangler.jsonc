@@ -18,6 +18,18 @@
       "migrations_dir": "migrations"
     }
   ],
+  // Node G1.5: immutable HTML version storage. The same physical bucket the
+  // content Worker reads from (wrangler.content.jsonc binds it as DOCS
+  // too); this Worker is the only one that writes to it. Objects are keyed
+  // documents/{document_id}/versions/{version_id}.html and are never
+  // overwritten — new bytes always mean a new version_id (SPEC.md §7,
+  // AGENT.md §12).
+  "r2_buckets": [
+    {
+      "binding": "DOCS",
+      "bucket_name": "alexandria-docs"
+    }
+  ],
   // Node G1.6 (Admin Auth & Login Rate Limit): defence-in-depth throttle on
   // POST /api/admin/login, keyed only on the trusted CF-Connecting-IP
   // header (never X-Forwarded-For). 10 attempts per 60s window, so the
