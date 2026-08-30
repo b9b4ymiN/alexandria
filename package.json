@@ -10,12 +10,13 @@
     "dev": "vite dev",
     "dev:content": "wrangler dev -c wrangler.content.jsonc",
     "build": "vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.browser-tests.json",
     "lint": "eslint .",
     "test": "vitest run",
     "test:browser": "playwright test",
     "db:migrate:local": "wrangler d1 migrations apply alexandria-db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply alexandria-db --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply alexandria-db --remote",
+    "seed:local": "wrangler d1 execute alexandria-db --local --file tests/browser/seed-local.sql"
   },
   "dependencies": {
     "hono": "4.13.5",

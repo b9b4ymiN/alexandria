@@ -2,5 +2,34 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "alexandria-content",
   "compatibility_date": "2026-08-22",
-  "main": "src/content/index.ts"
+  "main": "src/content/index.ts",
+  // Node G1.9: the app origin for the Content-Security-Policy
+  // frame-ancestors directive is configuration, not a literal in source
+  // (IMPLEMENTATION_PLAN.md Node G1.9, Implementation Requirement 7). The
+  // workers.dev subdomain is fixed by the Cloudflare account
+  // (IMPLEMENTATION_PLAN.md §5 Architecture Constraint 2; Checkpoint A).
+  "vars": {
+    "APP_ORIGIN": "https://alexandria.vcp-scanner.workers.dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "alexandria-db",
+      // Same physical database the app Worker uses (created by G1.12).
+      // Both configs point at the same physical D1 database once G1.12
+      // creates it and applies the real id. No "migrations_dir" here:
+      // this Worker never applies migrations, only reads (Architecture
+      // Constraint 3) — the app Worker's config stays the single owner of
+      // migration application.
+      "database_id": "ea0c8183-e89a-46ea-9348-a0d8ac220f46"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DOCS",
+      // Same physical bucket the app Worker writes to (added there by
+      // G1.5) — this Worker only reads from it.
+      "bucket_name": "alexandria-docs"
+    }
+  ]
 }

@@ -6,5 +6,51 @@
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  // Origins are configuration, never literals in source, so moving to a
+  // custom domain later is a config change rather than a code change.
+  // CONTENT_ORIGIN must stay a DIFFERENT hostname from APP_ORIGIN: that
+  // separation is the browser-security boundary for uploaded HTML
+  // (SPEC.md §2, §16; IMPLEMENTATION_PLAN.md §5 Architecture Constraint 1).
+  "vars": {
+    "APP_ORIGIN": "https://alexandria.vcp-scanner.workers.dev",
+    "CONTENT_ORIGIN": "https://alexandria-content.vcp-scanner.workers.dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "alexandria-db",
+      // Created by node G1.12 in region APAC.
+      "database_id": "ea0c8183-e89a-46ea-9348-a0d8ac220f46",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Node G1.5: immutable HTML version storage. The same physical bucket the
+  // content Worker reads from (wrangler.content.jsonc binds it as DOCS
+  // too); this Worker is the only one that writes to it. Objects are keyed
+  // documents/{document_id}/versions/{version_id}.html and are never
+  // overwritten — new bytes always mean a new version_id (SPEC.md §7,
+  // AGENT.md §12).
+  "r2_buckets": [
+    {
+      "binding": "DOCS",
+      "bucket_name": "alexandria-docs"
+    }
+  ],
+  // Node G1.6 (Admin Auth & Login Rate Limit): defence-in-depth throttle on
+  // POST /api/admin/login, keyed only on the trusted CF-Connecting-IP
+  // header (never X-Forwarded-For). 10 attempts per 60s window, so the
+  // 11th attempt inside a minute is the first to be rejected with 429 —
+  // matching the Node G1.6 edge case exactly. `namespace_id` is an
+  // account-scoped identifier Cloudflare assigns; this value is a
+  // placeholder like the D1 `database_id` above and needs no live account
+  // for local dev/test (the Workers Rate Limiting binding runs
+  // local-only under wrangler dev / vitest-pool-workers).
+  "ratelimits": [
+    {
+      "name": "LOGIN_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
 }

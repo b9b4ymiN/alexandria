@@ -1,0 +1,24 @@
+# Local-dev secrets for the `alexandria` Worker (see wrangler.jsonc).
+#
+# Copy this file to `.dev.vars` (git-ignored, see .gitignore) and fill in
+# real values for local development. NEVER commit `.dev.vars` itself and
+# NEVER put a real value in this `.example` file — SPEC.md §17 and
+# AGENT.md §13 require every one of these to be a Worker secret, never a
+# `vars` entry, never `VITE_`-prefixed, never printed to logs/chat.
+#
+# In production these are set with `wrangler secret put <NAME>`
+# (IMPLEMENTATION_PLAN.md Node G1.12), never written to this repo.
+
+# Node G1.6 (Admin Auth & Login Rate Limit) — required for
+# POST /api/admin/login and the requireAdmin middleware.
+ADMIN_PASSWORD=
+ADMIN_SESSION_SIGNING_SECRET=
+
+# Node G5.1 (Agent Auth & Agent API Routes) — required once that node is
+# built; documented here now because src/shared/types.ts already declares
+# it as part of the Env contract.
+AGENT_API_KEY=
+
+# Node G3.4 (Signed Historical Preview URLs) — required once that node is
+# built; documented here now for the same reason as AGENT_API_KEY above.
+CONTENT_PREVIEW_SIGNING_SECRET=

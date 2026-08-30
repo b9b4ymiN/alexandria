@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+<title>Script And Template Fixture</title>
+</head>
+<body>
+<script>
+document.write('<p>This fake paragraph lives inside a script tag and must never become the description.</p>');
+</script>
+<template>
+<p>This paragraph lives inside a template element and must never become the description either, per the node contract edge case.</p>
+</template>
+<p>This is the real first paragraph outside of script and template, long enough to qualify as the description.</p>
+</body>
+</html>

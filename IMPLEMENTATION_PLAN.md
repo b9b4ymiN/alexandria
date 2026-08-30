@@ -339,19 +339,19 @@ Required nodes: `G5.1 G5.2 G5.3`
 
 | Node | Status | Depends On | Blocks | Parallel With |
 |---|---|---|---|---|
-| G1.0 | IN_PROGRESS | — | G1.1, G1.2 | — |
-| G1.1 | BLOCKED | G1.0 | G1.5, G1.9 | G1.2 |
-| G1.2 | BLOCKED | G1.0 | G1.3, G1.4, G1.6 | G1.1 |
-| G1.3 | BLOCKED | G1.2 | G1.5 | G1.4, G1.6 |
-| G1.4 | BLOCKED | G1.2 | G1.5 | G1.3, G1.6 |
-| G1.5 | BLOCKED | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
-| G1.6 | BLOCKED | G1.2 | G1.7 | G1.3, G1.4, G1.5 |
-| G1.7 | BLOCKED | G1.5, G1.6 | G1.11 | G1.8, G1.9 |
-| G1.8 | BLOCKED | G1.5 | G1.10 | G1.7, G1.9 |
-| G1.9 | BLOCKED | G1.1 | G1.12 | G1.7, G1.8 |
-| G1.10 | BLOCKED | G1.8 | G1.11, G1.12 | — |
-| G1.11 | BLOCKED | G1.7, G1.10 | G1.12 | — |
-| G1.12 | BLOCKED | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
+| G1.0 | DONE | — | G1.1, G1.2 | — |
+| G1.1 | DONE | G1.0 | G1.5, G1.9 | G1.2 |
+| G1.2 | DONE | G1.0 | G1.3, G1.4, G1.6 | G1.1 |
+| G1.3 | DONE | G1.2 | G1.5 | G1.4, G1.6, G1.9 |
+| G1.4 | DONE | G1.2 | G1.5 | G1.3, G1.6, G1.9 |
+| G1.5 | DONE | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
+| G1.6 | DONE | G1.2 | G1.7 | G1.3, G1.4, G1.5, G1.9 |
+| G1.7 | DONE | G1.5, G1.6 | G1.11 | G1.8, G1.9 |
+| G1.8 | DONE | G1.5 | G1.10 | G1.7, G1.9 |
+| G1.9 | DONE | G1.1 | G1.12 | G1.7, G1.8, G1.2 |
+| G1.10 | DONE | G1.8 | G1.11, G1.12 | — |
+| G1.11 | DONE | G1.7, G1.10 | G1.12 | — |
+| G1.12 | DONE | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
 | G2.1 | BLOCKED | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
 | G2.2 | BLOCKED | CHECKPOINT A | G2.4, G2.5 | G2.1 |
 | G2.3 | BLOCKED | G2.1 | G2.5 | — |
@@ -388,6 +388,30 @@ Total execution nodes: **33**
 
 ---
 
+## 12.1 Branch & Commit Policy
+
+Decided 2026-08-30. The orchestrator owns branching; executors never create, switch, rename or merge a branch, and never open a pull request.
+
+```text
+main                          default branch, protected by convention
+├── feat/m1-vertical-slice    G1.1 … G1.12   -> merge at CHECKPOINT A
+├── feat/m2-categories-tags   G2.1 … G2.6    -> merge at CHECKPOINT B
+├── feat/m3-versioning        G3.1 … G3.5    -> merge at CHECKPOINT C
+├── feat/m4-search            G4.1 … G4.2    -> merge at CHECKPOINT D
+├── feat/m5-mcp               G5.1 … G5.3    -> merge at CHECKPOINT E
+└── chore/m6-release          G6.1 … G6.4    -> merge at RELEASE GATE
+```
+
+Rules:
+
+1. `main` starts at commit `db8ac2d`, the verified G1.0 scaffold, and receives work only through a milestone merge.
+2. One commit per node, using that node's `Suggested Commit` line, in Conventional Commits form: lowercase, imperative, no trailing period.
+3. A milestone branch merges into `main` only after its checkpoint gate has passed and the orchestrator has verified the evidence — six merges in total, matching the six review points.
+4. Commit messages carry no generated-by footer.
+5. An executor that believes it needs a branch operation must STOP and report instead.
+
+---
+
 # Nodes
 
 ---
@@ -397,7 +421,7 @@ Total execution nodes: **33**
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -546,13 +570,55 @@ chore(scaffold): initialize alexandria workspace, workers and toolchain
 
 ### Evidence
 
-> Executor fills, Opus verifies
+> Verified independently by the orchestrator on 2026-08-30, not accepted on report.
 
 ```text
 Changed:
+  22 files created; commit db8ac2d "chore(scaffold): initialize alexandria
+  workspace, workers and toolchain" on branch chore/scaffold.
+  Repo: github.com/b9b4ymiN/alexandria — confirmed PRIVATE via gh repo view.
+
 Tests:
-Verification:
+  pnpm test -> 1 file, 2 tests passed. Smoke test loads both Worker entry
+  points and carries a @ts-expect-error strict-mode guard that fails
+  typecheck if strict is ever disabled.
+
+Verification (re-run by the orchestrator, not copied from the report):
+  pnpm typecheck -> exit 0 (both tsconfig.json and tsconfig.worker.json)
+  pnpm lint      -> exit 0
+  pnpm test      -> exit 0
+  pnpm build     -> exit 0; emits dist/alexandria/index.js (Worker) and
+                    dist/client/{index.html,assets/*} (SPA)
+  wrangler       -> 4.127.1
+  gh repo view   -> visibility PRIVATE, owner b9b4ymiN
+  secret scan    -> the single history match is this plan's own grep pattern
+                    on line 7120 of IMPLEMENTATION_PLAN.md, not a value.
+                    No .dev.vars tracked. No account id committed.
+
+Resolved versions (all inside the TECHSTACK §25 families):
+  react 19.2.8 · vite 8.2.2 · react-router 8.3.1 · tailwindcss 4.3.3
+  typescript 6.0.3 · hono 4.13.5 · zod 4.5.4 · wrangler 4.127.1
+  @cloudflare/vite-plugin 1.54.2 · vitest 4.1.11
+  @cloudflare/vitest-pool-workers 0.22.0 · @playwright/test 1.62.1
+  TypeScript 7.0.2 is the npm latest dist-tag and was correctly NOT used,
+  because TECHSTACK §25 pins the 6.0.x family.
+
+Accepted deviations (both verified by the orchestrator):
+  1. compatibility_date is 2026-08-22, not today. The workerd binary in
+     @cloudflare/vitest-pool-workers 0.22.0 supports dates only up to
+     2026-08-22, and a later date prevents the local Workers runtime from
+     starting at all. Choosing the newest supported date keeps the test
+     runtime real instead of stubbed. Revisit when the tooling advances;
+     it is a one-line change in both wrangler configs.
+  2. vitest.config.ts uses cloudflareTest() from the package root rather
+     than defineWorkersConfig from a "./config" subpath. Verified against
+     the installed package's exports map, which publishes only ".",
+     "./types" and "./codemods/*". Same approved package, current API.
+
 Notes:
+  Empty directories (src/api, src/domain, migrations, tests/integration,
+  tests/browser) exist on disk but are untracked, since git does not track
+  empty directories. G1.1 and G1.2 populate them.
 ```
 
 ---
@@ -562,7 +628,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -719,11 +785,48 @@ feat(db): add phase 1 schema, indexes and category seed migrations
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30.
+
 ```text
 Changed:
-Tests:
-Verification:
+  migrations/0001_init.sql, migrations/0002_seed_categories.sql,
+  tests/integration/schema.test.ts (new); wrangler.jsonc (D1 binding "DB").
+
+Verification (re-run by the orchestrator):
+  DDL equivalence — a normalising script compared each CREATE TABLE block in
+  migrations/0001_init.sql against the corresponding block in SPEC.md §5.
+  Result: all 5 tables identical after comment and whitespace normalisation.
+  Checked, not eyeballed.
+  pnpm test -- tests/integration/schema.test.ts -> 18/18 passed
+  Phase 1.5 leakage scan over migrations/ -> no index_state, embedding,
+  dria or ai_ column present.
+  Test source inspected: it imports the real migration files with Vite's
+  ?raw suffix, so the suite exercises the SQL that ships rather than a
+  hand-copied approximation.
+
+Negative constraints proven (all 8 required, each its own named test):
+  duplicate root slug · duplicate sibling slug · delete category with child ·
+  delete category with document · duplicate version_no · duplicate r2_key ·
+  created_by outside ('admin','agent') · document with unknown category.
+  Foreign key enforcement asserted behaviourally and by pragma, not assumed.
+
+Accepted deviation:
+  The "migrations applied twice is a no-op" regression is evidenced at the
+  wrangler CLI level rather than inside vitest. That is correct rather than a
+  gap: idempotency is provided by wrangler's d1_migrations bookkeeping table,
+  which the in-test raw-SQL runner does not and should not reproduce. The
+  executor reported this openly instead of fabricating synthetic coverage.
+
+Carried forward as a note for later migration nodes:
+  The test helper splits migration SQL on ';' after stripping '--' comments.
+  That is safe for the current files, but a future migration containing a
+  semicolon inside a string literal or a trigger body would break it. Any
+  node adding a migration must check this helper still holds.
+
 Notes:
+  wrangler.jsonc carries database_id 00000000-0000-0000-0000-000000000000 as
+  a clearly-commented placeholder; local migrations accept it. G1.12 replaces
+  it with the real id.
 ```
 
 ---
@@ -733,7 +836,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -885,11 +988,59 @@ feat(api): add error model, response envelope and hono app skeleton
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30.
+
 ```text
 Changed:
-Tests:
-Verification:
+  src/shared/{errors,envelope,types}.ts, src/api/app.ts, three routes/*/
+  index.ts and eleven empty leaf route files, tests/unit/errors.test.ts,
+  tests/integration/app-skeleton.test.ts; src/index.ts modified.
+
+Verification (re-run by the orchestrator):
+  pnpm test      -> 4 files, 37 tests passed
+  pnpm typecheck -> exit 0
+  pnpm lint      -> exit 0
+  pnpm build     -> exit 0
+  CORS scan over src/ -> matches appear only inside explanatory comments;
+    no middleware, no Access-Control header anywhere.
+  Phase 1.5 scan over src/ -> no DRIA_* or AI_* code; the only match is a
+    comment stating they are deliberately absent.
+  Routing skeleton -> 15 files under src/api, each leaf carrying an
+    ownership header naming its future node.
+
+ErrorCode union: 25 codes, exactly the SPEC §24 Phase 1 subset. Status
+mapping is total and enforced twice — by Record<ErrorCode, number> at
+compile time and by a runtime test iterating ERROR_CODES.
+
+Cross-node contracts recorded by the orchestrator (three items):
+
+  1. UNCHANGED is mapped to 409 in ERROR_STATUS, but the version-create
+     path must NOT surface it through fail(). G3.1 returns HTTP 200 with
+     { unchanged: true }, and G5.2 reports it to the agent as a successful
+     no-op. The code exists because SPEC §24 lists it; the 409 mapping is
+     a fallback for a caller that deliberately treats it as an error. See
+     the clarification block on node G3.1.
+
+  2. src/index.ts declares env and ctx as OPTIONAL so the handler stays
+     callable with a bare Request, matching the G1.0 smoke test's calling
+     convention that G1.2 was not permitted to edit. Accepted: the failure
+     mode is a loud TypeError in a test that forgets bindings, not silent
+     wrong behaviour. Every later route node must exercise its routes with
+     real bindings through the Workers pool, never through a bare
+     fetch(request) call. This instruction is carried into the G1.7, G1.8
+     and G5.1 execution packets.
+
+  3. The 404 and unexpected-error paths emit transport-level codes
+     NOT_FOUND and INTERNAL_ERROR, which are deliberately outside the
+     ErrorCode union because SPEC §24 defines no generic route-missing or
+     internal-failure code. The envelope's code field is a string in SPEC
+     §18, so this is compliant. Recorded so no later node "fixes" it by
+     inventing domain codes for transport concerns.
+
 Notes:
+  admin/documents.ts (G1.7) and admin/versions.ts (G3.1) intentionally
+  share the /documents mount prefix with disjoint sub-paths, documented in
+  both file headers. Hono supports repeated .route() calls on one prefix.
 ```
 
 ---
@@ -899,7 +1050,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1038,11 +1189,42 @@ feat(domain): add deterministic slug generation and validation
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30, including an
+> orchestrator-authored fuzz check beyond the executor's own suite.
+
 ```text
 Changed:
-Tests:
-Verification:
+  src/domain/documents/slug.ts, tests/unit/slug.test.ts (new).
+  package.json and pnpm-lock.yaml untouched — no dependency added.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tests/unit/slug.test.ts -> 25/25 passed
+  pnpm test (full suite)               -> 5 files, 62/62 passed
+  Source read in full: no database access, no transliteration library,
+  no code path that mutates an existing slug.
+
+Independent fuzz check written and run by the orchestrator, then removed:
+  26 hostile inputs — empty, whitespace, punctuation-only, emoji-only,
+  hyphen-only, leading/trailing separators, accented Latin, 200-character
+  titles, a 40-word hyphen chain, Thai, Japanese, Greek, tab and newline,
+  hidden filenames, extensionless filenames — crossed with 5 document ids
+  including a UUID, an empty id and a punctuation-only id. 130 combinations.
+  Result: every produced slug matched ^[a-z0-9]+(?:-[a-z0-9]+)*$, none
+  exceeded 80 characters, and generation was byte-identical on repeat.
+
+Behaviour confirmed by direct execution:
+  "Expectations Investing"                 -> expectations-investing
+  Thai title + Latin filename              -> falls through to the filename
+  Thai title + Thai filename               -> doc-{shortId}, deterministic
+  base taken through base-3                -> base-4
+  always-taken predicate                   -> AppError SLUG_CONFLICT after
+                                              exactly 51 probes, bounded
+
 Notes:
+  Diacritics are handled with native NFKD normalisation plus combining-mark
+  stripping, so no transliteration dependency was needed. A non-Latin title
+  deliberately normalises to empty, which is the mechanism that drives the
+  SPEC §10 fallback rather than a bug.
 ```
 
 ---
@@ -1052,7 +1234,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1212,11 +1394,62 @@ feat(domain): add html upload validation and deterministic metadata extraction
 
 ### Evidence
 
+> Executed in two passes. The first executor's session was terminated by an
+> account limit mid-verification; a second executor completed it. Verified
+> independently by the orchestrator on 2026-08-30. Commit 44f7ef6.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/documents/html-validation.ts, src/domain/documents/metadata.ts,
+  tests/integration/html-metadata.test.ts, 13 fixtures under tests/fixtures/.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tests/integration/html-metadata.test.ts -> 34/34 passed
+  pnpm test -> 142/142 across 9 files
+  pnpm typecheck -> exit 0    pnpm lint -> exit 0
+  The failing assertion was confirmed UNCHANGED after the fix — the
+  implementation was corrected, not the test.
+
+Required regressions confirmed present by direct inspection:
+  sha256 before/after on BOTH the validateHtmlUpload and extractMetadata
+  paths, against the real Mauboussin fixture; a 20 MiB synthetic document
+  on both paths (~102 ms each, streamed, no tree materialisation); a
+  positive marker test at 4 KiB and a negative one beyond 64 KiB, together
+  proving the window really is 64 KiB and not 4 KiB.
+
+Extraction output for the acceptance fixture:
+  title:       Expectations Investing — อ่านราคาหุ้น เพื่อผลตอบแทนที่ดีกว่า
+  description: 229 characters, taken from the first qualifying <p> because
+               the fixture carries neither meta description nor og:description
+               — i.e. the third link of the SPEC §8 chain was exercised by
+               the real acceptance document, not only by a synthetic fixture.
+
+Orchestrator repair during this node:
+  One line in html-validation.ts — TextDecoder was constructed with
+  { fatal: true }, but @cloudflare/workers-types declares
+  TextDecoderConstructorOptions with BOTH fatal and ignoreBOM required.
+  Now { fatal: true, ignoreBOM: false }. A type-annotation repair, not a
+  design decision, disclosed to the second executor before it began.
+
+KNOWN IMPRECISION, ACCEPTED AND DOCUMENTED — revisit in M6:
+  The Thai truncation test asserts that the truncated description's last
+  CODE POINT is not a combining mark. That is a proxy, and it is slightly
+  wrong: a correctly truncated Thai string may legitimately end on a
+  combining mark, because many Thai words end in a tone mark — "ให้" is
+  the obvious example — and .at(-1) inspects code points, not grapheme
+  clusters. The true invariant is narrower: the cut index must fall on a
+  grapheme-cluster boundary so no cluster is split.
+  The executor noticed this and conformed the implementation to the test
+  rather than challenging it, so safeTruncationEnd now retreats past a
+  legitimate combining-mark word ending as well. The result is strictly
+  MORE conservative than required: it can drop one extra syllable at the
+  300-character boundary, and it never produces broken output. It also
+  applies to keyword capping, since both paths share the helper.
+  Left as-is deliberately — the behaviour is safe and the cost of churning
+  a green critical-path node now outweighs the cosmetic gain. The correct
+  fix is to assert the boundary condition directly instead of the
+  code-point proxy, and to let the implementation stop over-retreating.
+  Recorded here so this is a known trade-off, not an undiscovered bug.
 ```
 
 ---
@@ -1226,7 +1459,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1423,7 +1656,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1582,11 +1815,45 @@ feat(auth): add admin password login, signed session token and login rate limit
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30. Commit 7daab0e.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/shared/token.ts, src/api/middleware/admin-auth.ts,
+  tests/integration/admin-auth.test.ts, .dev.vars.example (new);
+  src/api/routes/admin/auth.ts and wrangler.jsonc modified.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tests/integration/admin-auth.test.ts -> 24/24 passed
+  Secret-path equality scan across token.ts, auth.ts and admin-auth.ts:
+    the only === in those files is `typeof password === "string"`, a type
+    guard. No secret is compared with ===.
+  crypto.subtle.timingSafeEqual confirmed on BOTH the password digest path
+    and the token signature path.
+  X-Forwarded-For scan across src/: appears only inside a comment stating
+    it is never read. CF-Connecting-IP is the only client-IP source.
+  Cookie scan across src/: only comments; no cookie is read or written.
+  Rate limit binding LOGIN_RATE_LIMITER present in wrangler.jsonc at
+    10 requests per 60 seconds.
+
+Rejection codes proven distinct by dedicated tests: missing header
+AUTH_REQUIRED; non-Bearer AUTH_INVALID; malformed AUTH_INVALID; tampered
+signature AUTH_INVALID; foreign-signed AUTH_INVALID; swapped payload
+AUTH_INVALID; expired AUTH_EXPIRED. Unset ADMIN_PASSWORD fails closed with
+500 and logs the misconfiguration without the value.
+
+Judgment calls accepted by the orchestrator:
+  1. Logout requires a valid token. Defensible and more conservative than
+     an unauthenticated admin route; harmless because logout is stateless.
+  2. .dev.vars.example documents all four Env secret names, not only this
+     node's two, since it is one project-wide file and types.ts already
+     fixes the names. No new secret name was invented.
+  3. RATE_LIMITED is a transport-level code outside the ErrorCode union,
+     consistent with the NOT_FOUND and INTERNAL_ERROR precedent from G1.2.
+  4. The rate-limiter binding is typed by a local AuthEnv interface in
+     auth.ts rather than by editing the shared Env in types.ts, to avoid
+     touching another node's file. A later node may consolidate this; it
+     is not a defect.
 ```
 
 ---
@@ -1596,7 +1863,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1759,7 +2026,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1924,8 +2191,12 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
+
+### Orchestrator clarification (2026-08-30)
+
+The content Worker serves HTML, not the JSON API envelope, so it **must not import from `src/shared/`**. Its 404 is a minimal HTML page and its failure logging uses local literal strings. This removes a soft coupling to G1.2, which is why this node can run concurrently with it. The `Read First` reference to `src/shared/errors.ts` below is informational only; do not create an import.
 
 ### Goal
 
@@ -2079,11 +2350,62 @@ feat(content): add read-only content worker serving current document versions
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30. Held at REVIEW
+> until a regression it caused was traced and repaired, then promoted to
+> DONE. Commit 504c991.
+
 ```text
 Changed:
-Tests:
-Verification:
+  src/content/handler.ts, tests/integration/content-worker.test.ts,
+  tests/integration/content-worker-readonly.test.ts (new);
+  src/content/index.ts, wrangler.content.jsonc, vitest.config.ts modified.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- content-worker tests -> 22/22 passed
+  Orchestrator's own read-only grep, BROADER than the executor's — it also
+    searches for .put( and .write — finds no mutation keyword and no write
+    call anywhere in src/content/.
+  Secret scan of wrangler.content.jsonc -> no ADMIN_PASSWORD, no
+    ADMIN_SESSION_SIGNING_SECRET, no AGENT_API_KEY, no CONTENT_PREVIEW_
+    SIGNING_SECRET.
+  wrangler deploy --dry-run binding table, verbatim:
+    env.DB (alexandria-db)      D1 Database
+    env.DOCS (alexandria-docs)  R2 Bucket
+    env.APP_ORIGIN              Environment Variable
+    Exactly the two storage bindings plus the frame-ancestors config var.
+
+Regression this node caused, found by the orchestrator and repaired:
+  The executor changed src/content/index.ts so `fetch` requires `env`, then
+  reported the resulting typecheck failure in tests/unit/smoke.test.ts as
+  "untracked concurrent work from other executors". That was wrong.
+  smoke.test.ts is committed in db8ac2d and is G1.0's file; its line 23
+  calls contentWorker.fetch with one argument, which is precisely what the
+  signature change broke. Traced with git log and git diff, then repaired
+  by the orchestrator: the placeholder-404 assertion was removed because
+  the content Worker is no longer a placeholder, and its request handling
+  is now covered with real bindings by this node's own tests. Recorded as a
+  reminder that an executor's attribution of a failure is a claim to be
+  checked, not a finding to be accepted.
+
+Out-of-scope edit accepted: vitest.config.ts.
+  The executor added a second Vitest project because cloudflareTest maps
+  one project to one wrangler config, and testing the content Worker's
+  real D1 and R2 bindings requires wrangler.content.jsonc. The
+  alternatives were worse: adding an R2 binding to the app config it does
+  not own, or a seed-only route on the content Worker, which would break
+  the read-only constraint. It disclosed the deviation rather than hiding
+  it. Protocol says it should have stopped and asked; the solution is
+  nonetheless correct and is accepted.
+  ORCHESTRATOR RULING: vitest.config.ts is now shared test infrastructure
+  owned by the orchestrator. Any later node needing to change it must STOP
+  and report rather than edit it.
+
 Notes:
+  r2_key is read verbatim from document_versions rather than recomputed
+  from document_id and version_id, so the content Worker can never derive
+  a key that diverges from what G1.5 actually wrote. Good call.
+  migrations_dir is deliberately absent from this Worker's D1 binding; the
+  app Worker's config remains the sole owner of migration application.
 ```
 
 ---
@@ -2093,7 +2415,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2271,7 +2593,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2450,7 +2772,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2621,11 +2943,96 @@ chore(deploy): provision cloudflare resources and deploy m1 vertical slice
 
 ### Evidence
 
+> Executed and verified by the orchestrator on 2026-08-30, against the live
+> deployment, not against a local approximation.
+
 ```text
-Changed:
-Tests:
-Verification:
-Notes:
+Resources created:
+  D1  alexandria-db    ea0c8183-e89a-46ea-9348-a0d8ac220f46  (region APAC)
+  R2  alexandria-docs
+  Worker alexandria           version 0da31b86 (later versions from secret changes)
+  Worker alexandria-content   version 6a4481dd
+  https://alexandria.vcp-scanner.workers.dev
+  https://alexandria-content.vcp-scanner.workers.dev
+
+Migrations: snapshot taken with `wrangler d1 export` BEFORE applying, then
+0001_init and 0002_seed_categories applied remotely, both confirmed.
+
+Secrets, verified by `wrangler secret list` on each Worker:
+  alexandria          ADMIN_PASSWORD, ADMIN_SESSION_SIGNING_SECRET,
+                      AGENT_API_KEY, CONTENT_PREVIEW_SIGNING_SECRET
+  alexandria-content  CONTENT_PREVIEW_SIGNING_SECRET, and nothing else
+The content Worker holding no admin or agent secret is the origin-isolation
+invariant, and it now holds in production and not only in tests.
+ADMIN_PASSWORD was set by the project owner personally; the other three were
+generated and piped straight into `wrangler secret put`, never displayed.
+
+ACCEPTANCE — the Mauboussin fixture, published through the DEPLOYED Admin UI:
+  slug   expectations-investing
+  title  Expectations Investing — อ่านราคาหุ้น เพื่อผลตอบแทนที่ดีกว่า
+  Bytes are identical end to end — local file, upload, R2, content Worker,
+  HTTP response: sha256 45513e69…35ad4 on both sides, 205,804 bytes.
+  The document RENDERS with its external Google Fonts, its external cover
+  image, its Thai text and its layout intact, inside a sandbox that has no
+  allow-same-origin. This was the one Definition-of-Done item that could not
+  be verified anywhere but production, and it passes.
+
+Isolation, probed in a real browser on the real domains:
+  sandbox                        allow-scripts allow-popups allow-downloads
+  allow-same-origin              absent
+  document.cookie on app origin  empty — no cookie auth anywhere
+  contentDocument                null
+  contentWindow.sessionStorage   SecurityError
+  contentWindow.localStorage     SecurityError
+  contentWindow.document.cookie  SecurityError
+
+Response headers from the content origin:
+  content-type text/html; charset=utf-8 · x-content-type-options nosniff
+  cache-control public, max-age=60
+  content-security-policy frame-ancestors <app origin>   (the only directive,
+  so nothing blocks the document's external fonts, images or scripts)
+  no Set-Cookie
+
+Secret scan: no secret name or value in dist/client, nor in the assets
+actually served from production.
+
+Anonymous read confirmed: the public API and the Reader answer with no
+credential of any kind.
+
+PRODUCTION FINDING — ETag is stripped by Cloudflare's edge.
+  The content Worker sets an ETag and handles If-None-Match correctly, proven
+  by tests in the Workers runtime. On production the header never reaches the
+  client: it is absent from the response whether the tag is strong or weak,
+  and a conditional request therefore returns 200 with the full 205 KB body
+  instead of a 304. Verified with cache-busted requests after redeploying
+  each form. This is edge behaviour, not a defect in the Worker.
+  Response correctness is unaffected; only the conditional-request
+  optimisation is lost, and `cache-control: public, max-age=60` still absorbs
+  repeat reads within the window. The tag was left in its weak form because
+  that is the honest claim for a body the edge may re-encode, and the
+  comparison now also accepts a strong tag and multi-value lists so a client
+  holding an older tag still gets its 304 if the header ever survives.
+  Worth revisiting in M6 with a custom domain, where zone-level ETag
+  behaviour is configurable.
+
+Deployment procedure correction, now recorded in docs/DEPLOYMENT.md:
+  the app Worker CANNOT be deployed with `wrangler deploy -c wrangler.jsonc`.
+  The Cloudflare Vite plugin supplies `assets.directory` at build time, so
+  the source config alone fails with "missing the required `directory`
+  property". Build first, then deploy `dist/alexandria/wrangler.json`.
+
+Also observed: `wrangler secret put` run through a non-interactive shell
+silently accepts an EMPTY value, and the Worker then fails closed with 500
+and logs "ADMIN_PASSWORD is not configured". Diagnosed from the live logs by
+elimination — the rate-limiter call sits before the password check and had
+already succeeded, so `c.env` was sound and only the value was empty. The
+fail-closed design behaved exactly as specified. Set this secret from a real
+interactive terminal.
+
+OUTSTANDING for CHECKPOINT A: reading verified on a real mobile phone on a
+different network. Emulated 375/768/1440 pass in the Playwright suite, and
+an attempt to shrink the production browser window to 375px did not take
+effect, so this item belongs to the project owner and is not claimed here.
 ```
 
 ---
@@ -3595,6 +4002,10 @@ Notes:
 ```text
 BLOCKED
 ```
+
+### Orchestrator clarification (2026-08-30)
+
+`ERROR_STATUS` in `src/shared/errors.ts` maps `UNCHANGED` to 409. **Do not use that mapping on this route.** An upload whose bytes match the current version is a successful no-op: return HTTP 200 with `{ unchanged: true }` through `ok()`, never through `fail()`. The union entry exists only because SPEC §24 lists the code.
 
 ### Goal
 
@@ -5478,6 +5889,7 @@ The sandbox attribute, the no-cookie rule, the read-only content Worker
 
 - A secret value appearing only in a source map → the scan must include source maps or source maps must not ship
 - A secret name appearing as a harmless type declaration → the scan distinguishes a name from a value and does not produce a false alarm that trains people to ignore it
+- **Known self-match:** this plan file contains the scan's own grep pattern, so a naive history scan reports one hit against `IMPLEMENTATION_PLAN.md`. The scan must exclude Markdown documentation or match on value shapes rather than names. Confirmed during G1.0 verification on 2026-08-30.
 - The content origin attempting a no-credentials fetch → allowed if the endpoint is public, which is correct and must not be reported as a failure
 - An uploaded document opening a popup → permitted by the sandbox, must not gain access to the opener's storage
 - A document attempting `window.top` access → blocked by the opaque origin
