@@ -1,11 +1,16 @@
 // Content Worker entry (alexandria-content).
+//
 // Serves uploaded HTML on a dedicated content origin, isolated from the
-// app/admin origin (AGENT.md §8). Placeholder only — node G1.9 wires up
-// serving the current version from R2. This Worker declares no D1, no R2
-// and no secret binding yet; when D1 is later bound here it must stay
-// strictly read-only (IMPLEMENTATION_PLAN.md §5 constraint 3).
+// app/admin origin (AGENT.md §8). All request handling lives in
+// src/content/handler.ts (Node G1.9); this file only wires the Worker's
+// bindings to it. Bindings are exactly the D1 database and the R2 bucket
+// declared in wrangler.content.jsonc — no admin or agent secret is bound
+// here (IMPLEMENTATION_PLAN.md §5 Architecture Constraint 3, Node G1.9
+// Implementation Requirement 2).
+import { handleContentRequest, type ContentEnv } from "./handler";
+
 export default {
-  async fetch(_request: Request): Promise<Response> {
-    return new Response("Not Found", { status: 404 });
+  fetch(request: Request, env: ContentEnv): Promise<Response> {
+    return handleContentRequest(request, env);
   },
-} satisfies ExportedHandler;
+} satisfies ExportedHandler<ContentEnv>;
