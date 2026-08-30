@@ -1394,11 +1394,62 @@ feat(domain): add html upload validation and deterministic metadata extraction
 
 ### Evidence
 
+> Executed in two passes. The first executor's session was terminated by an
+> account limit mid-verification; a second executor completed it. Verified
+> independently by the orchestrator on 2026-08-30. Commit 44f7ef6.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/documents/html-validation.ts, src/domain/documents/metadata.ts,
+  tests/integration/html-metadata.test.ts, 13 fixtures under tests/fixtures/.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tests/integration/html-metadata.test.ts -> 34/34 passed
+  pnpm test -> 142/142 across 9 files
+  pnpm typecheck -> exit 0    pnpm lint -> exit 0
+  The failing assertion was confirmed UNCHANGED after the fix — the
+  implementation was corrected, not the test.
+
+Required regressions confirmed present by direct inspection:
+  sha256 before/after on BOTH the validateHtmlUpload and extractMetadata
+  paths, against the real Mauboussin fixture; a 20 MiB synthetic document
+  on both paths (~102 ms each, streamed, no tree materialisation); a
+  positive marker test at 4 KiB and a negative one beyond 64 KiB, together
+  proving the window really is 64 KiB and not 4 KiB.
+
+Extraction output for the acceptance fixture:
+  title:       Expectations Investing — อ่านราคาหุ้น เพื่อผลตอบแทนที่ดีกว่า
+  description: 229 characters, taken from the first qualifying <p> because
+               the fixture carries neither meta description nor og:description
+               — i.e. the third link of the SPEC §8 chain was exercised by
+               the real acceptance document, not only by a synthetic fixture.
+
+Orchestrator repair during this node:
+  One line in html-validation.ts — TextDecoder was constructed with
+  { fatal: true }, but @cloudflare/workers-types declares
+  TextDecoderConstructorOptions with BOTH fatal and ignoreBOM required.
+  Now { fatal: true, ignoreBOM: false }. A type-annotation repair, not a
+  design decision, disclosed to the second executor before it began.
+
+KNOWN IMPRECISION, ACCEPTED AND DOCUMENTED — revisit in M6:
+  The Thai truncation test asserts that the truncated description's last
+  CODE POINT is not a combining mark. That is a proxy, and it is slightly
+  wrong: a correctly truncated Thai string may legitimately end on a
+  combining mark, because many Thai words end in a tone mark — "ให้" is
+  the obvious example — and .at(-1) inspects code points, not grapheme
+  clusters. The true invariant is narrower: the cut index must fall on a
+  grapheme-cluster boundary so no cluster is split.
+  The executor noticed this and conformed the implementation to the test
+  rather than challenging it, so safeTruncationEnd now retreats past a
+  legitimate combining-mark word ending as well. The result is strictly
+  MORE conservative than required: it can drop one extra syllable at the
+  300-character boundary, and it never produces broken output. It also
+  applies to keyword capping, since both paths share the helper.
+  Left as-is deliberately — the behaviour is safe and the cost of churning
+  a green critical-path node now outweighs the cosmetic gain. The correct
+  fix is to assert the boundary condition directly instead of the
+  code-point proxy, and to let the implementation stop over-retreating.
+  Recorded here so this is a known trade-off, not an undiscovered bug.
 ```
 
 ---
