@@ -351,7 +351,7 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.9 | DONE | G1.1 | G1.12 | G1.7, G1.8, G1.2 |
 | G1.10 | DONE | G1.8 | G1.11, G1.12 | — |
 | G1.11 | DONE | G1.7, G1.10 | G1.12 | — |
-| G1.12 | BLOCKED | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
+| G1.12 | DONE | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
 | G2.1 | BLOCKED | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
 | G2.2 | BLOCKED | CHECKPOINT A | G2.4, G2.5 | G2.1 |
 | G2.3 | BLOCKED | G2.1 | G2.5 | — |
@@ -2772,7 +2772,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2943,11 +2943,96 @@ chore(deploy): provision cloudflare resources and deploy m1 vertical slice
 
 ### Evidence
 
+> Executed and verified by the orchestrator on 2026-08-30, against the live
+> deployment, not against a local approximation.
+
 ```text
-Changed:
-Tests:
-Verification:
-Notes:
+Resources created:
+  D1  alexandria-db    ea0c8183-e89a-46ea-9348-a0d8ac220f46  (region APAC)
+  R2  alexandria-docs
+  Worker alexandria           version 0da31b86 (later versions from secret changes)
+  Worker alexandria-content   version 6a4481dd
+  https://alexandria.vcp-scanner.workers.dev
+  https://alexandria-content.vcp-scanner.workers.dev
+
+Migrations: snapshot taken with `wrangler d1 export` BEFORE applying, then
+0001_init and 0002_seed_categories applied remotely, both confirmed.
+
+Secrets, verified by `wrangler secret list` on each Worker:
+  alexandria          ADMIN_PASSWORD, ADMIN_SESSION_SIGNING_SECRET,
+                      AGENT_API_KEY, CONTENT_PREVIEW_SIGNING_SECRET
+  alexandria-content  CONTENT_PREVIEW_SIGNING_SECRET, and nothing else
+The content Worker holding no admin or agent secret is the origin-isolation
+invariant, and it now holds in production and not only in tests.
+ADMIN_PASSWORD was set by the project owner personally; the other three were
+generated and piped straight into `wrangler secret put`, never displayed.
+
+ACCEPTANCE — the Mauboussin fixture, published through the DEPLOYED Admin UI:
+  slug   expectations-investing
+  title  Expectations Investing — อ่านราคาหุ้น เพื่อผลตอบแทนที่ดีกว่า
+  Bytes are identical end to end — local file, upload, R2, content Worker,
+  HTTP response: sha256 45513e69…35ad4 on both sides, 205,804 bytes.
+  The document RENDERS with its external Google Fonts, its external cover
+  image, its Thai text and its layout intact, inside a sandbox that has no
+  allow-same-origin. This was the one Definition-of-Done item that could not
+  be verified anywhere but production, and it passes.
+
+Isolation, probed in a real browser on the real domains:
+  sandbox                        allow-scripts allow-popups allow-downloads
+  allow-same-origin              absent
+  document.cookie on app origin  empty — no cookie auth anywhere
+  contentDocument                null
+  contentWindow.sessionStorage   SecurityError
+  contentWindow.localStorage     SecurityError
+  contentWindow.document.cookie  SecurityError
+
+Response headers from the content origin:
+  content-type text/html; charset=utf-8 · x-content-type-options nosniff
+  cache-control public, max-age=60
+  content-security-policy frame-ancestors <app origin>   (the only directive,
+  so nothing blocks the document's external fonts, images or scripts)
+  no Set-Cookie
+
+Secret scan: no secret name or value in dist/client, nor in the assets
+actually served from production.
+
+Anonymous read confirmed: the public API and the Reader answer with no
+credential of any kind.
+
+PRODUCTION FINDING — ETag is stripped by Cloudflare's edge.
+  The content Worker sets an ETag and handles If-None-Match correctly, proven
+  by tests in the Workers runtime. On production the header never reaches the
+  client: it is absent from the response whether the tag is strong or weak,
+  and a conditional request therefore returns 200 with the full 205 KB body
+  instead of a 304. Verified with cache-busted requests after redeploying
+  each form. This is edge behaviour, not a defect in the Worker.
+  Response correctness is unaffected; only the conditional-request
+  optimisation is lost, and `cache-control: public, max-age=60` still absorbs
+  repeat reads within the window. The tag was left in its weak form because
+  that is the honest claim for a body the edge may re-encode, and the
+  comparison now also accepts a strong tag and multi-value lists so a client
+  holding an older tag still gets its 304 if the header ever survives.
+  Worth revisiting in M6 with a custom domain, where zone-level ETag
+  behaviour is configurable.
+
+Deployment procedure correction, now recorded in docs/DEPLOYMENT.md:
+  the app Worker CANNOT be deployed with `wrangler deploy -c wrangler.jsonc`.
+  The Cloudflare Vite plugin supplies `assets.directory` at build time, so
+  the source config alone fails with "missing the required `directory`
+  property". Build first, then deploy `dist/alexandria/wrangler.json`.
+
+Also observed: `wrangler secret put` run through a non-interactive shell
+silently accepts an EMPTY value, and the Worker then fails closed with 500
+and logs "ADMIN_PASSWORD is not configured". Diagnosed from the live logs by
+elimination — the rate-limiter call sits before the password check and had
+already succeeded, so `c.env` was sound and only the value was empty. The
+fail-closed design behaved exactly as specified. Set this secret from a real
+interactive terminal.
+
+OUTSTANDING for CHECKPOINT A: reading verified on a real mobile phone on a
+different network. Emulated 375/768/1440 pass in the Playwright suite, and
+an attempt to shrink the production browser window to 375px did not take
+effect, so this item belongs to the project owner and is not claimed here.
 ```
 
 ---
