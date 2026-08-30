@@ -15,13 +15,13 @@
     {
       "binding": "DB",
       "database_name": "alexandria-db",
-      // Placeholder — mirrors wrangler.jsonc (Node G1.1 Evidence Notes).
+      // Same physical database the app Worker uses (created by G1.12).
       // Both configs point at the same physical D1 database once G1.12
       // creates it and applies the real id. No "migrations_dir" here:
       // this Worker never applies migrations, only reads (Architecture
       // Constraint 3) — the app Worker's config stays the single owner of
       // migration application.
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "ea0c8183-e89a-46ea-9348-a0d8ac220f46"
     }
   ],
   "r2_buckets": [

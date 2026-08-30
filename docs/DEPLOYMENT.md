@@ -85,10 +85,26 @@ node -e "process.stdout.write(crypto.randomUUID()+crypto.randomUUID())" \
 the first consumer, so secret setup happens once.
 
 `AGENT_API_KEY` must also be readable locally for the MCP server (node
-G5.2). Keep it in the git-ignored `.dev.vars`, not in a person's memory.
+G5.2), so it is written to the git-ignored `.secrets.local` alongside the
+production API URL rather than kept in a person's memory. That file is
+matched by the `*.local` rule in `.gitignore`; confirm with
+`git check-ignore -v .secrets.local` before writing anything to it.
 
-Local development uses `.dev.vars` (git-ignored). `.dev.vars.example`
-documents the names with empty values and is safe to commit.
+Local development uses `.dev.vars` (git-ignored) with throwaway local
+values that are unrelated to production. `.dev.vars.example` documents the
+names with empty values and is safe to commit.
+
+**Secret placement is itself an invariant.** The content Worker must hold
+`CONTENT_PREVIEW_SIGNING_SECRET` and nothing else. Verify after any secret
+change:
+
+```bash
+pnpm exec wrangler secret list --name alexandria-content
+```
+
+The result must contain no `ADMIN_PASSWORD`, no
+`ADMIN_SESSION_SIGNING_SECRET` and no `AGENT_API_KEY`. If one ever appears
+there, the origin-isolation guarantee is broken (SPEC.md §16, AGENT.md §8).
 
 ---
 
@@ -113,7 +129,15 @@ pnpm exec wrangler d1 migrations list alexandria-db --remote
 # 4. Deploy content first, then the app, so the Reader never points at a
 #    hostname that does not answer yet
 pnpm exec wrangler deploy -c wrangler.content.jsonc
-pnpm exec wrangler deploy -c wrangler.jsonc
+
+# The APP Worker is built by the Cloudflare Vite plugin and must be deployed
+# from the config the BUILD emits, not from wrangler.jsonc directly. The
+# source config has no `assets.directory` — the plugin fills it in, pointing
+# at the built client output — so `wrangler deploy -c wrangler.jsonc` fails
+# with "The `assets` property in your configuration is missing the required
+# `directory` property." Build first, then deploy the generated config:
+pnpm build
+pnpm exec wrangler deploy -c dist/alexandria/wrangler.json
 
 # 5. Smoke check
 curl -sI https://alexandria-content.vcp-scanner.workers.dev/health

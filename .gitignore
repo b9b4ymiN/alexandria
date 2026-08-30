@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # Coverage
 coverage/
+
+# Database exports taken before migrations (may contain data)
+backup-*.sql

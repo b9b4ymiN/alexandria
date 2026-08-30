@@ -20,10 +20,8 @@
     {
       "binding": "DB",
       "database_name": "alexandria-db",
-      // Placeholder — no remote D1 database exists yet. Node G1.12 creates
-      // the real database and replaces this id when it applies remote
-      // migrations (IMPLEMENTATION_PLAN.md Node G1.1 scope: local only).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Created by node G1.12 in region APAC.
+      "database_id": "ea0c8183-e89a-46ea-9348-a0d8ac220f46",
       "migrations_dir": "migrations"
     }
   ],
