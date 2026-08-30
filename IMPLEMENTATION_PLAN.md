@@ -344,13 +344,13 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.2 | DONE | G1.0 | G1.3, G1.4, G1.6 | G1.1 |
 | G1.3 | DONE | G1.2 | G1.5 | G1.4, G1.6, G1.9 |
 | G1.4 | DONE | G1.2 | G1.5 | G1.3, G1.6, G1.9 |
-| G1.5 | IN_PROGRESS | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
+| G1.5 | DONE | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
 | G1.6 | DONE | G1.2 | G1.7 | G1.3, G1.4, G1.5, G1.9 |
-| G1.7 | BLOCKED | G1.5, G1.6 | G1.11 | G1.8, G1.9 |
-| G1.8 | BLOCKED | G1.5 | G1.10 | G1.7, G1.9 |
+| G1.7 | DONE | G1.5, G1.6 | G1.11 | G1.8, G1.9 |
+| G1.8 | DONE | G1.5 | G1.10 | G1.7, G1.9 |
 | G1.9 | DONE | G1.1 | G1.12 | G1.7, G1.8, G1.2 |
-| G1.10 | BLOCKED | G1.8 | G1.11, G1.12 | — |
-| G1.11 | BLOCKED | G1.7, G1.10 | G1.12 | — |
+| G1.10 | DONE | G1.8 | G1.11, G1.12 | — |
+| G1.11 | DONE | G1.7, G1.10 | G1.12 | — |
 | G1.12 | BLOCKED | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
 | G2.1 | BLOCKED | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
 | G2.2 | BLOCKED | CHECKPOINT A | G2.4, G2.5 | G2.1 |
@@ -1459,7 +1459,7 @@ KNOWN IMPRECISION, ACCEPTED AND DOCUMENTED — revisit in M6:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -1863,7 +1863,7 @@ Judgment calls accepted by the orchestrator:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2026,7 +2026,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2415,7 +2415,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -2593,7 +2593,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
