@@ -88,10 +88,36 @@ function frameAncestorsHeader(appOrigin: string): string {
   return `frame-ancestors ${appOrigin}`;
 }
 
+/**
+ * The version hash as a WEAK entity tag.
+ *
+ * Verified on production 2026-08-30: a STRONG tag (`"<sha256>"`) is stripped
+ * entirely by Cloudflare's edge before the response reaches a reader,
+ * because the edge re-encodes the streamed body and a strong tag asserts
+ * byte-for-byte equality it can no longer guarantee. The result was that no
+ * conditional request ever succeeded and every reader re-downloaded the
+ * whole document each minute. A weak tag makes the weaker claim the edge
+ * can keep — semantically equivalent content — and survives.
+ *
+ * The comparison below accepts both forms so a client that echoes back a
+ * strong tag from a cached older response still gets its 304.
+ */
+function weakEtag(sha256: string): string {
+  return `W/"${sha256}"`;
+}
+
+function etagMatches(ifNoneMatch: string | null, sha256: string): boolean {
+  if (ifNoneMatch === null) return false;
+  const normalise = (value: string) => value.trim().replace(/^W\//, "");
+  return ifNoneMatch
+    .split(",")
+    .some((candidate) => normalise(candidate) === normalise(`"${sha256}"`));
+}
+
 async function serveVersion(current: CurrentVersionRow, env: ContentEnv, request: Request): Promise<Response> {
-  const etag = `"${current.sha256}"`;
+  const etag = weakEtag(current.sha256);
   const ifNoneMatch = request.headers.get("if-none-match");
-  if (ifNoneMatch !== null && ifNoneMatch === etag) {
+  if (etagMatches(ifNoneMatch, current.sha256)) {
     return new Response(null, {
       status: 304,
       headers: {

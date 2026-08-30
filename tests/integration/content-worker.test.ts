@@ -139,7 +139,7 @@ describe("content worker — GET /d/:slug and GET /health", () => {
       expect(res.headers.get("content-type")).toBe("text/html; charset=utf-8");
       expect(res.headers.get("x-content-type-options")).toBe("nosniff");
       expect(res.headers.get("cache-control")).toBe("public, max-age=60");
-      expect(res.headers.get("etag")).toBe(`"${sha256}"`);
+      expect(res.headers.get("etag")).toBe(`W/"${sha256}"`);
 
       // Requirement 6/7: frame-ancestors is the ONLY CSP directive, driven
       // by the APP_ORIGIN configuration var, so nothing here blocks the
@@ -164,6 +164,41 @@ describe("content worker — GET /d/:slug and GET /health", () => {
       expect(await second.text()).toBe("");
     });
 
+    it("still answers 304 when a client echoes back the STRONG form of the tag", async () => {
+      // The Worker emits a weak tag, because a strong one is stripped by
+      // Cloudflare's edge (verified on production 2026-08-30). A client
+      // holding a strong tag from an older cached response must still get
+      // its 304 rather than a pointless 200 with the whole document.
+      const { slug, sha256 } = await seedDocument({ slug: "etag-strong-form" });
+
+      const res = await SELF.fetch(`https://content.test/d/${slug}`, {
+        headers: { "if-none-match": `"${sha256}"` },
+      });
+
+      expect(res.status).toBe(304);
+      expect(await res.text()).toBe("");
+    });
+
+    it("answers 304 when the tag appears in a multi-value If-None-Match list", async () => {
+      const { slug, sha256 } = await seedDocument({ slug: "etag-multi-value" });
+
+      const res = await SELF.fetch(`https://content.test/d/${slug}`, {
+        headers: { "if-none-match": `W/"something-else", W/"${sha256}"` },
+      });
+
+      expect(res.status).toBe(304);
+    });
+
+    it("answers 200 when the tag does not match", async () => {
+      const { slug } = await seedDocument({ slug: "etag-no-match" });
+
+      const res = await SELF.fetch(`https://content.test/d/${slug}`, {
+        headers: { "if-none-match": 'W/"a-tag-for-different-bytes"' },
+      });
+
+      expect(res.status).toBe(200);
+    });
+
     it("serves the Mauboussin acceptance fixture byte-identically, verified by sha256", async () => {
       const { slug, sha256, r2Key } = await seedDocument({ slug: "mauboussin-fixture", html: fixtureHtml });
 
@@ -172,7 +207,7 @@ describe("content worker — GET /d/:slug and GET /health", () => {
       expect(res.status).toBe(200);
       const servedBytes = new Uint8Array(await res.arrayBuffer());
       expect(await sha256Hex(servedBytes)).toBe(sha256);
-      expect(res.headers.get("etag")).toBe(`"${sha256}"`);
+      expect(res.headers.get("etag")).toBe(`W/"${sha256}"`);
 
       // Same object the Worker read from, read back independently.
       const stored = await getEnv().DOCS.get(r2Key);
