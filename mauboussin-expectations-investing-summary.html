@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expectations Investing — อ่านราคาหุ้น เพื่อผลตอบแทนที่ดีกว่า</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#24476B; --accent-deep:#152C46; --accent-light:#4C7BA8;
+  --accent-rule:rgba(36,71,107,.30); --accent-bg:rgba(36,71,107,.08);
+  --copper:#A9702C; --copper-bg:rgba(169,112,44,.10);
+  --paper:#F2EFE4; --paper-mid:#EAE5D2; --paper-deep:#DDD7BD; --paper-shadow:#C8C0A0;
+  --ink:#14110B; --ink-soft:#2A261C; --ink-mid:#46402F; --ink-muted:#7C7460; --ink-faint:#ABA48C;
+  --red:#7A1A1A; --red-bg:#FBF3F0; --green:#355E40; --green-bg:#F1F6EE;
+  --book-width:760px; --page-pad-h:76px; --page-pad-v:84px;
+}
+*{box-sizing:border-box;}
+body{background:#161B22;padding:40px 16px;margin:0;-webkit-text-size-adjust:100%;}
+.book{max-width:var(--book-width);margin:0 auto;background:var(--paper);
+  box-shadow:0 0 0 1px rgba(0,0,0,.10),0 4px 40px rgba(0,0,0,.40),0 0 120px rgba(0,0,0,.25);}
+p{font-family:'Noto Serif Thai',serif;font-size:16px;line-height:1.95;color:var(--ink-soft);margin:0 0 18px;}
+.page{padding:var(--page-pad-v) var(--page-pad-h);}
+.eyebrow{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--copper);font-weight:700;margin-bottom:14px;}
+h1{font-family:'Noto Serif Thai',serif;font-size:29px;line-height:1.4;color:var(--ink);font-weight:700;margin:0 0 26px;letter-spacing:-.2px;}
+h2{font-family:'Noto Serif Thai',serif;font-size:20px;line-height:1.5;color:var(--accent-deep);font-weight:600;
+  margin:44px 0 16px;padding-top:14px;border-top:1px solid var(--paper-shadow);}
+h3{font-family:'Sarabun',sans-serif;font-size:15px;color:var(--ink);font-weight:700;margin:28px 0 10px;}
+strong{color:var(--ink);font-weight:600;}
+em{font-style:italic;}
+.en{font-family:'Noto Serif',serif;font-style:italic;color:var(--accent);font-size:.95em;}
+
+/* COVER */
+.cover{background:var(--accent-deep);padding:70px 46px 54px;text-align:center;position:relative;}
+.cover:before,.cover:after{content:'';position:absolute;width:44px;height:44px;border:1px solid rgba(255,255,255,.28);}
+.cover:before{top:22px;left:22px;border-right:0;border-bottom:0;}
+.cover:after{bottom:22px;right:22px;border-left:0;border-top:0;}
+.cover-pub{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:34px;}
+.cover-title{font-family:'Playfair Display',serif;font-size:52px;line-height:1.05;color:#fff;font-weight:700;margin:0 0 6px;letter-spacing:-1px;}
+.cover-title span{display:block;font-size:26px;font-style:italic;font-weight:400;color:var(--copper);margin-top:10px;letter-spacing:0;}
+.cover-rule{width:56px;height:2px;background:var(--copper);margin:26px auto;}
+.cover-th{font-family:'Noto Serif Thai',serif;font-size:17px;color:rgba(255,255,255,.86);line-height:1.75;max-width:430px;margin:0 auto 30px;}
+.cover-authors{font-family:'Sarabun',sans-serif;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#fff;font-weight:600;}
+.cover-sub{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.5);margin-top:8px;}
+.cover-img{margin:34px auto 0;max-width:150px;}
+.cover-img img{width:100%;display:block;box-shadow:0 6px 24px rgba(0,0,0,.5);}
+.cover-img figcaption{font-family:'Sarabun',sans-serif;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,.4);margin-top:10px;text-transform:uppercase;}
+
+/* CHAPTER OPEN */
+.ch-open{background:var(--paper-mid);padding:76px var(--page-pad-h);border-top:1px solid var(--paper-shadow);border-bottom:1px solid var(--paper-shadow);position:relative;overflow:hidden;}
+.ch-num{position:absolute;right:34px;top:24px;font-family:'Playfair Display',serif;font-size:126px;color:rgba(36,71,107,.10);font-weight:700;line-height:1;}
+.ch-label{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--copper);font-weight:700;margin-bottom:16px;position:relative;}
+.ch-title{font-family:'Playfair Display',serif;font-size:34px;line-height:1.2;color:var(--ink);font-weight:700;margin:0 0 8px;position:relative;}
+.ch-title em{display:block;font-family:'Noto Serif Thai',serif;font-size:19px;font-style:normal;font-weight:500;color:var(--accent);margin-top:10px;}
+.ch-essence{font-family:'Noto Serif Thai',serif;font-size:15.5px;line-height:1.85;color:var(--ink-mid);font-style:italic;max-width:520px;margin-top:22px;padding-left:16px;border-left:2px solid var(--copper);position:relative;}
+
+/* SOURCE BADGES */
+.src{display:inline-block;font-family:'Sarabun',sans-serif;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;padding:2px 7px;margin-right:6px;vertical-align:2px;border-radius:2px;}
+.src-book{background:var(--accent);color:#fff;}
+.src-interp{background:var(--copper-bg);color:var(--copper);border:1px solid rgba(169,112,44,.35);}
+.src-demo{background:var(--green-bg);color:var(--green);border:1px solid rgba(53,94,64,.35);}
+.src-ext{background:var(--paper-deep);color:var(--ink-mid);border:1px solid var(--paper-shadow);}
+
+/* BOXES */
+.insight-box{background:var(--accent-bg);border-left:3px solid var(--accent);padding:24px 28px;margin:30px 0;}
+.insight-box .lbl{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent-deep);font-weight:700;margin-bottom:10px;}
+.insight-box p{font-size:15.5px;margin:0 0 10px;line-height:1.85;}
+.insight-box p:last-child{margin:0;}
+.warn-box{background:var(--red-bg);border-left:3px solid var(--red);padding:22px 26px;margin:28px 0;}
+.warn-box .lbl{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:10px;}
+.warn-box p{font-size:15px;margin:0 0 10px;}
+.warn-box p:last-child{margin:0;}
+.apply-box{background:var(--green-bg);border-left:3px solid var(--green);padding:22px 26px;margin:28px 0;}
+.apply-box .lbl{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:10px;}
+.apply-box p{font-size:15px;margin:0 0 10px;}
+.apply-box ol,.apply-box ul{margin:0;padding-left:20px;}
+.apply-box li{font-family:'Noto Serif Thai',serif;font-size:14.5px;line-height:1.8;color:var(--ink-soft);margin-bottom:7px;}
+
+.author-box{display:flex;gap:18px;padding:24px 28px;background:var(--paper-mid);border-left:3px solid var(--accent);margin:28px 0;}
+.author-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent-deep);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:16px;font-style:italic;flex-shrink:0;}
+.author-meta{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent-deep);margin-bottom:8px;font-weight:600;}
+.author-text{font-family:'Noto Serif Thai',serif;font-size:15.5px;line-height:1.85;color:var(--ink-soft);font-style:italic;margin:0;}
+
+.blockquote-full{background:var(--ink);padding:52px 46px;margin:40px calc(var(--page-pad-h)*-1);text-align:center;}
+.blockquote-full .q{font-family:'Noto Serif',serif;font-style:italic;font-size:22px;line-height:1.5;color:#fff;margin:0 0 16px;}
+.blockquote-full .qth{font-family:'Noto Serif Thai',serif;font-size:15px;line-height:1.8;color:var(--paper-deep);margin:0 0 16px;}
+.blockquote-full .qa{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--copper);font-weight:600;}
+.pullquote{font-family:'Noto Serif Thai',serif;font-size:19px;line-height:1.7;color:var(--accent-deep);font-weight:500;border-left:3px solid var(--copper);padding:6px 0 6px 24px;margin:32px 0;}
+
+/* LADDER */
+.ladder{margin:32px 0;}
+.ladder-step{padding:18px 24px;}
+.ladder-step.wrong{background:var(--red-bg);border-left:3px solid var(--red);}
+.ladder-step.truth{background:var(--accent-bg);border-left:3px solid var(--accent-deep);}
+.ladder-step.action{background:var(--green-bg);border-left:3px solid var(--green);}
+.ladder-tag{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:6px;}
+.ladder-step.wrong .ladder-tag{color:var(--red);}
+.ladder-step.truth .ladder-tag{color:var(--accent-deep);}
+.ladder-step.action .ladder-tag{color:var(--green);}
+.ladder-text{font-family:'Noto Serif Thai',serif;font-size:15px;line-height:1.75;color:var(--ink-soft);}
+.ladder-arrow{text-align:center;padding:6px;color:var(--ink-faint);font-size:18px;}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin:26px 0;font-family:'Sarabun',sans-serif;font-size:13.5px;}
+th{background:var(--accent-deep);color:#fff;text-align:left;padding:11px 12px;font-weight:600;font-size:12px;letter-spacing:.5px;}
+td{padding:10px 12px;border-bottom:1px solid var(--paper-shadow);color:var(--ink-soft);line-height:1.6;vertical-align:top;}
+tr:nth-child(even) td{background:rgba(0,0,0,.018);}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
+td.pos{color:var(--green);font-weight:700;}
+td.neg{color:var(--red);font-weight:700;}
+.tbl-cap{font-family:'Sarabun',sans-serif;font-size:11.5px;color:var(--ink-muted);margin:-16px 0 26px;line-height:1.6;}
+
+/* STATS */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--paper-shadow);margin:30px 0;}
+.stat{background:var(--paper-mid);padding:20px 16px;text-align:center;}
+.stat-num{font-family:'Playfair Display',serif;font-size:30px;color:var(--accent-deep);font-weight:700;line-height:1.1;}
+.stat-lbl{font-family:'Sarabun',sans-serif;font-size:11px;color:var(--ink-muted);margin-top:7px;line-height:1.5;}
+
+/* FORMULA */
+.formula{background:var(--ink);color:var(--paper);padding:22px 26px;margin:26px 0;font-family:'Noto Serif',serif;font-size:15px;line-height:1.9;text-align:center;letter-spacing:.3px;}
+.formula .fnote{display:block;font-family:'Sarabun',sans-serif;font-size:11.5px;color:var(--paper-deep);margin-top:12px;letter-spacing:0;}
+
+/* CHART */
+.chart-wrap{margin:32px 0;background:#fff;border:1px solid var(--paper-shadow);padding:20px 16px 12px;}
+.chart-wrap svg{width:100%;height:auto;display:block;}
+.fig-cap{font-family:'Sarabun',sans-serif;font-size:11.5px;color:var(--ink-muted);line-height:1.65;margin-top:12px;padding-top:10px;border-top:1px solid var(--paper-deep);}
+.fig-cap b{color:var(--accent-deep);}
+
+/* REFLECTION / CHECKLIST */
+.reflection{background:var(--paper-mid);border:1px solid var(--paper-shadow);padding:26px 28px;margin:38px 0 0;}
+.reflection .lbl{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--copper);font-weight:700;margin-bottom:14px;}
+.reflection ol{margin:0;padding-left:20px;}
+.reflection li{font-family:'Noto Serif Thai',serif;font-size:15px;line-height:1.85;color:var(--ink-soft);margin-bottom:10px;}
+.checklist{margin:26px 0;}
+.ck-group{font-family:'Sarabun',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--copper);font-weight:700;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--paper-shadow);}
+.ck{display:flex;gap:12px;padding:9px 0;align-items:flex-start;}
+.ck-box{width:15px;height:15px;border:1.5px solid var(--accent);flex-shrink:0;margin-top:4px;}
+.ck-txt{font-family:'Noto Serif Thai',serif;font-size:14.5px;line-height:1.75;color:var(--ink-soft);}
+.ck-txt b{color:var(--accent-deep);}
+
+/* TOC */
+.ch-card{display:flex;gap:20px;padding:18px 0;border-bottom:1px solid var(--paper-shadow);align-items:flex-start;}
+.ch-card-num{font-family:'Playfair Display',serif;font-style:italic;font-size:32px;color:var(--accent);font-weight:400;line-height:1;min-width:46px;padding-top:4px;}
+.ch-card-title{font-family:'Noto Serif Thai',serif;font-size:15.5px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.ch-card-one-liner{font-family:'Noto Serif Thai',serif;font-size:13.5px;color:var(--ink-muted);font-style:italic;line-height:1.65;}
+.part-lbl{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--copper);font-weight:700;margin:32px 0 6px;}
+
+/* FLOW */
+.flow{margin:30px 0;}
+.flow-step{background:var(--paper-mid);border-left:3px solid var(--accent);padding:14px 20px;}
+.flow-step .n{font-family:'Sarabun',sans-serif;font-size:10px;letter-spacing:2px;color:var(--copper);font-weight:700;}
+.flow-step .t{font-family:'Noto Serif Thai',serif;font-size:15.5px;color:var(--ink);font-weight:600;margin-top:3px;}
+.flow-step .d{font-family:'Noto Serif Thai',serif;font-size:13.5px;color:var(--ink-muted);line-height:1.7;margin-top:5px;}
+.flow-arrow{text-align:center;color:var(--accent-light);font-size:16px;padding:5px;}
+
+/* FOOTER */
+.book-footer{background:var(--ink);padding:56px var(--page-pad-h);text-align:center;}
+.book-footer-mark{font-family:'Playfair Display',serif;font-style:italic;font-size:30px;color:var(--copper);margin-bottom:16px;}
+.book-footer-text{font-family:'Noto Serif Thai',serif;font-size:14px;color:var(--paper-deep);font-style:italic;line-height:1.8;max-width:480px;margin:0 auto 20px;}
+.book-footer-author{font-family:'Sarabun',sans-serif;font-size:11px;color:var(--accent-light);letter-spacing:3px;text-transform:uppercase;font-weight:600;}
+.legend{background:var(--paper-mid);border:1px solid var(--paper-shadow);padding:20px 24px;margin:28px 0;}
+.legend div{font-family:'Sarabun',sans-serif;font-size:12.5px;color:var(--ink-mid);line-height:1.9;}
+
+@media (max-width:780px){
+  :root{--page-pad-h:24px;--page-pad-v:52px;}
+  body{padding:14px 6px;}
+  .cover{padding:52px 24px 40px;}
+  .cover-title{font-size:36px;}
+  .cover-title span{font-size:19px;}
+  .ch-num{font-size:88px;right:14px;}
+  .ch-title{font-size:26px;}
+  .ch-open{padding:56px 24px;}
+  h1{font-size:24px;}
+  h2{font-size:18px;}
+  p{font-size:15.5px;}
+  .stat-row{grid-template-columns:1fr;}
+  .blockquote-full{padding:38px 22px;margin-left:-24px;margin-right:-24px;}
+  .blockquote-full .q{font-size:18px;}
+  table{font-size:12px;}
+  th,td{padding:8px 7px;}
+  .chart-wrap{padding:14px 8px 8px;}
+}
+</style>
+</head>
+<body>
+<div class="book">
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="cover-pub">Personal Study Edition · ฉบับสรุปเพื่อการใช้งานจริง</div>
+  <div class="cover-title">Expectations<br>Investing<span>Reading Stock Prices for Better Returns</span></div>
+  <div class="cover-rule"></div>
+  <div class="cover-th">อย่าเริ่มจากคำถามว่า “หุ้นตัวนี้ควรมีมูลค่าเท่าไร”<br>ให้เริ่มจาก “ราคาวันนี้กำลังคาดหวังอะไรไว้แล้ว”</div>
+  <div class="cover-authors">Michael J. Mauboussin &amp; Alfred Rappaport</div>
+  <div class="cover-sub">Revised and Updated · Columbia Business School Publishing, 2021</div>
+  <figure class="cover-img">
+    <img src="https://cup-us.imgix.net/covers/9780231554848.jpg?auto=format&amp;w=1500" alt="ปกหนังสือ Expectations Investing" onerror="this.parentNode.style.display='none'">
+    <figcaption>ปกฉบับ Revised &amp; Updated</figcaption>
+  </figure>
+</div>
+
+<!-- ============ TOC ============ -->
+<div class="page">
+  <div class="eyebrow">Contents · สารบัญ</div>
+  <h1>เดินตามโครงสร้างจริงของหนังสือ 12 บท</h1>
+  <p>เอกสารนี้เดินตามลำดับบทของฉบับ Revised &amp; Updated (2021) ซึ่งแบ่งเป็น 3 ภาค คือ <em>เตรียมเครื่องมือ</em> → <em>ลงมือใช้กระบวนการ</em> → <em>อ่านสัญญาณจากบริษัทและแหล่งโอกาส</em> ปิดท้ายด้วยบทตกผลึกที่ผมเขียนเพิ่มเพื่อให้คุณนำไปใช้กับหุ้นตัวจริงได้ทันที</p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num">3</div><div class="stat-lbl">ขั้นตอนของกระบวนการ<br>Read → Identify → Decide</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-lbl">กฎของ<br>Expectations Investing</div></div>
+    <div class="stat"><div class="stat-num">25</div><div class="stat-lbl">คำถามใน Checklist<br>ท้ายเล่ม</div></div>
+  </div>
+
+  <div class="part-lbl">บทนำ</div>
+  <div class="ch-card"><div class="ch-card-num">01</div><div><div class="ch-card-title">The Case for Expectations Investing · ทำไมต้องกลับด้านกระบวนการ</div><div class="ch-card-one-liner">ราคาหุ้นคือคำพยากรณ์ที่ตลาดเขียนไว้แล้ว หน้าที่เราคืออ่านมันให้ออก ไม่ใช่เขียนทับ</div></div></div>
+
+  <div class="part-lbl">ภาค 1 · เตรียมเครื่องมือ</div>
+  <div class="ch-card"><div class="ch-card-num">02</div><div><div class="ch-card-title">How the Market Values Stocks · ตลาดตีมูลค่าหุ้นด้วยอะไร</div><div class="ch-card-one-liner">กระแสเงินสด ไม่ใช่กำไรทางบัญชี คือภาษาที่ตลาดใช้จริง</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">03</div><div><div class="ch-card-title">The Expectations Infrastructure · โครงสร้างพื้นฐานของความคาดหวัง</div><div class="ch-card-one-liner">แผนที่ที่เชื่อม “ข่าวหนึ่งบรรทัด” ไปถึง “มูลค่าต่อหุ้น” อย่างเป็นระบบ</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">04</div><div><div class="ch-card-title">Analyzing Competitive Strategy · วิเคราะห์การแข่งขัน</div><div class="ch-card-one-liner">คูเมืองไม่ได้ตอบว่าเก่งแค่ไหน แต่ตอบว่าเก่งได้อีกนานแค่ไหน</div></div></div>
+
+  <div class="part-lbl">ภาค 2 · ลงมือใช้กระบวนการ</div>
+  <div class="ch-card"><div class="ch-card-num">05</div><div><div class="ch-card-title">How to Estimate Price-Implied Expectations · ถอดความคาดหวังจากราคา</div><div class="ch-card-one-liner">Reverse DCF ทีละขั้น พร้อมตัวเลขที่คุณกดเครื่องคิดเลขตามได้</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">06</div><div><div class="ch-card-title">Identifying Expectations Opportunities · หาช่องว่างความคาดหวัง</div><div class="ch-card-one-liner">หา turbo trigger ตัวเดียวที่ขยับมูลค่ามากที่สุด แล้วทุ่มเวลาวิจัยไปที่นั่น</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">07</div><div><div class="ch-card-title">Buy, Sell, or Hold? · แปลงมุมมองเป็นการตัดสินใจ</div><div class="ch-card-one-liner">Expected value กับส่วนเผื่อความปลอดภัย คือเส้นแบ่งระหว่างความเห็นกับการลงเงิน</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">08</div><div><div class="ch-card-title">Beyond Discounted Cash Flow · เมื่อ DCF ไม่พอ</div><div class="ch-card-one-liner">Real options: มูลค่าของ “สิทธิที่จะเลือก” ในธุรกิจที่อนาคตยังไม่นิ่ง</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">09</div><div><div class="ch-card-title">Across the Economic Landscape · ธุรกิจ 3 สายพันธุ์</div><div class="ch-card-one-liner">ธุรกิจกายภาพ ธุรกิจบริการ ธุรกิจความรู้ — จุดที่ความคาดหวังพลิกไม่เหมือนกัน</div></div></div>
+
+  <div class="part-lbl">ภาค 3 · อ่านสัญญาณและแหล่งโอกาส</div>
+  <div class="ch-card"><div class="ch-card-num">10</div><div><div class="ch-card-title">Mergers and Acquisitions · ดีลซื้อกิจการ</div><div class="ch-card-one-liner">SVAR: วัดว่าผู้ซื้อเอาเงินผู้ถือหุ้นไปเสี่ยงกี่เปอร์เซ็นต์</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">11</div><div><div class="ch-card-title">Share Buybacks · การซื้อหุ้นคืน</div><div class="ch-card-one-liner">กฎทองข้อเดียว: ซื้อคืนเมื่อราคาต่ำกว่ามูลค่าคาดหวังเท่านั้น</div></div></div>
+  <div class="ch-card"><div class="ch-card-num">12</div><div><div class="ch-card-title">Sources of Expectations Opportunities · แหล่งของโอกาส</div><div class="ch-card-one-liner">แปดสถานการณ์ที่การปรับความคาดหวังมักเกิดขึ้นจริง</div></div></div>
+
+  <div class="part-lbl">ตกผลึก</div>
+  <div class="ch-card"><div class="ch-card-num">13</div><div><div class="ch-card-title">Synthesis · Workflow + Checklist 25 ข้อ</div><div class="ch-card-one-liner">จากหนังสือ 12 บท สู่กระบวนการ 8 ขั้นที่ใช้กับหุ้นตัวใหม่ได้ทันทีวันนี้</div></div></div>
+
+  <div class="legend">
+    <div><span class="src src-book">จากหนังสือ</span> แนวคิด/กรอบคิดที่มาจากตัวหนังสือโดยตรง</div>
+    <div><span class="src src-interp">ตีความ</span> การอธิบายหรือเรียบเรียงของผมเอง เพื่อให้เข้าใจง่ายขึ้น</div>
+    <div><span class="src src-demo">ตัวอย่างสอน</span> ตัวเลขที่ผมสร้างขึ้นเองเพื่อสาธิต — ไม่ใช่บริษัทจริง</div>
+    <div><span class="src src-ext">ต่อยอด</span> ส่วนที่ผมเพิ่มเข้ามา ไม่มีในหนังสือ</div>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink-muted);">หนังสือใช้กรณีศึกษาหลักคือ <strong>Domino’s Pizza</strong> (บทที่ 5–7) และ <strong>Shopify</strong> (บทที่ 8) ในเอกสารนี้ผมอ้างถึงว่าหนังสือใช้เคสอะไร แต่ตัวเลขทุกตัวที่นำมาคำนวณให้ดูเป็น <em>ตัวอย่างที่สร้างขึ้นเพื่อสอน</em> เพื่อไม่ให้เกิดการอ้างตัวเลขที่ตรวจสอบไม่ได้</p>
+</div>
+
+<!-- ============ FOREWORD ============ -->
+<div class="page" style="background:var(--paper-mid);border-top:1px solid var(--paper-shadow);">
+  <div class="eyebrow">Foreword · คำนำจากผู้เรียบเรียง</div>
+  <h1>คุณกำลังแข่งกับคำพยากรณ์ ไม่ได้แข่งกับบริษัท</h1>
+  <p>นักลงทุนส่วนใหญ่ใช้เวลา 90% ไปกับคำถามว่า “บริษัทนี้ดีไหม” แล้วใช้เวลา 10% ที่เหลือกับคำถามว่า “ราคานี้แพงไปหรือยัง” — Mauboussin กับ Rappaport บอกว่าลำดับนี้กลับหัว เพราะสิ่งที่คุณซื้อไม่ใช่บริษัท แต่คือ <strong>ส่วนต่างระหว่างสิ่งที่ตลาดคาดไว้ กับสิ่งที่จะเกิดขึ้นจริง</strong></p>
+  <p>วิธีคิดของหนังสือเล่มนี้สั้นมาก: ราคาหุ้นคือผลลัพธ์ของสมการหนึ่ง ที่มีตัวแปรอนาคตซ่อนอยู่ข้างใน แทนที่จะพยายามเดาตัวแปรเองแล้วเอาไปเทียบกับราคา — ซึ่งเป็นเกมที่คุณแพ้ตั้งแต่ต้นเพราะคุณกำลังแข่งกับนักวิเคราะห์หลายพันคนที่มีข้อมูลเท่ากัน — ให้เอาราคาที่รู้อยู่แล้วมา <strong>แก้สมการย้อนกลับ</strong> เพื่อดูว่าตลาดต้องเชื่ออะไรถึงจะยอมจ่ายราคานี้</p>
+  <p>พอคุณอ่านความคาดหวังออก โจทย์จะเปลี่ยนจาก “ประเมินมูลค่าให้แม่น” (ซึ่งเป็นไปไม่ได้) เป็น “ตัดสินว่าความคาดหวังชุดนี้สูงเกินไปหรือต่ำเกินไป” (ซึ่งพอทำได้ ถ้าคุณเข้าใจธุรกิจและการแข่งขันจริง) — และนั่นคือทั้งเล่มในย่อหน้าเดียว</p>
+  <div class="author-box">
+    <div class="author-avatar">MR</div>
+    <div class="author-content">
+      <div class="author-meta">สรุปน้ำเสียงผู้เขียน (เรียบเรียงใหม่ ไม่ใช่คำพูดตรง)</div>
+      <p class="author-text">“เราไม่ได้ขอให้คุณพยากรณ์เก่งกว่าตลาด เราขอให้คุณรู้ก่อนว่าตลาดพยากรณ์อะไรไว้ — แล้วค่อยถามตัวเองว่าคุณเห็นต่างตรงไหน และมีหลักฐานอะไร”</p>
+    </div>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink-muted);margin:0;">หมายเหตุ: เอกสารนี้เป็นการเรียบเรียงเพื่อการศึกษาส่วนตัว ไม่ใช่คำแนะนำการลงทุน ตัวเลขทั้งหมดที่ใช้สาธิตเป็นตัวเลขสมมติ</p>
+</div>
+
+<!-- ============ CH 1 ============ -->
+<div class="ch-open">
+  <div class="ch-num">01</div>
+  <div class="ch-label">Chapter One · บทที่ 1</div>
+  <div class="ch-title">The Case for Expectations Investing<em>ทำไมต้องกลับด้านกระบวนการทั้งหมด</em></div>
+  <div class="ch-essence">ราคาหุ้นไม่ใช่ตัวเลขที่รอเราไปตัดสิน แต่คือคำพยากรณ์ที่ตลาดเขียนไว้แล้วอย่างละเอียด งานของนักลงทุนคืออ่านคำพยากรณ์นั้นให้ออก แล้วเดิมพันกับ “การแก้คำพยากรณ์” ครั้งต่อไป</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>เลิกทายอนาคต แล้วหันมาอ่านอนาคตที่ตลาดทายไว้แล้ว</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> Expectations Investing ใช้เครื่องมือเดียวกับที่วอลล์สตรีทใช้ คือแบบจำลองคิดลดกระแสเงินสด (<span class="en">Discounted Cash Flow — DCF</span> คือการแปลงเงินสดที่ธุรกิจจะสร้างได้ในอนาคต ให้กลายเป็นมูลค่าวันนี้ โดยหักส่วนลดตามความเสี่ยงและเวลา) แต่ใช้มัน <strong>กลับทิศ</strong></p>
+
+  <p>วิธีปกติคือ: พยากรณ์ยอดขาย → พยากรณ์อัตรากำไร → พยากรณ์เงินลงทุน → ได้มูลค่า → เอาไปเทียบกับราคา ปัญหาคือขั้นตอนที่ 1–3 คือส่วนที่เรามั่นใจน้อยที่สุด แต่มันดันเป็นตัวกำหนดคำตอบทั้งหมด เท่ากับเราเอาการเดาสามชั้นมาสรุปเป็นตัวเลขทศนิยมสองตำแหน่งแล้วเรียกว่า “มูลค่าที่แท้จริง”</p>
+
+  <p>วิธีของหนังสือคือ: เอาราคาหุ้นซึ่งเป็นข้อมูลเดียวที่เรารู้แน่ ๆ มาตั้งเป็นคำตอบ แล้วแก้ย้อนกลับว่า <em>ต้องใส่สมมติฐานอะไรลงไป มูลค่าจึงจะออกมาเท่ากับราคานี้พอดี</em> ผลลัพธ์เรียกว่า <strong>ความคาดหวังที่ราคาสะท้อนอยู่</strong> (<span class="en">Price-Implied Expectations — PIE</span>) แล้วโจทย์ที่เหลือมีข้อเดียว: ความคาดหวังชุดนี้ <em>สูงไป ต่ำไป หรือพอดี</em></p>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · แก่นของทั้งเล่มใน 3 ประโยค</div>
+    <p><strong>1.</strong> คุณไม่ได้ทำเงินจากการ “ประเมินมูลค่าแม่น” แต่ทำเงินจากการ “คาดการณ์การเปลี่ยนแปลงความคาดหวัง” ได้ถูก</p>
+    <p><strong>2.</strong> หุ้นที่ราคาสะท้อนอนาคตดี ๆ ไว้ครบแล้ว จะให้ผลตอบแทนแค่ระดับปกติ ต่อให้บริษัททำได้ตามที่คาดทุกประการ</p>
+    <p><strong>3.</strong> ดังนั้นคำถามแรกไม่ใช่ “บริษัทนี้ดีไหม” แต่คือ <strong>“ราคานี้คาดหวังอะไรไว้แล้วบ้าง”</strong></p>
+  </div>
+
+  <h2>กระบวนการ 3 ขั้นตอน — โครงกระดูกของทั้งเล่ม</h2>
+  <p><span class="src src-book">จากหนังสือ</span> ทุกบทที่เหลือคือการขยายความสามขั้นนี้ ไม่มีอะไรเกินไปกว่านี้</p>
+
+  <div class="flow">
+    <div class="flow-step"><div class="n">Step 1</div><div class="t">Estimate Price-Implied Expectations · อ่านความคาดหวังจากราคา</div><div class="d">ถอดว่าราคาปัจจุบันต้องการการเติบโตของยอดขาย อัตรากำไร และการลงทุนระดับไหน นานกี่ปี (บทที่ 5)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">Step 2</div><div class="t">Identify Expectations Opportunities · หาช่องว่าง</div><div class="d">ใช้การวิเคราะห์การแข่งขันและโครงสร้างความคาดหวัง ตัดสินว่าตลาดคาดสูงหรือต่ำเกินไป และตัวแปรไหนคือตัวชี้ขาด (บทที่ 3, 4, 6)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">Step 3</div><div class="t">Buy, Sell, or Hold · ตัดสินใจ</div><div class="d">แปลงมุมมองเป็นมูลค่าคาดหวังแบบถ่วงน้ำหนักความน่าจะเป็น แล้วซื้อก็ต่อเมื่อมีส่วนเผื่อความปลอดภัยพอ (บทที่ 7)</div></div>
+  </div>
+
+  <h2>ทำไมกำไรต่อหุ้นและ P/E ถึงพาเราหลงทาง</h2>
+  <p><span class="src src-book">จากหนังสือ</span> หนังสือโจมตีเรื่องนี้ตรง ๆ ตั้งแต่บทแรก เหตุผลเชิงตรรกะคือ P/E ไม่ได้ <em>กำหนด</em> มูลค่า แต่เป็น <em>ผลลัพธ์</em> ของมูลค่า ลองคิดตาม: ถ้าคุณบอกว่ามูลค่าหุ้น = กำไรต่อหุ้น × P/E ที่เหมาะสม แต่ตัว “P/E ที่เหมาะสม” จะรู้ได้ก็ต่อเมื่อรู้ราคาที่เหมาะสมก่อน — คุณต้องรู้คำตอบก่อนจึงจะคำนวณคำตอบได้ นั่นคือการวนเป็นวงกลม</p>
+
+  <div class="blockquote-full">
+    <div class="q">“It is an economic cul-de-sac.”</div>
+    <div class="qth">“มันคือทางตันทางเศรษฐศาสตร์” — Mauboussin และ Rappaport พูดถึงการใช้ P/E เป็นทางลัดในการวิเคราะห์</div>
+    <div class="qa">Expectations Investing · Rule 2, expectationsinvesting.com</div>
+  </div>
+
+  <p><span class="src src-interp">ตีความ</span> ข้อโต้แย้งนี้ไม่ได้แปลว่าห้ามดู P/E เลย P/E มีประโยชน์ในฐานะ “ภาษากลาง” ที่ใช้สื่อสารเร็ว ๆ แต่มันเป็นตัวเลขสรุปที่บีบข้อมูลสามชั้น (การเติบโต ผลตอบแทนจากเงินลงทุน และความเสี่ยง) ให้เหลือตัวเลขเดียว — พอบีบแล้วเราจะมองไม่เห็นว่ามันแพงเพราะอะไร และอะไรจะทำให้มันถูกลง</p>
+
+  <h2>ภาคผนวกที่สำคัญที่สุดของบทนี้: “โต” กับ “สร้างมูลค่า” เป็นคนละเรื่อง</h2>
+  <p><span class="src src-book">จากหนังสือ</span> หนังสือแนบภาคผนวกท้ายบทที่ 1 เพื่อยืนยันประเด็นเดียว — การเติบโตไม่ได้สร้างมูลค่าเสมอไป มันสร้างมูลค่าก็ต่อเมื่อ <strong>ผลตอบแทนจากเงินลงทุนส่วนเพิ่มสูงกว่าต้นทุนเงินทุน</strong></p>
+
+  <p>ศัพท์สองตัวที่ต้องเข้าใจก่อน: <span class="en">ROIC (Return on Invested Capital)</span> คือผลตอบแทนที่ธุรกิจได้จากเงินทุกบาทที่ลงไปในกิจการ และ <span class="en">WACC (Weighted Average Cost of Capital)</span> คือต้นทุนเฉลี่ยของเงินทุนที่บริษัทใช้ — พูดง่าย ๆ คือ “ดอกเบี้ยที่ผู้ให้เงินเรียกร้อง” ทั้งจากเจ้าหนี้และผู้ถือหุ้น</p>
+
+  <div class="formula">
+    Growth = ROIC × Reinvestment Rate
+    <span class="fnote">การเติบโตไม่ได้มาฟรี ๆ — มันคือผลคูณของ “ผลตอบแทนต่อเงินลงทุน” กับ “สัดส่วนกำไรที่เอากลับไปลงทุนซ้ำ”</span>
+  </div>
+
+  <p><span class="src src-demo">ตัวอย่างสอน</span> สมมติบริษัทหนึ่งมีกำไรจากการดำเนินงานหลังภาษี (<span class="en">NOPAT</span> — กำไรดำเนินงานหลังหักภาษี แต่ยังไม่หักดอกเบี้ย) ปีละ 100 ล้านบาท ต้นทุนเงินทุน 10% ถ้าไม่โตเลยแต่รักษากำไรนี้ไปตลอด มูลค่าธุรกิจ = 100 ÷ 10% = <strong>1,000 ล้านบาท</strong> ทีนี้ให้มันโต 5% ต่อปีตลอดไป ในสามสถานการณ์:</p>
+
+  <table>
+    <tr><th>สถานการณ์</th><th style="text-align:right">ROIC</th><th style="text-align:right">ต้องกันกำไรไปลงทุนซ้ำ</th><th style="text-align:right">เงินสดเหลือถึงผู้ถือหุ้น</th><th style="text-align:right">มูลค่าธุรกิจ</th></tr>
+    <tr><td>โตดี — ROIC สูงกว่าต้นทุนทุนมาก</td><td class="num">20%</td><td class="num">25%</td><td class="num">75 ล้าน</td><td class="num pos">1,500</td></tr>
+    <tr><td>โตเปล่า — ROIC เท่าต้นทุนทุนพอดี</td><td class="num">10%</td><td class="num">50%</td><td class="num">50 ล้าน</td><td class="num">1,000</td></tr>
+    <tr><td>โตแล้วเจ็บ — ROIC ต่ำกว่าต้นทุนทุน</td><td class="num">6.7%</td><td class="num">75%</td><td class="num">25 ล้าน</td><td class="num neg">500</td></tr>
+  </table>
+  <div class="tbl-cap">ทั้งสามกรณีโต 5% เท่ากันเป๊ะ และมีกำไรเริ่มต้น 100 ล้านเท่ากัน ต่างกันแค่ว่าต้อง “จ่ายค่าเติบโต” ไปเท่าไร · คำนวณจาก มูลค่า = เงินสดอิสระ ÷ (ต้นทุนทุน − อัตราการเติบโต)</div>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <line x1="90" y1="290" x2="670" y2="290" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="40" x2="90" y2="290" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="140" x2="670" y2="140" stroke="#A9702C" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="676" y="135" font-size="11" fill="#A9702C" text-anchor="end" font-weight="700">มูลค่าถ้าไม่โตเลย = 1,000</text>
+      <text x="80" y="295" font-size="11" fill="#7C7460" text-anchor="end">0</text>
+      <text x="80" y="220" font-size="11" fill="#7C7460" text-anchor="end">500</text>
+      <text x="80" y="145" font-size="11" fill="#7C7460" text-anchor="end">1,000</text>
+      <text x="80" y="70" font-size="11" fill="#7C7460" text-anchor="end">1,500</text>
+      <rect x="140" y="65" width="120" height="225" fill="#355E40"/>
+      <rect x="290" y="140" width="120" height="150" fill="#7C7460"/>
+      <rect x="440" y="215" width="120" height="75" fill="#7A1A1A"/>
+      <text x="200" y="55" font-size="17" fill="#355E40" text-anchor="middle" font-weight="700">1,500</text>
+      <text x="350" y="130" font-size="17" fill="#46402F" text-anchor="middle" font-weight="700">1,000</text>
+      <text x="500" y="205" font-size="17" fill="#7A1A1A" text-anchor="middle" font-weight="700">500</text>
+      <text x="200" y="310" font-size="12.5" fill="#14110B" text-anchor="middle" font-weight="700">ROIC 20%</text>
+      <text x="200" y="328" font-size="11" fill="#7C7460" text-anchor="middle">สูงกว่าต้นทุนทุน</text>
+      <text x="350" y="310" font-size="12.5" fill="#14110B" text-anchor="middle" font-weight="700">ROIC 10%</text>
+      <text x="350" y="328" font-size="11" fill="#7C7460" text-anchor="middle">= ต้นทุนทุนพอดี</text>
+      <text x="500" y="310" font-size="12.5" fill="#14110B" text-anchor="middle" font-weight="700">ROIC 6.7%</text>
+      <text x="500" y="328" font-size="11" fill="#7C7460" text-anchor="middle">ต่ำกว่าต้นทุนทุน</text>
+      <text x="100" y="30" font-size="12" fill="#152C46" font-weight="700">มูลค่าธุรกิจ (ล้านบาท) — ทุกกรณีโต 5% ต่อปีเท่ากัน</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 1 · การเติบโตเท่ากัน มูลค่าต่างกัน 3 เท่า</b> เมื่อ ROIC เท่ากับต้นทุนเงินทุนพอดี การเติบโตไม่เพิ่มมูลค่าแม้แต่บาทเดียว (แท่งกลางเท่ากับเส้นประ) และเมื่อ ROIC ต่ำกว่าต้นทุนทุน ยิ่งโตยิ่งทำลายมูลค่า <span class="src src-demo" style="margin-left:4px">ตัวอย่างสอน</span></div>
+  </div>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“หุ้นเติบโตสูง = หุ้นดี”</strong> — จากตารางข้างบน บริษัทที่โต 5% ด้วย ROIC 6.7% มีมูลค่าเพียงครึ่งเดียวของบริษัทที่ไม่โตเลย ทั้งที่ข่าวพาดหัวจะเขียนว่า “รายได้โตต่อเนื่อง”</p>
+    <p><strong>“กำไรโตแปลว่าราคาจะขึ้น”</strong> — ถ้าตลาดคาดว่ากำไรจะโต 20% แล้วบริษัททำได้ 20% พอดี ราคาไม่ควรขึ้นเกินผลตอบแทนปกติ เพราะไม่มีการ “แก้คำพยากรณ์” เกิดขึ้น</p>
+  </div>
+
+  <div class="ladder">
+    <div class="ladder-step wrong"><div class="ladder-tag">ความเชื่อเดิม</div><div class="ladder-text">งานของนักลงทุนคือหาบริษัทที่ดีที่สุด แล้วถือให้นาน</div></div>
+    <div class="ladder-arrow">↓</div>
+    <div class="ladder-step truth"><div class="ladder-tag">ความจริงจากหนังสือ</div><div class="ladder-text">งานของนักลงทุนคือหา “ช่องว่าง” ระหว่างความคาดหวังของตลาดกับความเป็นจริงของธุรกิจ — บริษัทดีที่ราคาแพงเกินคือการลงทุนที่แย่ ส่วนบริษัทธรรมดาที่ตลาดคาดต่ำเกินไปคือการลงทุนที่ดี</div></div>
+    <div class="ladder-arrow">↓</div>
+    <div class="ladder-step action"><div class="ladder-tag">ลงมือทำ</div><div class="ladder-text">ก่อนซื้อหุ้นตัวถัดไป เขียนลงกระดาษว่า “ราคานี้กำลังคาดหวังยอดขายโตกี่ % อัตรากำไรเท่าไร นานกี่ปี” ถ้าเขียนไม่ได้ แปลว่ายังไม่รู้ว่ากำลังเดิมพันกับอะไร</div></div>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>เปิดงบการเงินย้อนหลัง 5 ปี จดสามตัวเลข: อัตราการเติบโตของยอดขายเฉลี่ย, อัตรากำไรจากการดำเนินงาน, และเงินลงทุนสุทธิเทียบกับยอดขายที่เพิ่มขึ้น</li>
+      <li>คำนวณ ROIC ส่วนเพิ่มแบบหยาบ ๆ = (กำไรดำเนินงานหลังภาษีที่เพิ่มขึ้น) ÷ (เงินลงทุนที่เพิ่มขึ้น) แล้วเทียบกับต้นทุนเงินทุนคร่าว ๆ 8–10%</li>
+      <li>ถ้า ROIC ส่วนเพิ่มต่ำกว่าต้นทุนทุน ให้ตั้งสมมติฐานตั้งต้นว่า “การเติบโตของบริษัทนี้ไม่ใช่จุดขาย แต่คือความเสี่ยง”</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection · คำถามก่อนไปบทถัดไป</div>
+    <ol>
+      <li>หุ้นที่คุณถืออยู่ตอนนี้ ถ้าให้เขียนความคาดหวังที่ราคาสะท้อนอยู่เป็นตัวเลข คุณเขียนได้กี่ตัว</li>
+      <li>ครั้งล่าสุดที่คุณซื้อหุ้นเพราะ “บริษัทดี” — ตอนนั้นคุณตรวจหรือไม่ว่าความดีนั้นถูกใส่ไว้ในราคาหมดแล้วหรือยัง</li>
+      <li>ถ้าบริษัทที่คุณชอบที่สุดโตช้าลงครึ่งหนึ่ง แต่ ROIC สูงขึ้นสองเท่า คุณจะดีใจหรือเสียใจ — และคำตอบนั้นบอกอะไรเกี่ยวกับวิธีคิดของคุณ</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 2 ============ -->
+<div class="ch-open">
+  <div class="ch-num">02</div>
+  <div class="ch-label">Chapter Two · บทที่ 2 · ภาค 1 เตรียมเครื่องมือ</div>
+  <div class="ch-title">How the Market Values Stocks<em>ตลาดตีมูลค่าหุ้นด้วยภาษาอะไร</em></div>
+  <div class="ch-essence">ก่อนจะอ่านความคาดหวังจากราคาได้ ต้องรู้ก่อนว่าราคาถูกประกอบขึ้นจากชิ้นส่วนอะไรบ้าง — และชิ้นส่วนเหล่านั้นมีแค่สามตัว</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>มูลค่าทั้งก้อน ประกอบขึ้นจากตัวแปรแค่สามตัวครึ่ง</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> หัวใจของบทนี้คือ <strong>ตัวขับเคลื่อนมูลค่า</strong> (<span class="en">Value Drivers</span>) ซึ่งมีเพียงสามตัว บวกกับตัวแปรกำกับอีกสองตัว ทุกอย่างที่คุณอ่านในบทวิเคราะห์ยาวสามสิบหน้า สุดท้ายต้องลงมาที่ห้าตัวนี้ให้ได้ ไม่งั้นแปลว่ามันไม่กระทบมูลค่า</p>
+
+  <table>
+    <tr><th>ตัวแปร</th><th>ความหมายแบบง่าย</th><th>ผลต่อมูลค่า</th></tr>
+    <tr><td><strong>อัตราการเติบโตของยอดขาย</strong><br><span class="en">Sales growth rate</span></td><td>ปีหน้าขายได้มากกว่าปีนี้กี่ %</td><td>โตแล้วดี <em>เฉพาะเมื่อ</em> ผลตอบแทนต่อเงินลงทุนสูงกว่าต้นทุนทุน</td></tr>
+    <tr><td><strong>อัตรากำไรจากการดำเนินงาน</strong><br><span class="en">Operating profit margin</span></td><td>ขายได้ 100 บาท เหลือกำไรก่อนดอกเบี้ยและภาษีกี่บาท</td><td>ตัวที่ไวที่สุดต่อมูลค่าในธุรกิจส่วนใหญ่</td></tr>
+    <tr><td><strong>อัตราการลงทุนส่วนเพิ่ม</strong><br><span class="en">Incremental investment rate</span></td><td>ยอดขายที่เพิ่มมา 100 บาท ต้องใช้เงินลงทุนเพิ่ม (เครื่องจักร สต๊อก ลูกหนี้) กี่บาท</td><td>ยิ่งต่ำยิ่งดี — เพราะเงินสดเหลือถึงผู้ถือหุ้นมากขึ้น</td></tr>
+    <tr><td><strong>อัตราภาษีเงินสด</strong><br><span class="en">Cash tax rate</span></td><td>ภาษีที่จ่ายจริงเป็นเงินสด ไม่ใช่ที่บันทึกในงบ</td><td>ตัวกำกับ — ต่างจากภาษีทางบัญชีได้มาก</td></tr>
+    <tr><td><strong>ต้นทุนเงินทุน</strong><br><span class="en">Cost of capital / WACC</span></td><td>ผลตอบแทนขั้นต่ำที่ผู้ให้เงินเรียกร้อง</td><td>ใช้เป็นอัตราคิดลด — และเป็น “เส้นแบ่ง” ว่าโตแล้วสร้างหรือทำลายมูลค่า</td></tr>
+  </table>
+
+  <div class="formula">
+    เงินสดอิสระปีที่ t = (ยอดขาย<sub>t</sub> × อัตรากำไรหลังภาษี) − (ยอดขายที่เพิ่มขึ้น × อัตราการลงทุนส่วนเพิ่ม)
+    <span class="fnote">นี่คือสมการทั้งหมดที่คุณต้องใช้ใน Reverse DCF บทที่ 5 — จำแค่บรรทัดนี้บรรทัดเดียวพอ</span>
+  </div>
+
+  <h2>ทำไมต้องเป็นกระแสเงินสด ไม่ใช่กำไรทางบัญชี</h2>
+  <p><span class="src src-book">จากหนังสือ</span> เหตุผลไม่ใช่เรื่องอุดมคติ แต่เป็นเรื่องกลไก: บริษัทจ่ายปันผลหรือซื้อหุ้นคืนด้วย <em>เงินสด</em> ไม่ใช่ด้วยตัวเลขกำไร ถ้าไม่มีเงินสดในอนาคต หุ้นก็ไม่มีมูลค่า และงานวิจัยเชิงประจักษ์จำนวนมากพบว่าราคาหุ้นตอบสนองต่อการเปลี่ยนแปลงของแนวโน้มกระแสเงินสด <strong>ระยะยาว</strong> ไม่ใช่กำไรไตรมาสหน้า</p>
+
+  <p><span class="src src-interp">ตีความ</span> ช่องว่างระหว่างกำไรกับเงินสดกว้างขึ้นเรื่อย ๆ ในเศรษฐกิจปัจจุบัน เพราะบริษัทสมัยใหม่ลงทุนใน <strong>สินทรัพย์ไม่มีตัวตน</strong> (<span class="en">intangibles</span> — เช่น ซอฟต์แวร์ แบรนด์ การวิจัยพัฒนา การหาลูกค้าใหม่) ซึ่งมาตรฐานบัญชีบังคับให้บันทึกเป็น <em>ค่าใช้จ่าย</em> ทันที ทั้งที่ในเชิงเศรษฐศาสตร์มันคือ <em>การลงทุน</em> ผลคือกำไรที่รายงานดูต่ำเกินจริงในบริษัทที่กำลังลงทุนหนัก และดูสูงเกินจริงในบริษัทที่หยุดลงทุน — ฉบับปรับปรุงปี 2021 เพิ่มประเด็นนี้เข้ามาโดยเฉพาะ</p>
+
+  <h2>Continuing Value — ชิ้นส่วนที่ใหญ่ที่สุด และคนมองข้ามที่สุด</h2>
+  <p><span class="src src-book">จากหนังสือ</span> เราพยากรณ์กระแสเงินสดรายปีได้แค่ช่วงหนึ่ง (เรียกว่า <span class="en">forecast period</span>) หลังจากนั้นต้องสรุปมูลค่าที่เหลือทั้งหมดเป็นก้อนเดียว เรียกว่า <strong>มูลค่าต่อเนื่อง</strong> (<span class="en">Continuing Value</span>)</p>
+
+  <p>วิธีมาตรฐานที่หนังสือใช้คือ <strong>วิธีมูลค่าถาวรของกำไรดำเนินงานหลังภาษี</strong> — เอากำไรดำเนินงานหลังภาษีปีสุดท้ายหารด้วยต้นทุนเงินทุน สมมติฐานเบื้องหลังสำคัญมาก: <em>หลังจบช่วงพยากรณ์ การแข่งขันจะกดผลตอบแทนของบริษัทลงมาเท่ากับต้นทุนเงินทุน</em> แปลว่าบริษัทยังโตได้ แต่การโตนั้นจะไม่เพิ่มมูลค่าอีกต่อไป</p>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · ทำไมสมมติฐานนี้ถึงฉลาด</div>
+    <p>ถ้าเราปล่อยให้บริษัทมีผลตอบแทนเหนือต้นทุนทุนไปตลอดกาลในโมเดล เราจะได้มูลค่าเท่าไรก็ได้ตามใจ — และการวิเคราะห์จะไร้ความหมาย</p>
+    <p>การบังคับให้ผลตอบแทนลู่เข้าหาต้นทุนทุน ทำให้คำถามสำคัญเปลี่ยนจาก “บริษัทนี้เก่งแค่ไหน” เป็น <strong>“บริษัทนี้จะเก่งได้อีกกี่ปี”</strong> ซึ่งเป็นคำถามที่ตอบด้วยการวิเคราะห์การแข่งขันได้จริง (บทที่ 4)</p>
+  </div>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“Continuing value คือส่วนที่เดา ๆ เอา เลยไม่สำคัญ”</strong> — ตรงกันข้าม ในหุ้นทั่วไปมันมักคิดเป็น 60–80% ของมูลค่าทั้งหมด ส่วนที่เราพยากรณ์รายปีอย่างละเอียดกลับเป็นส่วนน้อย</p>
+    <p><strong>“ใส่อัตราการเติบโตถาวรเข้าไปในสูตรจะสมจริงกว่า”</strong> — การใส่ growth ถาวรโดยไม่บังคับให้มีเงินลงทุนตามมาด้วย คือการสร้างมูลค่าจากอากาศ ถ้าจะใส่ growth ต้องหักเงินลงทุนที่ทำให้เกิด growth นั้นด้วยเสมอ</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>เปิดสเปรดชีต ทำสามคอลัมน์: ยอดขาย, กำไรดำเนินงานหลังภาษี, เงินลงทุนสุทธิ (รายจ่ายลงทุน − ค่าเสื่อม + เงินทุนหมุนเวียนที่เพิ่ม) ย้อนหลัง 5 ปี</li>
+      <li>คำนวณ “อัตราการลงทุนส่วนเพิ่ม” = เงินลงทุนสุทธิสะสม 5 ปี ÷ ยอดขายที่เพิ่มขึ้นใน 5 ปี — ตัวเลขนี้คือสิ่งที่คนไม่ค่อยดู แต่มันคือหัวใจ</li>
+      <li>จดไว้ว่าค่าในอดีตของสามตัวแปรนี้คือเท่าไร เพราะบทที่ 5 คุณจะเอามาเทียบกับสิ่งที่ราคาหุ้นกำลังคาดหวัง</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>บริษัทที่คุณติดตามอยู่ ยอดขายเพิ่ม 100 บาท ต้องใช้เงินลงทุนเพิ่มกี่บาท — ถ้าตอบไม่ได้ คุณยังไม่รู้ว่าการเติบโตของมันแพงหรือถูก</li>
+      <li>ถ้ากำไรทางบัญชีของบริษัทหนึ่งสวยขึ้นทุกปี แต่กระแสเงินสดจากการดำเนินงานไม่ขยับเลย คุณจะเชื่อตัวไหน และจะตรวจสอบอย่างไร</li>
+      <li>คุณเคยประเมินหรือไม่ว่ามูลค่าหุ้นที่คุณถือมาจาก “ห้าปีข้างหน้า” กี่ % และมาจาก “หลังจากนั้น” กี่ %</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 3 ============ -->
+<div class="ch-open">
+  <div class="ch-num">03</div>
+  <div class="ch-label">Chapter Three · บทที่ 3</div>
+  <div class="ch-title">The Expectations Infrastructure<em>โครงสร้างพื้นฐานของความคาดหวัง</em></div>
+  <div class="ch-essence">ข่าวหนึ่งบรรทัดจะกลายเป็นการเปลี่ยนแปลงมูลค่าได้อย่างไร — บทนี้คือแผนที่เส้นทางที่เชื่อมสองสิ่งนั้นเข้าด้วยกัน และเป็นเครื่องมือที่ใช้บ่อยที่สุดในชีวิตจริง</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>จากข่าว → สู่ตัวแปรมูลค่า → สู่ราคาหุ้น</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> ปัญหาที่นักลงทุนเจอทุกวันคือ ข่าวมาในรูปแบบ “ปีหน้าจะขึ้นราคาสินค้า 3%” หรือ “ปิดโรงงานเก่าสองแห่ง” แต่โมเดลต้องการตัวเลขในรูปแบบ “อัตรากำไรจะเปลี่ยนกี่ %” — <strong>Expectations Infrastructure</strong> คือสะพานสามชั้นที่แปลภาษาหนึ่งไปเป็นอีกภาษาหนึ่ง</p>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <text x="350" y="22" font-size="12" fill="#152C46" font-weight="700" text-anchor="middle">สะพานสามชั้นจาก “สิ่งที่เกิดขึ้นในธุรกิจ” ไปสู่ “มูลค่าหุ้น”</text>
+      <text x="350" y="48" font-size="11" fill="#A9702C" font-weight="700" text-anchor="middle">ชั้นที่ 1 · VALUE TRIGGERS — ตัวจุดชนวน</text>
+      <rect x="60" y="58" width="180" height="42" fill="#24476B"/><text x="150" y="84" font-size="13" fill="#fff" text-anchor="middle" font-weight="600">ยอดขาย</text>
+      <rect x="260" y="58" width="180" height="42" fill="#24476B"/><text x="350" y="84" font-size="13" fill="#fff" text-anchor="middle" font-weight="600">ต้นทุนและค่าใช้จ่าย</text>
+      <rect x="460" y="58" width="180" height="42" fill="#24476B"/><text x="550" y="84" font-size="13" fill="#fff" text-anchor="middle" font-weight="600">การลงทุน</text>
+      <path d="M150 100 L150 120 M350 100 L350 120 M550 100 L550 120" stroke="#7C7460" stroke-width="1.5"/>
+      <path d="M146 118 l4 8 l4 -8 z M346 118 l4 8 l4 -8 z M546 118 l4 8 l4 -8 z" fill="#7C7460"/>
+      <text x="350" y="148" font-size="11" fill="#A9702C" font-weight="700" text-anchor="middle">ชั้นที่ 2 · VALUE FACTORS — ตัวแปรกลางที่อธิบายว่าเกิดอะไรขึ้นจริง</text>
+      <rect x="60" y="158" width="180" height="76" fill="#EAE5D2" stroke="#C8C0A0"/>
+      <text x="150" y="180" font-size="11.5" fill="#14110B" text-anchor="middle">ปริมาณขาย</text>
+      <text x="150" y="200" font-size="11.5" fill="#14110B" text-anchor="middle">ราคาและส่วนผสมสินค้า</text>
+      <text x="150" y="220" font-size="10.5" fill="#7C7460" text-anchor="middle">(volume · price/mix)</text>
+      <rect x="260" y="158" width="180" height="76" fill="#EAE5D2" stroke="#C8C0A0"/>
+      <text x="350" y="178" font-size="11.5" fill="#14110B" text-anchor="middle">ความได้เปรียบจากขนาด</text>
+      <text x="350" y="196" font-size="11.5" fill="#14110B" text-anchor="middle">ต้นทุนคงที่คงเดิม</text>
+      <text x="350" y="214" font-size="11.5" fill="#14110B" text-anchor="middle">ประสิทธิภาพต้นทุน</text>
+      <text x="350" y="230" font-size="10.5" fill="#7C7460" text-anchor="middle">(scale · leverage · efficiency)</text>
+      <rect x="460" y="158" width="180" height="76" fill="#EAE5D2" stroke="#C8C0A0"/>
+      <text x="550" y="185" font-size="11.5" fill="#14110B" text-anchor="middle">ประสิทธิภาพการลงทุน</text>
+      <text x="550" y="205" font-size="11.5" fill="#14110B" text-anchor="middle">เงินทุนหมุนเวียน</text>
+      <text x="550" y="223" font-size="10.5" fill="#7C7460" text-anchor="middle">(investment efficiency)</text>
+      <path d="M150 234 L150 254 M350 234 L350 254 M550 234 L550 254" stroke="#7C7460" stroke-width="1.5"/>
+      <path d="M146 252 l4 8 l4 -8 z M346 252 l4 8 l4 -8 z M546 252 l4 8 l4 -8 z" fill="#7C7460"/>
+      <text x="350" y="282" font-size="11" fill="#A9702C" font-weight="700" text-anchor="middle">ชั้นที่ 3 · VALUE DRIVERS — ตัวขับเคลื่อนมูลค่าในโมเดล</text>
+      <rect x="60" y="292" width="180" height="40" fill="#4C7BA8"/><text x="150" y="317" font-size="12" fill="#fff" text-anchor="middle" font-weight="600">อัตราเติบโตยอดขาย</text>
+      <rect x="260" y="292" width="180" height="40" fill="#4C7BA8"/><text x="350" y="317" font-size="12" fill="#fff" text-anchor="middle" font-weight="600">อัตรากำไรดำเนินงาน</text>
+      <rect x="460" y="292" width="180" height="40" fill="#4C7BA8"/><text x="550" y="317" font-size="12" fill="#fff" text-anchor="middle" font-weight="600">อัตราการลงทุน</text>
+      <path d="M150 332 L350 352 M350 332 L350 352 M550 332 L350 352" stroke="#7C7460" stroke-width="1.5" fill="none"/>
+      <rect x="230" y="354" width="240" height="38" fill="#152C46"/>
+      <text x="350" y="378" font-size="13.5" fill="#fff" text-anchor="middle" font-weight="700">มูลค่าต่อหุ้น</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 2 · Expectations Infrastructure</b> ข่าวหรือเหตุการณ์เข้าที่ชั้นบนสุดเสมอ แล้วไหลลงมาผ่านตัวแปรกลาง จนกลายเป็นตัวเลขในโมเดล — ถ้าข่าวไหนไหลลงมาไม่ถึงชั้นล่าง แปลว่ามันไม่กระทบมูลค่า <span class="src src-book" style="margin-left:4px">จากหนังสือ</span></div>
+  </div>
+
+  <h2>ทำไมชั้นกลางถึงสำคัญที่สุด</h2>
+  <p><span class="src src-book">จากหนังสือ</span> ตัวจุดชนวนมีแค่สามตัว ตัวขับเคลื่อนก็มีแค่สามตัว แต่ชั้นกลางคือที่ที่ <em>เศรษฐศาสตร์ของธุรกิจ</em> อยู่ ยกตัวอย่างความแตกต่างที่คนมักมองข้าม: ยอดขายเพิ่ม 10% เหมือนกัน แต่ผลต่อมูลค่าต่างกันมหาศาลระหว่าง</p>
+  <ul style="font-family:'Noto Serif Thai',serif;font-size:15.5px;line-height:1.9;color:var(--ink-soft);">
+    <li><strong>โตจากปริมาณ</strong> — ต้องซื้อวัตถุดิบเพิ่ม ต้องเพิ่มกำลังผลิต ต้นทุนผันแปรเพิ่มตาม กำไรเพิ่มไม่มาก แต่ได้ประโยชน์จากต้นทุนคงที่ที่เท่าเดิม</li>
+    <li><strong>โตจากการขึ้นราคา</strong> — ต้นทุนแทบไม่เพิ่ม ทุกบาทที่เพิ่มไหลลงกำไรเกือบทั้งหมด และไม่ต้องลงทุนเพิ่ม นี่คือการเติบโตที่มีมูลค่าสูงที่สุด</li>
+    <li><strong>โตจากส่วนผสมสินค้าที่ดีขึ้น</strong> — ขายของแพงกว่าในสัดส่วนที่มากขึ้น ผลใกล้เคียงกับการขึ้นราคา</li>
+  </ul>
+  <p><span class="src src-interp">ตีความ</span> นี่คือเหตุผลที่คำถามในการประชุมนักวิเคราะห์ที่ดีที่สุดไม่ใช่ “ปีหน้ายอดขายโตเท่าไร” แต่คือ <strong>“ยอดขายที่โตมานั้น มาจากปริมาณ ราคา หรือส่วนผสม กี่เปอร์เซ็นต์”</strong></p>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · กฎการอ่านข่าวแบบ Expectations Investor</div>
+    <p>เวลาเจอข่าวใด ๆ ให้ถามสามคำถามเรียงกัน: <strong>(1)</strong> ข่าวนี้แตะตัวจุดชนวนตัวไหน — ยอดขาย ต้นทุน หรือการลงทุน <strong>(2)</strong> มันไหลผ่านตัวแปรกลางตัวไหน <strong>(3)</strong> สุดท้ายมันเปลี่ยนตัวขับเคลื่อนตัวใด กี่เปอร์เซ็นต์ และเปลี่ยน <em>ถาวร</em> หรือ <em>ชั่วคราว</em></p>
+    <p>ข่าวที่เปลี่ยนตัวขับเคลื่อนอย่างถาวร มีค่ามากกว่าข่าวที่เปลี่ยนกำไรไตรมาสเดียวหลายสิบเท่า แม้พาดหัวจะดูเล็กกว่าก็ตาม</p>
+  </div>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“ข่าวดี = ราคาต้องขึ้น”</strong> — ข่าวดีที่ตลาดคาดไว้แล้วไม่ทำให้ราคาขึ้น สิ่งที่ทำให้ราคาขยับคือ <em>ระยะห่างระหว่างข่าวกับสิ่งที่คาดไว้</em> ไม่ใช่ตัวข่าว</p>
+    <p><strong>“ตัดค่าใช้จ่ายได้เท่าไร ก็คือกำไรเพิ่มเท่านั้น”</strong> — ต้องดูก่อนว่าการตัดนั้นยั่งยืนหรือแค่เลื่อนค่าใช้จ่ายออกไป และคู่แข่งจะทำตามได้ไหม ถ้าทุกคนทำได้ ประหยัดที่ได้จะไหลไปหาลูกค้าในรูปราคาที่ถูกลงในที่สุด</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>ทำ “ตารางแปลข่าว” ของหุ้นที่ถืออยู่: คอลัมน์ซ้ายคือข่าว/เหตุการณ์ 5 ข้อล่าสุด คอลัมน์ขวาคือ ตัวขับเคลื่อนไหนเปลี่ยน กี่ % ถาวรหรือชั่วคราว</li>
+      <li>ข่าวที่กรอกคอลัมน์ขวาไม่ได้ ให้ตัดทิ้งจากกระบวนการตัดสินใจ — มันคือเสียงรบกวน</li>
+      <li>ในการประชุมนักวิเคราะห์ ให้จดเฉพาะประโยคที่พูดถึง ปริมาณ / ราคา / ส่วนผสม / ต้นทุนคงที่ / เงินลงทุนต่อยอดขาย</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>ข่าวล่าสุดที่ทำให้คุณอยากซื้อหุ้นตัวหนึ่ง — มันไหลลงมาถึงชั้นตัวขับเคลื่อนได้จริงไหม หรือหยุดอยู่แค่ชั้นบน</li>
+      <li>การเติบโตของบริษัทที่คุณถือ มาจากปริมาณหรือราคาเป็นหลัก และคุณรู้ได้อย่างไร</li>
+      <li>ถ้าบริษัทประกาศลดต้นทุน 500 ล้านบาท คุณจะตรวจอย่างไรว่ามันจะตกถึงผู้ถือหุ้น ไม่ใช่ตกถึงลูกค้า</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 4 ============ -->
+<div class="ch-open">
+  <div class="ch-num">04</div>
+  <div class="ch-label">Chapter Four · บทที่ 4</div>
+  <div class="ch-title">Analyzing Competitive Strategy<em>คูเมืองไม่ได้ตอบว่า “เก่งแค่ไหน” แต่ตอบว่า “เก่งได้อีกนานแค่ไหน”</em></div>
+  <div class="ch-essence">การวิเคราะห์การแข่งขันไม่ใช่บทเสริมสวยงามก่อนคำนวณ แต่คือเครื่องมือที่ใช้ตอบตัวแปรที่แพงที่สุดในโมเดล นั่นคือ “จำนวนปีที่บริษัทยังสร้างผลตอบแทนเหนือต้นทุนทุนได้”</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>ช่วงเวลาที่ได้เปรียบ คือสิ่งที่ราคาหุ้นกำลังเดิมพันจริง ๆ</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> บทนี้ถูกเขียนใหม่แทบทั้งบทในฉบับปรับปรุง โดยรวมกรอบคิดจากหลายสำนัก — Michael Porter (แรงกดดันห้าด้าน), Bruce Greenwald (อุปสรรคในการเข้าสู่ตลาด), Clay Christensen (นวัตกรรมพลิกโฉม), Pankaj Ghemawat และ Orit Gadiesh (แหล่งกำไรในห่วงโซ่คุณค่า) — แต่เป้าหมายมีข้อเดียว: ตัดสินว่าความคาดหวังที่ราคาสะท้อนอยู่นั้น <em>สมเหตุสมผลกับสภาพการแข่งขันจริงหรือไม่</em></p>
+
+  <p>แนวคิดที่ผูกทุกอย่างเข้าด้วยกันคือ <strong>ช่วงเวลาแห่งความได้เปรียบในการแข่งขัน</strong> (<span class="en">Competitive Advantage Period — CAP</span>) หมายถึงจำนวนปีที่บริษัทยังสร้างผลตอบแทนจากเงินลงทุนสูงกว่าต้นทุนเงินทุนได้ ก่อนที่การแข่งขันจะกดมันลงมาเสมอกัน</p>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 370" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <line x1="90" y1="300" x2="670" y2="300" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="40" x2="90" y2="300" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="233" x2="670" y2="233" stroke="#A9702C" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="668" y="228" font-size="11" fill="#A9702C" font-weight="700" text-anchor="end">ต้นทุนเงินทุน (WACC) = 8%</text>
+      <text x="80" y="304" font-size="11" fill="#7C7460" text-anchor="end">0%</text>
+      <text x="80" y="237" font-size="11" fill="#7C7460" text-anchor="end">8%</text>
+      <text x="80" y="154" font-size="11" fill="#7C7460" text-anchor="end">18%</text>
+      <text x="80" y="96" font-size="11" fill="#7C7460" text-anchor="end">25%</text>
+      <text x="90" y="322" font-size="11" fill="#7C7460" text-anchor="middle">ปีที่ 0</text>
+      <text x="318" y="322" font-size="11" fill="#7C7460" text-anchor="middle">ปีที่ 6</text>
+      <text x="546" y="322" font-size="11" fill="#7C7460" text-anchor="middle">ปีที่ 12</text>
+      <polyline points="90,92 204,92 318,100 432,117 546,142 660,167" fill="none" stroke="#355E40" stroke-width="3"/>
+      <polyline points="90,150 166,158 242,183 318,208 394,229 470,233 660,233" fill="none" stroke="#24476B" stroke-width="3"/>
+      <polyline points="90,200 128,208 166,221 204,232 660,233" fill="none" stroke="#7A1A1A" stroke-width="3"/>
+      <text x="440" y="118" font-size="11.5" fill="#355E40" font-weight="700">คูเมืองแข็งแรง · CAP ยาว 15 ปี+</text>
+      <text x="330" y="196" font-size="11.5" fill="#24476B" font-weight="700">คูเมืองปานกลาง · CAP ~8 ปี</text>
+      <text x="215" y="252" font-size="11.5" fill="#7A1A1A" font-weight="700">ไม่มีคูเมือง · CAP ~3 ปี</text>
+      <text x="100" y="28" font-size="12" fill="#152C46" font-weight="700">ผลตอบแทนจากเงินลงทุน (ROIC) ลู่เข้าหาต้นทุนเงินทุนเมื่อเวลาผ่านไป</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 3 · CAP คือ “พื้นที่เหนือเส้นประ”</b> มูลค่าส่วนเกินของบริษัททั้งหมดอยู่ในพื้นที่ระหว่างเส้น ROIC กับเส้นต้นทุนเงินทุน — บริษัทที่ ROIC สูงมากแต่หล่นเร็ว อาจมีมูลค่าน้อยกว่าบริษัทที่ ROIC ปานกลางแต่ยืนได้นาน <span class="src src-demo" style="margin-left:4px">ตัวอย่างสอน</span></div>
+  </div>
+
+  <h2>สามคำถามที่แทนการวิเคราะห์การแข่งขันทั้งหมดได้</h2>
+  <p><span class="src src-interp">ตีความ</span> ผมย่อกรอบทั้งหมดในบทนี้ให้เหลือสามคำถามที่ตอบได้จริงในทางปฏิบัติ</p>
+
+  <table>
+    <tr><th>คำถาม</th><th>สิ่งที่กำลังวัด</th><th>หลักฐานที่ต้องหา</th></tr>
+    <tr><td><strong>1. กำไรอยู่ตรงไหนในห่วงโซ่</strong></td><td>แหล่งกำไรของอุตสาหกรรม (value pool) กำลังย้ายที่หรือไม่</td><td>เปรียบเทียบอัตรากำไรของผู้เล่นแต่ละขั้น — ต้นน้ำ กลางน้ำ ปลายน้ำ — ย้อนหลัง 5 ปี</td></tr>
+    <tr><td><strong>2. อะไรกันคู่แข่งไว้</strong></td><td>อุปสรรคในการเข้าสู่ตลาด: ต้นทุนต่ำกว่าจริง, ลูกค้าย้ายยาก, ผลจากเครือข่าย, ใบอนุญาต, ขนาดที่คู่แข่งตามไม่ทัน</td><td>ส่วนแบ่งตลาดย้อนหลัง — ถ้าไม่เคยเปลี่ยนมือเลยหลายปี แปลว่าอุปสรรคมีจริง</td></tr>
+    <tr><td><strong>3. ใครกำลังเข้ามาจากข้างล่าง</strong></td><td>นวัตกรรมพลิกโฉม — คู่แข่งที่เริ่มจากของถูกกว่าและด้อยกว่า แล้วไต่ขึ้นมา</td><td>มีผู้เล่นใหม่ที่ลูกค้ากลุ่มล่างเริ่มยอมรับหรือยัง และโครงสร้างต้นทุนเขาต่างจากเราไหม</td></tr>
+  </table>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · จุดเชื่อมที่ทำให้บทนี้มีค่า</div>
+    <p>ในบทที่ 5 คุณจะได้ตัวเลขออกมาว่า “ราคานี้ต้องการให้บริษัทสร้างผลตอบแทนเหนือต้นทุนทุนต่อไปอีก 8 ปี”</p>
+    <p>บทที่ 4 คือเครื่องมือเดียวที่ใช้ตอบว่า <strong>8 ปีนั้นมากไปหรือน้อยไป</strong> — ถ้าคุณตอบไม่ได้ว่าอะไรจะกันคู่แข่งไว้ได้ 8 ปี คุณก็ไม่มีสิทธิ์เห็นต่างจากตลาด</p>
+  </div>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“แบรนด์ดัง = คูเมือง”</strong> — แบรนด์เป็นคูเมืองก็ต่อเมื่อมันทำให้ตั้งราคาสูงกว่าคู่แข่งได้ <em>โดยยังรักษาส่วนแบ่งตลาดไว้ได้</em> ถ้าแบรนด์ดังแต่ต้องลดราคาแข่งตลอด นั่นคือค่าใช้จ่ายการตลาด ไม่ใช่คูเมือง</p>
+    <p><strong>“ผู้นำตลาด = ปลอดภัย”</strong> — ส่วนแบ่งตลาดสูงในอุตสาหกรรมที่ผลตอบแทนต่ำ ไม่ได้สร้างมูลค่า สิ่งที่สร้างมูลค่าคือความสามารถในการรักษาผลตอบแทนเหนือต้นทุนทุน ไม่ใช่ขนาด</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>คำนวณ ROIC ย้อนหลัง 7–10 ปีของบริษัทและคู่แข่ง 2–3 ราย พล็อตเป็นกราฟเส้นเทียบกัน — ถ้าเส้นของบริษัทอยู่เหนือคู่แข่งตลอด นั่นคือหลักฐานเชิงประจักษ์ของคูเมือง ดีกว่าเรื่องเล่าใด ๆ</li>
+      <li>ถามว่า “ราคาสินค้าของบริษัทนี้เคยขึ้นได้โดยไม่เสียลูกค้าหรือไม่” — อำนาจตั้งราคาคือการทดสอบคูเมืองที่ตรงที่สุด</li>
+      <li>ตั้งสมมติฐาน CAP ของคุณเองเป็นตัวเลข (เช่น 5 / 10 / 15 ปี) แล้วเก็บไว้เทียบกับตัวเลขที่ราคาหุ้นบอก ในบทถัดไป</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>บริษัทที่คุณถืออยู่ ถ้าคู่แข่งลอกทุกอย่างได้พรุ่งนี้ ยังเหลืออะไรที่ลอกไม่ได้</li>
+      <li>คุณให้ CAP กี่ปีกับบริษัทนี้ และมีหลักฐานอะไรรองรับตัวเลขนั้น นอกจากความรู้สึก</li>
+      <li>ในสิบปีที่ผ่านมา ผลตอบแทนของอุตสาหกรรมนี้ทั้งอุตสาหกรรมสูงขึ้นหรือต่ำลง และนั่นบอกอะไรเกี่ยวกับอนาคต</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 5 ============ -->
+<div class="ch-open">
+  <div class="ch-num">05</div>
+  <div class="ch-label">Chapter Five · บทที่ 5 · ภาค 2 ลงมือใช้กระบวนการ</div>
+  <div class="ch-title">How to Estimate Price-Implied Expectations<em>ถอดความคาดหวังออกจากราคาหุ้น ทีละขั้น</em></div>
+  <div class="ch-essence">บทนี้คือหัวใจของหนังสือทั้งเล่ม — เปลี่ยนราคาหุ้นจาก “ตัวเลขที่เราต้องตัดสิน” ให้กลายเป็น “ชุดสมมติฐานที่เราอ่านออก” หนังสือใช้กรณีศึกษา Domino’s Pizza ส่วนที่นี่ผมใช้ตัวอย่างสมมติที่คุณกดเครื่องคิดเลขตามได้ทุกบรรทัด</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>Reverse DCF: แก้สมการย้อนกลับจากราคาที่เห็น</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> ขั้นตอนมีสี่ขั้นเท่านั้น</p>
+  <div class="flow">
+    <div class="flow-step"><div class="n">1</div><div class="t">รวบรวมข้อมูลปัจจุบัน</div><div class="d">ยอดขายล่าสุด อัตรากำไร อัตราภาษีเงินสด อัตราการลงทุนส่วนเพิ่ม หนี้สินสุทธิ จำนวนหุ้น และราคาตลาด</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">2</div><div class="t">ประมาณต้นทุนเงินทุน</div><div class="d">ใช้ค่าโดยประมาณก็พอ (โดยมากอยู่ในช่วง 7–10%) หนังสือย้ำว่าไม่ต้องหมกมุ่นกับทศนิยม เพราะตัวแปรอื่นมีผลมากกว่า</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">3</div><div class="t">ล็อกสมมติฐานสองตัว แล้วแก้หาตัวที่สาม</div><div class="d">ตั้งอัตรากำไรและอัตราการลงทุนไว้ที่ระดับใกล้ปัจจุบัน แล้วดูว่าต้องใช้ “กี่ปีของการเติบโตที่สร้างมูลค่า” มูลค่าจึงจะเท่าราคาพอดี</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">4</div><div class="t">อ่านผลลัพธ์เป็นภาษามนุษย์</div><div class="d">แปลตัวเลขกลับเป็นประโยค เช่น “ราคานี้เชื่อว่าบริษัทจะโต 10% ต่อปี โดยรักษาอัตรากำไร 8% ได้ต่อเนื่องอีก 8 ปี”</div></div>
+  </div>
+
+  <h2>ตัวอย่างเต็มรูปแบบ: บริษัทสมมติ “นวรัตน์ รีเทล”</h2>
+  <p><span class="src src-demo">ตัวอย่างสอน</span> ตัวเลขทั้งหมดต่อจากนี้เป็นตัวเลขที่ผมสร้างขึ้นเพื่อสาธิตวิธีคำนวณ ไม่ใช่บริษัทจริงและไม่ใช่ตัวเลขจากหนังสือ</p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num">10,000</div><div class="stat-lbl">ยอดขายปีล่าสุด (ล้านบาท)</div></div>
+    <div class="stat"><div class="stat-num">8%</div><div class="stat-lbl">อัตรากำไรดำเนินงานหลังภาษี</div></div>
+    <div class="stat"><div class="stat-num">20%</div><div class="stat-lbl">อัตราการลงทุนส่วนเพิ่ม<br>(ยอดขายเพิ่ม 100 ลงทุน 20)</div></div>
+    <div class="stat"><div class="stat-num">8%</div><div class="stat-lbl">ต้นทุนเงินทุน</div></div>
+    <div class="stat"><div class="stat-num">1,500</div><div class="stat-lbl">หนี้สินสุทธิ (ล้านบาท)</div></div>
+    <div class="stat"><div class="stat-num">15.50</div><div class="stat-lbl">ราคาตลาดต่อหุ้น (บาท)<br>หุ้น 1,000 ล้านหุ้น</div></div>
+  </div>
+
+  <h3>ขั้นที่ 1 — หามูลค่าของ “ธุรกิจปัจจุบัน ที่ไม่โตเลย”</h3>
+  <p>ถ้าบริษัทหยุดโตวันนี้ แต่ยังทำกำไรดำเนินงานหลังภาษีปีละ 800 ล้านบาทไปตลอด และไม่ต้องลงทุนเพิ่มเพื่อการเติบโต มูลค่ากิจการ = 800 ÷ 8% = <strong>10,000 ล้านบาท</strong> หักหนี้สินสุทธิ 1,500 เหลือมูลค่าส่วนของผู้ถือหุ้น 8,500 ล้านบาท หรือ <strong>8.50 บาทต่อหุ้น</strong></p>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <text x="100" y="30" font-size="12" fill="#152C46" font-weight="700">ราคาหุ้น 15.50 บาท ประกอบขึ้นจากอะไร</text>
+      <rect x="100" y="60" width="270" height="60" fill="#24476B"/>
+      <rect x="370" y="60" width="222" height="60" fill="#A9702C"/>
+      <text x="235" y="88" font-size="13.5" fill="#fff" text-anchor="middle" font-weight="700">8.50 บาท</text>
+      <text x="235" y="108" font-size="11.5" fill="#D9E2EC" text-anchor="middle">มูลค่าธุรกิจปัจจุบัน (55%)</text>
+      <text x="481" y="88" font-size="13.5" fill="#fff" text-anchor="middle" font-weight="700">7.00 บาท</text>
+      <text x="481" y="108" font-size="11.5" fill="#F7EBDC" text-anchor="middle">มูลค่าของ “ความคาดหวัง” (45%)</text>
+      <line x1="100" y1="135" x2="592" y2="135" stroke="#C8C0A0"/>
+      <text x="100" y="160" font-size="12" fill="#46402F">ส่วนสีน้ำเงิน = ธุรกิจที่มีอยู่แล้ว หยุดโตก็ยังได้เท่านี้</text>
+      <text x="100" y="182" font-size="12" fill="#46402F">ส่วนสีทองแดง = สิ่งที่ยังไม่เกิดขึ้น และคือส่วนที่คุณกำลังเดิมพัน</text>
+      <text x="100" y="216" font-size="12.5" fill="#7A1A1A" font-weight="700">ถ้าความคาดหวังส่วนนี้ไม่เกิดขึ้น ราคาหุ้นมีทางลงถึง 45%</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 4 · แยกราคาออกเป็นสองก้อน</b> ขั้นตอนนี้ทำได้ในสองนาทีและมีค่ามหาศาล เพราะมันบอกทันทีว่าคุณกำลังจ่ายค่าอนาคตไปกี่เปอร์เซ็นต์ของราคา <span class="src src-demo" style="margin-left:4px">ตัวอย่างสอน</span></div>
+  </div>
+
+  <h3>ขั้นที่ 2 — หาว่าต้องโตอีกกี่ปี ราคาถึงจะสมเหตุสมผล</h3>
+  <p>ส่วนต่าง 7.00 บาทต่อหุ้น (รวม 7,000 ล้านบาท) คือมูลค่าที่ตลาดให้กับ “การเติบโตที่สร้างมูลค่า” เราจึงต้องหาว่าถ้าบริษัทโตปีละ 10% โดยรักษาอัตรากำไร 8% และอัตราการลงทุน 20% ไว้ได้ ต้องโตแบบนี้กี่ปีมูลค่าจึงจะถึง 15.50 บาท</p>
+
+  <table>
+    <tr><th>ปีที่</th><th style="text-align:right">ยอดขาย</th><th style="text-align:right">กำไรหลังภาษี</th><th style="text-align:right">เงินลงทุนเพิ่ม</th><th style="text-align:right">เงินสดอิสระ</th><th style="text-align:right">มูลค่าปัจจุบัน</th></tr>
+    <tr><td>1</td><td class="num">11,000</td><td class="num">880</td><td class="num">200</td><td class="num">680</td><td class="num">630</td></tr>
+    <tr><td>2</td><td class="num">12,100</td><td class="num">968</td><td class="num">220</td><td class="num">748</td><td class="num">641</td></tr>
+    <tr><td>3</td><td class="num">13,310</td><td class="num">1,065</td><td class="num">242</td><td class="num">823</td><td class="num">653</td></tr>
+    <tr><td>4</td><td class="num">14,641</td><td class="num">1,171</td><td class="num">266</td><td class="num">905</td><td class="num">665</td></tr>
+    <tr><td>5</td><td class="num">16,105</td><td class="num">1,288</td><td class="num">293</td><td class="num">996</td><td class="num">678</td></tr>
+    <tr><td>6</td><td class="num">17,716</td><td class="num">1,417</td><td class="num">322</td><td class="num">1,095</td><td class="num">690</td></tr>
+    <tr><td>7</td><td class="num">19,487</td><td class="num">1,559</td><td class="num">354</td><td class="num">1,205</td><td class="num">703</td></tr>
+    <tr><td>8</td><td class="num">21,436</td><td class="num">1,715</td><td class="num">390</td><td class="num">1,325</td><td class="num">716</td></tr>
+    <tr><td colspan="5"><strong>รวมมูลค่าปัจจุบันของเงินสดอิสระ 8 ปี</strong></td><td class="num">5,376</td></tr>
+    <tr><td colspan="5"><strong>+ มูลค่าต่อเนื่อง</strong> = 1,715 ÷ 8% = 21,436 คิดลด 8 ปี</td><td class="num">11,581</td></tr>
+    <tr><td colspan="5"><strong>= มูลค่ากิจการ</strong></td><td class="num">16,957</td></tr>
+    <tr><td colspan="5"><strong>− หนี้สินสุทธิ</strong></td><td class="num">−1,500</td></tr>
+    <tr><td colspan="5"><strong>= มูลค่าผู้ถือหุ้น ÷ 1,000 ล้านหุ้น</strong></td><td class="num pos">15.46 บาท</td></tr>
+  </table>
+  <div class="tbl-cap">หน่วยเป็นล้านบาท · เงินสดอิสระ = กำไรหลังภาษี − เงินลงทุนเพิ่ม · คิดลดที่ 8% · ตัวเลข 15.46 เท่ากับราคาตลาด 15.50 แทบพอดี</div>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <line x1="90" y1="280" x2="670" y2="280" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="40" x2="90" y2="280" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="163" x2="670" y2="163" stroke="#7A1A1A" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="666" y="157" font-size="11.5" fill="#7A1A1A" font-weight="700" text-anchor="end">ราคาตลาด 15.50 บาท</text>
+      <text x="80" y="284" font-size="11" fill="#7C7460" text-anchor="end">8</text>
+      <text x="80" y="230" font-size="11" fill="#7C7460" text-anchor="end">11</text>
+      <text x="80" y="167" font-size="11" fill="#7C7460" text-anchor="end">15.5</text>
+      <text x="80" y="104" font-size="11" fill="#7C7460" text-anchor="end">19</text>
+      <polyline points="90,280 170,225 250,206 330,187 410,163 490,143 570,124 650,105" fill="none" stroke="#24476B" stroke-width="3"/>
+      <circle cx="410" cy="163" r="7" fill="#7A1A1A"/>
+      <text x="420" y="128" font-size="12.5" fill="#7A1A1A" font-weight="700">จุดตัด = 8 ปี</text>
+      <text x="420" y="146" font-size="11" fill="#7A1A1A">คือ “ช่วงเวลาที่ราคาสะท้อนอยู่”</text>
+      <text x="90" y="300" font-size="11" fill="#7C7460" text-anchor="middle">0</text>
+      <text x="250" y="300" font-size="11" fill="#7C7460" text-anchor="middle">4</text>
+      <text x="410" y="300" font-size="11" fill="#7C7460" text-anchor="middle">8</text>
+      <text x="570" y="300" font-size="11" fill="#7C7460" text-anchor="middle">12</text>
+      <text x="380" y="322" font-size="11.5" fill="#46402F" text-anchor="middle">จำนวนปีที่บริษัทยังเติบโตแบบสร้างมูลค่าได้</text>
+      <text x="100" y="28" font-size="12" fill="#152C46" font-weight="700">มูลค่าต่อหุ้น (บาท) เปลี่ยนไปตามจำนวนปีที่โต</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 5 · ช่วงเวลาพยากรณ์ที่ราคาสะท้อนอยู่</b> (<span class="en">market-implied forecast period</span>) เส้นน้ำเงินคือมูลค่าที่ได้จากการโต 10% พร้อมอัตรากำไร 8% ตามจำนวนปีต่าง ๆ จุดที่มันตัดราคาตลาดคือคำตอบ — ราคานี้กำลังบอกว่า “ฉันเชื่อว่าบริษัทนี้จะเก่งได้อีก 8 ปี” <span class="src src-demo" style="margin-left:4px">ตัวอย่างสอน</span></div>
+  </div>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · ผลลัพธ์ที่แปลเป็นภาษามนุษย์แล้ว</div>
+    <p>“ราคา 15.50 บาท กำลังเดิมพันว่า นวรัตน์ รีเทล จะเติบโตปีละ 10% ติดต่อกัน 8 ปี โดยรักษาอัตรากำไรหลังภาษีที่ 8% และใช้เงินลงทุนเพียง 20 บาทต่อยอดขายที่เพิ่ม 100 บาท หลังจากนั้นการแข่งขันจะกดผลตอบแทนลงมาเท่าต้นทุนเงินทุน”</p>
+    <p>ประโยคเดียวนี้แหละคือสิ่งที่คุณต้องตัดสิน — ไม่ใช่ตัดสินว่า “หุ้นดีไหม” แต่ตัดสินว่า <strong>“ประโยคนี้จริงหรือเปล่า”</strong></p>
+  </div>
+
+  <h2>สิ่งที่ต้องระวังในการทำ Reverse DCF</h2>
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“ต้องหาต้นทุนเงินทุนให้แม่นก่อน”</strong> — หนังสือย้ำว่าอย่าหมกมุ่น ต้นทุนทุนที่ต่างกัน 0.5% เปลี่ยนคำตอบน้อยกว่าอัตรากำไรที่ต่างกัน 1% มาก ให้ใช้ค่ากลางแล้วทำ sensitivity แทน</p>
+    <p><strong>“ผลลัพธ์เป็นตัวเลขเดียว = ความจริง”</strong> — Reverse DCF ให้ <em>ชุด</em> สมมติฐานที่เข้ากันได้ ไม่ใช่คำตอบเดียว ราคานี้อาจหมายถึง “โต 10% นาน 8 ปี” หรือ “โต 14% นาน 5 ปี” ก็ได้ หน้าที่คุณคือเลือกชุดที่สอดคล้องกับความเข้าใจธุรกิจของคุณมากที่สุด</p>
+    <p><strong>“ตัวเลขไม่ตรงเป๊ะแปลว่าทำผิด”</strong> — เป้าหมายคือความถูกต้องระดับ “ประมาณการที่มีเหตุผล” ไม่ใช่ทศนิยมสองตำแหน่ง</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง — ทำได้ในวันนี้</div>
+    <ol>
+      <li>เลือกหุ้นที่คุณถืออยู่หนึ่งตัว เปิดสเปรดชีตเปล่า ใส่ยอดขายล่าสุด อัตรากำไรดำเนินงานหลังภาษี อัตราการลงทุนส่วนเพิ่ม หนี้สินสุทธิ จำนวนหุ้น</li>
+      <li>คำนวณ “มูลค่าถ้าไม่โตเลย” ก่อนเสมอ = กำไรดำเนินงานหลังภาษี ÷ ต้นทุนทุน − หนี้สินสุทธิ แล้วเทียบกับราคาปัจจุบัน</li>
+      <li>ถ้าราคาสูงกว่ามูลค่าไม่โตมาก เช่น 2–3 เท่า ให้ตั้งคำถามทันทีว่า “อะไรจะทำให้บริษัทนี้โตแบบสร้างมูลค่าได้นานขนาดนั้น”</li>
+      <li>เขียนประโยคสรุปความคาดหวังลงสมุด แล้วลงวันที่ไว้ — ทุกไตรมาสให้กลับมาตรวจว่าความจริงกำลังเดินตามประโยคนั้นหรือไม่</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>ถ้าราคาหุ้นที่คุณถือกำลังบอกว่าบริษัทจะเก่งได้อีก 15 ปี คุณนึกออกไหมว่ามีบริษัทกี่แห่งในตลาดที่ทำแบบนั้นได้จริงในอดีต</li>
+      <li>ระหว่าง “มูลค่าธุรกิจปัจจุบัน” กับ “มูลค่าความคาดหวัง” ในราคาหุ้นที่คุณถือ อย่างไหนมากกว่ากัน และคุณสบายใจกับสัดส่วนนั้นไหม</li>
+      <li>ถ้าคุณต้องอธิบายความคาดหวังที่ราคาสะท้อนอยู่ให้เพื่อนที่ไม่รู้เรื่องการเงินฟังในสามประโยค คุณจะพูดว่าอย่างไร</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 6 ============ -->
+<div class="ch-open">
+  <div class="ch-num">06</div>
+  <div class="ch-label">Chapter Six · บทที่ 6</div>
+  <div class="ch-title">Identifying Expectations Opportunities<em>หาช่องว่างระหว่างสิ่งที่ตลาดคาด กับสิ่งที่ธุรกิจทำได้จริง</em></div>
+  <div class="ch-essence">เมื่อรู้แล้วว่าราคาคาดหวังอะไร คำถามถัดไปคือ “ตัวแปรไหนที่ถ้าเปลี่ยนแล้วมูลค่าขยับมากที่สุด” — ทุ่มเวลาวิจัยไปที่ตัวนั้นตัวเดียว</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>หา “ตัวจุดชนวนหลัก” แล้ววิจัยให้ลึกกว่าคนอื่นเฉพาะตรงนั้น</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> หนังสือเรียกตัวแปรที่มีผลต่อมูลค่ามากที่สุดว่า <strong>turbo trigger</strong> เหตุผลเชิงปฏิบัติชัดมาก — เวลาและความสนใจของคุณมีจำกัด ถ้าคุณกระจายไปวิจัยทุกตัวแปรเท่ากัน คุณจะไม่ลึกกว่าตลาดในตัวไหนเลย แต่ถ้าคุณรู้ว่าตัวแปรตัวเดียวอธิบายมูลค่าได้ 60% คุณควรเอาเวลา 60% ไปกับมัน</p>
+
+  <p>วิธีหาคือทดสอบความไว: เปลี่ยนตัวแปรทีละตัวในระดับที่ “เป็นไปได้จริง” แล้วดูว่ามูลค่าต่อหุ้นขยับเท่าไร</p>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <text x="350" y="26" font-size="12" fill="#152C46" font-weight="700" text-anchor="middle">มูลค่าต่อหุ้นเปลี่ยนไปเท่าไร เมื่อขยับตัวแปรทีละตัว (ฐาน 15.46 บาท)</text>
+      <line x1="350" y1="45" x2="350" y2="250" stroke="#46402F" stroke-width="1.5"/>
+      <rect x="118" y="60" width="232" height="34" fill="#7A1A1A"/>
+      <rect x="350" y="60" width="232" height="34" fill="#355E40"/>
+      <text x="350" y="83" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700">อัตรากำไร ±1%</text>
+      <text x="110" y="83" font-size="12" fill="#7A1A1A" text-anchor="end" font-weight="700">−2.32</text>
+      <text x="590" y="83" font-size="12" fill="#355E40" font-weight="700">+2.32</text>
+      <rect x="255" y="125" width="95" height="34" fill="#7A1A1A" opacity=".78"/>
+      <rect x="350" y="125" width="95" height="34" fill="#355E40" opacity=".78"/>
+      <text x="350" y="148" font-size="12.5" fill="#fff" text-anchor="middle" font-weight="700">การเติบโต ±1%</text>
+      <text x="247" y="148" font-size="12" fill="#7A1A1A" text-anchor="end" font-weight="700">−0.90</text>
+      <text x="453" y="148" font-size="12" fill="#355E40" font-weight="700">+0.95</text>
+      <rect x="310" y="190" width="40" height="34" fill="#7A1A1A" opacity=".55"/>
+      <rect x="350" y="190" width="40" height="34" fill="#355E40" opacity=".55"/>
+      <text x="350" y="213" font-size="12" fill="#fff" text-anchor="middle" font-weight="700">เงินลงทุน ±5%</text>
+      <text x="302" y="213" font-size="12" fill="#7A1A1A" text-anchor="end" font-weight="700">−0.40</text>
+      <text x="398" y="213" font-size="12" fill="#355E40" font-weight="700">+0.40</text>
+      <text x="350" y="270" font-size="12.5" fill="#A9702C" text-anchor="middle" font-weight="700">Turbo Trigger = อัตรากำไร — ขยับ 1% มีผลมากกว่าการเติบโต 1% ถึง 2.4 เท่า</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 6 · ทดสอบความไวเพื่อหา Turbo Trigger</b> ในบริษัทตัวอย่างนี้ ถ้าคุณจะวิจัยเรื่องเดียวให้ลึกกว่าตลาด ควรเป็นเรื่อง “อะไรจะทำให้อัตรากำไรขยับ” ไม่ใช่ “ยอดขายจะโตกี่เปอร์เซ็นต์” <span class="src src-demo" style="margin-left:4px">ตัวอย่างสอน</span></div>
+  </div>
+
+  <p><span class="src src-interp">ตีความ</span> ผลลัพธ์นี้ไม่ใช่กฎสากล — ในธุรกิจต่างกัน turbo trigger ต่างกัน ธุรกิจที่ใช้เงินทุนหนักอย่างโรงงานหรือสายการบิน อัตราการลงทุนมักเป็นตัวชี้ขาด ส่วนธุรกิจแพลตฟอร์มซอฟต์แวร์ มักเป็นการเติบโตของฐานผู้ใช้ ประเด็นคือ <strong>ต้องทดสอบเอง ไม่ใช่เดา</strong></p>
+
+  <h2>จาก Turbo Trigger สู่การวางฉากทัศน์</h2>
+  <p><span class="src src-book">จากหนังสือ</span> เมื่อรู้ตัวแปรชี้ขาดแล้ว ให้สร้างฉากทัศน์ (<span class="en">scenarios</span>) ไม่ใช่เพื่อ “ทำนายให้ครบทุกทาง” แต่เพื่อกำหนดขอบเขตของผลลัพธ์ที่เป็นไปได้ และบังคับให้เราคิดถึงกรณีที่เราผิด</p>
+
+  <table>
+    <tr><th>ฉากทัศน์</th><th>สมมติฐาน</th><th style="text-align:right">มูลค่าต่อหุ้น</th><th>เรื่องเล่าที่ต้องเป็นจริง</th></tr>
+    <tr><td><strong>ขาลง (Bear)</strong></td><td>โต 5% · อัตรากำไร 7% · ได้อีก 5 ปี</td><td class="num neg">8.88</td><td>คู่แข่งเข้ามาเร็ว ต้องลดราคาแข่ง การขยายสาขาชะลอ</td></tr>
+    <tr><td><strong>ฐาน (Base)</strong></td><td>โต 10% · อัตรากำไร 8% · ได้อีก 8 ปี</td><td class="num">15.46</td><td>ทุกอย่างเป็นไปตามที่ตลาดคาดพอดี</td></tr>
+    <tr><td><strong>ขาขึ้น (Bull)</strong></td><td>โต 14% · อัตรากำไร 9% · ได้อีก 10 ปี</td><td class="num pos">26.73</td><td>ได้ประโยชน์จากขนาด อัตรากำไรขยับขึ้นจริง ขยายตลาดใหม่สำเร็จ</td></tr>
+  </table>
+  <div class="tbl-cap">สังเกตว่าช่วงห่างกว้างมาก — จาก 8.88 ถึง 26.73 ที่ราคาตลาด 15.50 นี่คือความจริงของการลงทุน ไม่ใช่ความล้มเหลวของโมเดล <span class="src src-demo">ตัวอย่างสอน</span></div>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · ฉากทัศน์ที่ดีต้องมี “เรื่องเล่า” กำกับทุกตัวเลข</div>
+    <p>ตัวเลขที่ไม่มีเรื่องเล่ารองรับคือการเล่นกับสเปรดชีต ไม่ใช่การวิเคราะห์ ทุกฉากทัศน์ต้องตอบได้ว่า <strong>“โลกต้องเป็นอย่างไร ตัวเลขชุดนี้จึงจะเกิดขึ้น”</strong></p>
+    <p>และเมื่อมีเรื่องเล่าแล้ว คุณจะรู้ทันทีว่าต้องเฝ้าดูอะไร — เพราะสัญญาณแรก ๆ ของเรื่องเล่าแต่ละแบบจะปรากฏก่อนตัวเลขงบการเงินเสมอ</p>
+  </div>
+
+  <h2>กับดักทางพฤติกรรมที่หนังสือเตือนไว้</h2>
+  <p><span class="src src-book">จากหนังสือ</span> ฉบับปรับปรุงเพิ่มงานวิจัยเรื่องความมั่นใจเกินจริงเข้ามาโดยเฉพาะ เพราะกระบวนการนี้มีจุดอ่อนตรงที่ <em>มันให้ตัวเลขที่ดูน่าเชื่อถือ</em> จนเราลืมว่ามันมาจากสมมติฐานของเราเอง</p>
+  <ul style="font-family:'Noto Serif Thai',serif;font-size:15.5px;line-height:1.9;color:var(--ink-soft);">
+    <li><strong>ความมั่นใจเกินจริง</strong> — ช่วงประมาณการของเราแคบเกินไปเสมอ วิธีแก้: บังคับให้ฉากทัศน์ขาลงเลวร้ายกว่าที่รู้สึกว่า “แย่แล้ว” อีกหนึ่งขั้น</li>
+    <li><strong>หลักฐานยืนยันความเชื่อเดิม</strong> — พอตั้งสมมติฐานไปแล้ว เราจะหาแต่ข้อมูลที่สนับสนุน วิธีแก้: เขียนเงื่อนไขที่จะพิสูจน์ว่าเราผิด <em>ก่อน</em> ซื้อ</li>
+    <li><strong>ยึดติดกับตัวเลขแรกที่เห็น</strong> — ประมาณการของนักวิเคราะห์กลายเป็นจุดยึดโดยไม่รู้ตัว วิธีแก้: ทำ Reverse DCF ก่อนอ่านบทวิเคราะห์ของใคร</li>
+    <li><strong>ละเลยอัตราฐาน</strong> — ประวัติศาสตร์บอกว่าบริษัทที่โตเกิน 20% ต่อปีนานเกิน 10 ปี มีน้อยมาก แต่โมเดลของเราใส่ตัวเลขแบบนั้นได้ง่าย ๆ</li>
+  </ul>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“ราคาเป้าหมายของนักวิเคราะห์คือข้อมูลที่มีประโยชน์”</strong> — หนังสือมีกล่องเสริมพูดเรื่องนี้โดยเฉพาะ และสรุปว่าราคาเป้าหมายส่วนใหญ่ไร้ประโยชน์ เพราะมันไม่ได้บอกสมมติฐานที่อยู่เบื้องหลัง สิ่งที่ควรอ่านคือ <em>ตัวเลขประมาณการรายบรรทัด</em> ไม่ใช่ราคาเป้าหมาย</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>ทำตารางความไวของหุ้นที่ถือ: ขยับอัตรากำไร ±1% การเติบโต ±2% และอัตราการลงทุน ±5% ดูว่าตัวไหนขยับมูลค่ามากที่สุด</li>
+      <li>เขียนเรื่องเล่าสามแบบ (ขาลง/ฐาน/ขาขึ้น) แบบละ 3 บรรทัด พร้อมสมมติฐานตัวเลขกำกับ</li>
+      <li>ระบุ “สัญญาณเตือนล่วงหน้า” ของฉากทัศน์ขาลงอย่างน้อย 3 ข้อ ที่จะเห็นได้ก่อนงบการเงินออก เช่น การลดราคาของคู่แข่ง อัตราการลาออกของพนักงานขาย จำนวนสาขาที่เปิดใหม่ชะลอ</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>ตัวแปรไหนคือ turbo trigger ของหุ้นที่คุณถือหนักที่สุด และคุณใช้เวลาวิจัยตัวนั้นมากที่สุดจริงหรือไม่</li>
+      <li>ฉากทัศน์ขาลงของคุณ “แย่พอ” หรือยัง — ถ้ามันเกิดขึ้นจริง คุณจะแปลกใจไหม</li>
+      <li>คุณอ่านบทวิเคราะห์ก่อนหรือหลังจากที่คุณตั้งสมมติฐานของตัวเอง และลำดับนั้นส่งผลต่อคุณอย่างไร</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 7 ============ -->
+<div class="ch-open">
+  <div class="ch-num">07</div>
+  <div class="ch-label">Chapter Seven · บทที่ 7</div>
+  <div class="ch-title">Buy, Sell, or Hold?<em>แปลงมุมมองให้กลายเป็นการตัดสินใจที่มีวินัย</em></div>
+  <div class="ch-essence">มุมมองที่ไม่ถูกแปลงเป็นตัวเลขความน่าจะเป็น คือความเห็น ไม่ใช่การลงทุน — บทนี้คือสะพานจากการวิเคราะห์ไปสู่การกดปุ่มซื้อหรือขาย</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>มูลค่าคาดหวัง คือค่าเฉลี่ยถ่วงน้ำหนักของโลกที่เป็นไปได้</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> ขั้นตอนมีสามส่วน: (1) ให้ความน่าจะเป็นกับแต่ละฉากทัศน์ (2) คูณกับมูลค่าของฉากทัศน์นั้นแล้วบวกกัน ได้เป็น <strong>มูลค่าคาดหวัง</strong> (<span class="en">expected value</span>) (3) เทียบกับราคาตลาด และตัดสินใจเมื่อส่วนต่างกว้างพอ</p>
+
+  <div class="formula">
+    มูลค่าคาดหวัง = Σ (ความน่าจะเป็นของฉากทัศน์ × มูลค่าของฉากทัศน์นั้น)
+    <span class="fnote">ความน่าจะเป็นรวมกันต้องเท่ากับ 100% เสมอ — การบังคับตัวเองให้ใส่ตัวเลขนี้ คือวินัยที่ทรงพลังที่สุดในกระบวนการทั้งหมด</span>
+  </div>
+
+  <p><span class="src src-demo">ตัวอย่างสอน</span> ใช้ฉากทัศน์จากบทที่ 6 สมมติว่าหลังวิจัยแล้ว คุณให้น้ำหนัก ขาลง 25% · ฐาน 50% · ขาขึ้น 25%</p>
+
+  <div class="chart-wrap">
+    <svg viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg" font-family="Sarabun, sans-serif">
+      <line x1="90" y1="280" x2="670" y2="280" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="45" x2="90" y2="280" stroke="#C8C0A0" stroke-width="1.5"/>
+      <line x1="90" y1="153" x2="670" y2="153" stroke="#7A1A1A" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="96" y="146" font-size="11.5" fill="#7A1A1A" font-weight="700">ราคาตลาด 15.50</text>
+      <text x="80" y="284" font-size="11" fill="#7C7460" text-anchor="end">0</text>
+      <text x="80" y="198" font-size="11" fill="#7C7460" text-anchor="end">10</text>
+      <text x="80" y="116" font-size="11" fill="#7C7460" text-anchor="end">20</text>
+      <rect x="120" y="207" width="105" height="73" fill="#7A1A1A"/>
+      <rect x="255" y="153" width="105" height="127" fill="#7C7460"/>
+      <rect x="390" y="61" width="105" height="219" fill="#355E40"/>
+      <rect x="540" y="143" width="105" height="137" fill="#24476B"/>
+      <text x="172" y="199" font-size="13" fill="#7A1A1A" text-anchor="middle" font-weight="700">8.88</text>
+      <text x="307" y="145" font-size="13" fill="#46402F" text-anchor="middle" font-weight="700">15.46</text>
+      <text x="442" y="53" font-size="13" fill="#355E40" text-anchor="middle" font-weight="700">26.73</text>
+      <text x="592" y="135" font-size="14" fill="#24476B" text-anchor="middle" font-weight="700">16.63</text>
+      <text x="172" y="300" font-size="12" fill="#14110B" text-anchor="middle" font-weight="700">ขาลง 25%</text>
+      <text x="307" y="300" font-size="12" fill="#14110B" text-anchor="middle" font-weight="700">ฐาน 50%</text>
+      <text x="442" y="300" font-size="12" fill="#14110B" text-anchor="middle" font-weight="700">ขาขึ้น 25%</text>
+      <text x="592" y="300" font-size="12" fill="#24476B" text-anchor="middle" font-weight="700">มูลค่าคาดหวัง</text>
+      <text x="592" y="318" font-size="11" fill="#7C7460" text-anchor="middle">(ถ่วงน้ำหนักแล้ว)</text>
+      <text x="350" y="340" font-size="12.5" fill="#A9702C" text-anchor="middle" font-weight="700">ส่วนต่างจากราคาเพียง +7.3% — ยังไม่พอเป็นเหตุผลในการซื้อ</text>
+      <text x="100" y="32" font-size="12" fill="#152C46" font-weight="700">มูลค่าต่อหุ้น (บาท) ในแต่ละฉากทัศน์</text>
+    </svg>
+    <div class="fig-cap"><b>รูปที่ 7 · มูลค่าคาดหวังเทียบราคา</b> มูลค่าคาดหวัง 16.63 บาท สูงกว่าราคาตลาดเพียง 7.3% ซึ่งไม่ถือว่าเป็นโอกาส เพราะยังไม่ครอบคลุมความผิดพลาดของสมมติฐาน ค่าคอมมิชชั่น และภาษี <span class="src src-demo" style="margin-left:4px">ตัวอย่างสอน</span></div>
+  </div>
+
+  <h2>ส่วนเผื่อความปลอดภัย — และทำไม 7% ถึงไม่พอ</h2>
+  <p><span class="src src-book">จากหนังสือ</span> หนังสือยืนยันว่าต้องมี <strong>ส่วนเผื่อความปลอดภัยหลังภาษี</strong> (<span class="en">after-tax margin of safety</span>) ที่ชัดเจนระหว่างราคาวันนี้กับมูลค่าคาดหวัง เหตุผลไม่ใช่ความขี้กลัว แต่เป็นคณิตศาสตร์: สมมติฐานของเราคลาดเคลื่อนได้ง่าย และการซื้อขายมีต้นทุนจริง</p>
+
+  <table>
+    <tr><th>สถานการณ์</th><th style="text-align:right">มูลค่าคาดหวัง</th><th style="text-align:right">ส่วนต่างจากราคา 15.50</th><th>การตัดสินใจ</th></tr>
+    <tr><td>น้ำหนักกลาง ๆ (25/50/25)</td><td class="num">16.63</td><td class="num">+7.3%</td><td>เฝ้าดู — ยังไม่ซื้อ</td></tr>
+    <tr><td>งานวิจัยชี้ว่าขาขึ้นน่าจะเกิดมากกว่า (15/45/40)</td><td class="num">18.98</td><td class="num pos">+22.5%</td><td>เริ่มน่าสนใจ ถ้ามั่นใจในหลักฐาน</td></tr>
+    <tr><td>งานวิจัยชี้ว่าคูเมืองกำลังพัง (35/50/15)</td><td class="num">14.85</td><td class="num neg">−4.2%</td><td>ไม่ซื้อ / ถ้าถืออยู่ให้ทบทวน</td></tr>
+  </table>
+  <div class="tbl-cap">ข้อสังเกตสำคัญ: มูลค่าของฉากทัศน์ไม่เปลี่ยนเลยทั้งสามแถว สิ่งที่เปลี่ยนคือ <em>ความน่าจะเป็น</em> ซึ่งมาจากงานวิจัยของคุณ — นั่นคือจุดที่ความได้เปรียบของนักลงทุนเกิดขึ้นจริง <span class="src src-demo">ตัวอย่างสอน</span></div>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · แหล่งที่มาของผลตอบแทนส่วนเกิน มีแค่สองทาง</div>
+    <p><strong>ทางที่ 1 — ส่วนลดที่กว้าง</strong> ยิ่งราคาต่ำกว่ามูลค่าคาดหวังมากเท่าไร ผลตอบแทนส่วนเกินยิ่งสูง</p>
+    <p><strong>ทางที่ 2 — เวลาที่สั้น</strong> ยิ่งตลาดปรับความคาดหวังเร็วเท่าไร ผลตอบแทนต่อปียิ่งสูง ถ้าส่วนลด 30% ใช้เวลา 1 ปีจึงปิด นั่นคือกำไรดี แต่ถ้าใช้เวลา 6 ปี ผลตอบแทนต่อปีเหลือแค่ระดับตลาด</p>
+    <p>ดังนั้นคำถามที่นักลงทุนส่วนใหญ่ลืมถามคือ <strong>“อะไรจะทำให้ตลาดเปลี่ยนใจ และเมื่อไร”</strong></p>
+  </div>
+
+  <h2>เหตุผลที่ควรขาย มีเพียงสามข้อ</h2>
+  <p><span class="src src-book">จากหนังสือ</span> (1) ราคาขึ้นไปถึงมูลค่าคาดหวังแล้ว (2) มีโอกาสลงทุนที่ดีกว่าอย่างชัดเจน (3) คุณปรับความคาดหวังของตัวเองลงเพราะข้อมูลใหม่ — และหนังสือเตือนว่าแม้เข้าเงื่อนไขข้อใดข้อหนึ่ง ยังต้องคิดเรื่องภาษีและต้นทุนการซื้อขายก่อนตัดสินใจจริง</p>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“ขายเพราะราคาลง”</strong> — ราคาลงไม่ใช่เหตุผล ถ้าความคาดหวังของคุณยังเหมือนเดิม ราคาที่ลงแปลว่าส่วนลดกว้างขึ้น ซึ่งเป็นเหตุผลให้ <em>ซื้อเพิ่ม</em> ไม่ใช่ขาย</p>
+    <p><strong>“ถือไว้จนกว่าจะเท่าทุน”</strong> — ราคาที่คุณซื้อมาไม่มีอยู่ในสมการมูลค่าคาดหวังเลยแม้แต่ตัวแปรเดียว มันอยู่ในหัวคุณเท่านั้น หนังสือฉบับปรับปรุงเพิ่มเนื้อหาเรื่องความกลัวการขาดทุน (<span class="en">loss aversion</span>) มาเตือนเรื่องนี้โดยเฉพาะ</p>
+  </div>
+
+  <div class="ladder">
+    <div class="ladder-step wrong"><div class="ladder-tag">ความเชื่อเดิม</div><div class="ladder-text">“หุ้นตัวนี้ดี ราคาน่าจะไปได้อีก” — ตัดสินใจจากความรู้สึกและเรื่องเล่า</div></div>
+    <div class="ladder-arrow">↓</div>
+    <div class="ladder-step truth"><div class="ladder-tag">ความจริงจากหนังสือ</div><div class="ladder-text">การตัดสินใจที่ดีคือการเปรียบเทียบตัวเลขสองตัว: ราคาวันนี้ กับมูลค่าคาดหวังที่ถ่วงน้ำหนักความน่าจะเป็นแล้ว โดยต้องมีส่วนต่างกว้างพอที่จะรองรับความผิดพลาดของเราเอง</div></div>
+    <div class="ladder-arrow">↓</div>
+    <div class="ladder-step action"><div class="ladder-tag">ลงมือทำ</div><div class="ladder-text">ก่อนซื้อทุกครั้ง เขียนสามบรรทัด: มูลค่าคาดหวัง = ___ บาท · ราคาปัจจุบัน = ___ บาท · ส่วนต่าง = ___ % ถ้าส่วนต่างต่ำกว่าเกณฑ์ที่ตั้งไว้ล่วงหน้า ให้ไม่ซื้อโดยไม่ต้องถกเถียงกับตัวเอง</div></div>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>ตั้งเกณฑ์ส่วนเผื่อความปลอดภัยของตัวเองไว้ล่วงหน้าเป็นตัวเลข (เช่น ต้องมากกว่า 25% สำหรับธุรกิจที่คาดเดายาก และ 15% สำหรับธุรกิจที่มั่นคง) แล้วเขียนไว้ในสมุด</li>
+      <li>เขียน “เงื่อนไขการขาย” พร้อมกับตอนซื้อเสมอ — ทั้งฝั่งที่คิดถูกและฝั่งที่คิดผิด</li>
+      <li>ตรวจสอบด้วยอัตราฐาน: บริษัทในอุตสาหกรรมเดียวกันในอดีต เคยทำได้ตามฉากทัศน์ขาขึ้นของคุณกี่ราย จากทั้งหมดกี่ราย</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>ครั้งล่าสุดที่คุณขายหุ้น เหตุผลของคุณตรงกับสามข้อในบทนี้ข้อไหน หรือไม่ตรงเลย</li>
+      <li>ถ้าคุณต้องใส่ตัวเลขความน่าจะเป็นให้ฉากทัศน์ขาลงของหุ้นที่คุณถือมากที่สุด คุณจะใส่กี่ % และทำไม</li>
+      <li>คุณเคยไม่ซื้อหุ้นที่ชอบมาก เพราะส่วนต่างไม่ถึงเกณฑ์หรือไม่ — ถ้าไม่เคย แปลว่าเกณฑ์ของคุณอาจยังไม่มีอยู่จริง</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 8 ============ -->
+<div class="ch-open">
+  <div class="ch-num">08</div>
+  <div class="ch-label">Chapter Eight · บทที่ 8</div>
+  <div class="ch-title">Beyond Discounted Cash Flow<em>เมื่อ DCF ตีมูลค่า “ทางเลือก” ไม่ได้</em></div>
+  <div class="ch-essence">DCF ตีมูลค่าแผนที่วางไว้แล้ว แต่ตีมูลค่า “สิทธิที่จะเปลี่ยนแผน” ไม่ได้ — ในธุรกิจที่อนาคตยังไม่นิ่ง สิทธินั้นอาจเป็นมูลค่าก้อนใหญ่</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>Real Options — มูลค่าของการมีสิทธิ์เลือก แต่ไม่ต้องผูกมัด</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> <strong>ทางเลือกที่แท้จริง</strong> (<span class="en">real options</span>) คือสิทธิ์ที่จะลงทุนในอนาคต โดยไม่มีภาระผูกพันว่าต้องลงทุน หนังสือใช้กรณีศึกษา Shopify ในฉบับปรับปรุง เพื่อแสดงว่าบริษัทที่มีแพลตฟอร์มและฐานลูกค้าอยู่แล้ว มีสิทธิ์ที่จะเปิดธุรกิจใหม่ต่อยอดได้ในต้นทุนต่ำกว่าคนอื่น และสิทธิ์นั้นมีมูลค่า</p>
+
+  <p>ทำไม DCF ธรรมดาถึงตีมูลค่านี้ไม่ได้? เพราะ DCF สมมติว่าเราวางแผนไว้แล้วเดินตามแผน ในโลกจริงผู้บริหารเห็นข้อมูลใหม่แล้ว <em>เปลี่ยนแผนได้</em> — ถ้าโครงการไปได้สวยก็ขยาย ถ้าไม่สวยก็หยุด ความยืดหยุ่นนี้ทำให้ผลขาดทุนถูกจำกัด แต่ผลกำไรไม่ถูกจำกัด ซึ่งเป็นโครงสร้างผลตอบแทนแบบเดียวกับออปชัน</p>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · เงื่อนไขสามข้อที่ต้องครบ ถึงจะเรียกว่ามี real option</div>
+    <p><strong>1. ความไม่แน่นอนสูง</strong> — ถ้าอนาคตชัดเจน สิทธิ์ที่จะเลือกก็ไม่มีค่า ความผันผวนคือแหล่งมูลค่าของออปชัน ไม่ใช่ศัตรู</p>
+    <p><strong>2. ผู้บริหารเปลี่ยนแผนได้จริง</strong> — ต้องมีจุดที่หยุด ขยาย หรือเลื่อนได้ ไม่ใช่ลงทุนก้อนเดียวแล้วถอยไม่ได้</p>
+    <p><strong>3. บริษัทเข้าถึงโอกาสนั้นได้จริงกว่าคนอื่น</strong> — ถ้าใครก็ทำได้ มูลค่าจะถูกแข่งจนหายไป</p>
+  </div>
+
+  <p><span class="src src-interp">ตีความ</span> ในทางปฏิบัติ ผมมองว่า real options เป็นเครื่องมือ <em>ตรวจสอบเหตุผล</em> มากกว่าเครื่องมือคำนวณ กล่าวคือ เมื่อทำ Reverse DCF แล้วพบว่าราคาสูงกว่าที่เหตุผลพื้นฐานรองรับได้มาก คำถามควรเป็น “ตลาดกำลังจ่ายค่าทางเลือกอะไรอยู่” ถ้าตอบได้ชัดและมีเงื่อนไขครบสามข้อ ราคานั้นอาจมีเหตุผล แต่ถ้าตอบไม่ได้ นั่นคือสัญญาณว่าราคาสูงเกินจริง</p>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“บริษัทขาดทุนแต่มีโอกาสเยอะ = มี real option”</strong> — ความหวังไม่ใช่ออปชัน ต้องมีสินทรัพย์หรือความสามารถที่ทำให้บริษัท <em>นี้</em> มีสิทธิ์เหนือกว่าคู่แข่งจริง ๆ</p>
+    <p><strong>“ค่าตอบแทนพนักงานที่จ่ายเป็นหุ้นไม่ใช่ค่าใช้จ่ายจริง”</strong> — หนังสือปรับปรุงส่วนนี้ใหม่ ค่าตอบแทนที่จ่ายเป็นหุ้น (<span class="en">stock-based compensation</span>) คือค่าใช้จ่ายที่ผู้ถือหุ้นเดิมจ่ายจริงผ่านการถูกลดสัดส่วน ต้องนับ</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>ทำ Reverse DCF ปกติก่อนเสมอ — ถ้าราคาสมเหตุสมผลอยู่แล้ว ไม่ต้องพึ่ง real options</li>
+      <li>ถ้าราคาสูงกว่ามาก ให้เขียนรายการ “ทางเลือกในอนาคต” ที่บริษัทมี แล้วทดสอบด้วยเงื่อนไขสามข้อทีละข้อ</li>
+      <li>ตรวจว่าค่าตอบแทนที่จ่ายเป็นหุ้นคิดเป็นกี่ % ของยอดขาย และคุณได้หักออกจากกระแสเงินสดแล้วหรือยัง</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>หุ้นที่คุณคิดว่า “แพงแต่มีอนาคต” — อนาคตนั้นผ่านเงื่อนไขสามข้อครบไหม</li>
+      <li>ถ้าความไม่แน่นอนคือแหล่งมูลค่าของออปชัน แล้วทำไมโดยทั่วไปเราถึงกลัวความผันผวน</li>
+      <li>บริษัทที่คุณถือ มีทางเลือกอะไรที่คู่แข่งไม่มี และมันมาจากสินทรัพย์อะไร</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 9 ============ -->
+<div class="ch-open">
+  <div class="ch-num">09</div>
+  <div class="ch-label">Chapter Nine · บทที่ 9</div>
+  <div class="ch-title">Across the Economic Landscape<em>ธุรกิจสามสายพันธุ์ — และจุดที่ความคาดหวังพลิกต่างกัน</em></div>
+  <div class="ch-essence">กรอบคิดเดียวใช้ได้กับทุกธุรกิจ แต่ “ตัวแปรที่ควรเฝ้าดู” ไม่เหมือนกัน บทนี้บอกว่าควรเฝ้าดูอะไรในธุรกิจแบบไหน</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>กายภาพ · บริการ · ความรู้</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> หนังสือจัดธุรกิจเป็นสามกลุ่มตามแหล่งที่มาของความได้เปรียบ แล้วชี้ว่าในแต่ละกลุ่ม การปรับความคาดหวังครั้งใหญ่มักมาจากคนละที่กัน</p>
+
+  <table>
+    <tr><th>ประเภท</th><th>แหล่งความได้เปรียบ</th><th>ตัวแปรที่ควรเฝ้าดูที่สุด</th><th>สัญญาณอันตราย</th></tr>
+    <tr><td><strong>ธุรกิจกายภาพ</strong><br><span class="en">Physical</span><br>โรงงาน ค้าปลีก พลังงาน</td><td>สินทรัพย์ที่จับต้องได้ ขนาด ทำเล ต้นทุนต่ำ</td><td>อัตราการใช้กำลังผลิต · เงินลงทุนต่อยอดขายที่เพิ่ม · ราคาสินค้าโภคภัณฑ์</td><td>กำลังผลิตส่วนเกินในอุตสาหกรรม — จะกดราคาและอัตรากำไรพร้อมกัน</td></tr>
+    <tr><td><strong>ธุรกิจบริการ</strong><br><span class="en">Service</span><br>โรงพยาบาล ที่ปรึกษา ร้านอาหาร</td><td>คน กระบวนการ และความสม่ำเสมอของประสบการณ์</td><td>ผลิตภาพต่อพนักงาน · อัตราการลาออก · ยอดขายต่อสาขาเดิม</td><td>ขยายเร็วจนคุณภาพตก — เห็นในยอดขายสาขาเดิมที่ชะลอก่อนงบรวมจะแย่</td></tr>
+    <tr><td><strong>ธุรกิจความรู้</strong><br><span class="en">Knowledge</span><br>ซอฟต์แวร์ แพลตฟอร์ม ยา</td><td>ทำครั้งเดียว ขายซ้ำได้ไม่จำกัด (สินค้าไม่ถูกใช้หมด)</td><td>ต้นทุนการหาลูกค้าใหม่ · อัตราการเลิกใช้ · ผลจากเครือข่าย</td><td>ของล้าสมัยเร็ว และการปกป้องทรัพย์สินทางปัญญาทำได้ยาก</td></tr>
+  </table>
+
+  <p><span class="src src-interp">ตีความ</span> คำที่หนังสือใช้ซึ่งควรเข้าใจคือ <strong>สินค้าที่ไม่ถูกใช้หมด</strong> (<span class="en">non-rival goods</span>) — ซอฟต์แวร์ชุดหนึ่งคนล้านคนใช้พร้อมกันได้โดยต้นทุนเพิ่มเกือบเป็นศูนย์ ต่างจากขนมปังก้อนหนึ่งที่คนกินได้คนเดียว คุณสมบัตินี้อธิบายว่าทำไมธุรกิจความรู้ถึงมีอัตรากำไรส่วนเพิ่มสูงมากเมื่อผ่านจุดคุ้มทุน และทำไมอัตราการลงทุนส่วนเพิ่มถึงต่ำผิดปกติ</p>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · ใช้ตารางนี้เพื่อเลือกว่าจะวิจัยอะไร</div>
+    <p>ในธุรกิจกายภาพ ให้ใช้เวลาไปกับ <strong>เงินลงทุน</strong> เพราะมันคือสิ่งที่กินเงินสด</p>
+    <p>ในธุรกิจบริการ ให้ใช้เวลาไปกับ <strong>คนและผลิตภาพ</strong> เพราะมันคือเพดานของการขยาย</p>
+    <p>ในธุรกิจความรู้ ให้ใช้เวลาไปกับ <strong>เศรษฐศาสตร์ของลูกค้าหนึ่งคน</strong> — ได้มาเท่าไร อยู่นานแค่ไหน จ่ายเท่าไรตลอดอายุ</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>จัดหุ้นทุกตัวในพอร์ตลงในสามช่องนี้ แล้วตรวจว่าคุณกำลังติดตามตัวแปรที่ถูกต้องของแต่ละตัวหรือไม่</li>
+      <li>สำหรับธุรกิจความรู้ ให้ประมาณต้นทุนการหาลูกค้าหนึ่งรายเทียบกับกำไรตลอดอายุลูกค้า — ถ้าอัตราส่วนแย่ลงเรื่อย ๆ การเติบโตกำลังทำลายมูลค่า</li>
+      <li>สำหรับธุรกิจกายภาพ ให้ดูอัตราการใช้กำลังผลิตทั้งอุตสาหกรรม ไม่ใช่แค่ของบริษัทเดียว</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>หุ้นในพอร์ตของคุณกระจุกอยู่ในสายพันธุ์ไหนมากที่สุด และนั่นทำให้คุณเสี่ยงกับอะไรร่วมกัน</li>
+      <li>คุณกำลังใช้ตัวชี้วัดของธุรกิจประเภทหนึ่ง ไปตัดสินธุรกิจอีกประเภทหนึ่งอยู่หรือเปล่า</li>
+      <li>ในธุรกิจที่คุณเข้าใจดีที่สุด อะไรคือตัวเลขที่บอกอนาคตได้ก่อนงบการเงินสามเดือน</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 10 ============ -->
+<div class="ch-open">
+  <div class="ch-num">10</div>
+  <div class="ch-label">Chapter Ten · บทที่ 10 · ภาค 3 อ่านสัญญาณ</div>
+  <div class="ch-title">Mergers and Acquisitions<em>ดีลซื้อกิจการ — เงินก้อนใหญ่ที่สุดที่ผู้บริหารตัดสินใจแทนเรา</em></div>
+  <div class="ch-essence">การซื้อกิจการคือการจัดสรรเงินทุนก้อนใหญ่ที่สุดของบริษัท และเป็นที่ที่มูลค่าถูกทำลายบ่อยที่สุด — เพราะคนวัดผลด้วยกำไรต่อหุ้น แทนที่จะวัดด้วยมูลค่า</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>ส่วนเกินที่จ่าย คือหนี้ที่ต้องใช้คืนด้วยผลประโยชน์ร่วม</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> ตรรกะของดีลเรียบง่ายมาก ผู้ซื้อจ่าย <strong>ส่วนเกิน</strong> (<span class="en">premium</span>) เหนือราคาตลาดของเป้าหมาย ส่วนเกินนั้นคือมูลค่าที่ย้ายจากผู้ถือหุ้นผู้ซื้อไปหาผู้ถือหุ้นเป้าหมายทันทีในวันปิดดีล ดีลจะสร้างมูลค่าก็ต่อเมื่อ <strong>ผลประโยชน์ร่วม</strong> (<span class="en">synergy</span>) ที่เกิดขึ้นจริง มีมูลค่าปัจจุบันมากกว่าส่วนเกินที่จ่ายไป</p>
+
+  <div class="formula">
+    SVAR = ส่วนเกินที่จ่าย ÷ มูลค่าตลาดของผู้ซื้อ
+    <span class="fnote">Shareholder Value at Risk — มูลค่าผู้ถือหุ้นที่ถูกนำไปเสี่ยง คิดเป็นกี่ % ของบริษัทตัวเอง</span>
+  </div>
+
+  <p><span class="src src-demo">ตัวอย่างสอน</span> ใช้ นวรัตน์ รีเทล ต่อ — มูลค่าตลาด 15,500 ล้านบาท ประกาศซื้อคู่แข่งที่มูลค่าตลาด 5,000 ล้านบาท โดยจ่ายส่วนเกิน 30% = <strong>1,500 ล้านบาท</strong></p>
+
+  <table>
+    <tr><th>ตัวชี้วัด</th><th style="text-align:right">ค่า</th><th>ความหมาย</th></tr>
+    <tr><td>ส่วนเกินที่จ่าย</td><td class="num">1,500 ล้านบาท</td><td>มูลค่าที่ย้ายไปหาผู้ถือหุ้นฝั่งเป้าหมายทันที</td></tr>
+    <tr><td><strong>SVAR</strong></td><td class="num neg">9.7%</td><td>ผู้ถือหุ้นผู้ซื้อกำลังเสี่ยงเกือบ 10% ของมูลค่าตัวเองกับดีลนี้</td></tr>
+    <tr><td>ผลประโยชน์ร่วมที่ต้องทำให้ได้</td><td class="num">120 ล้านบาท/ปี ตลอดไป</td><td>= 1,500 × ต้นทุนเงินทุน 8% — แค่จะ “เสมอตัว” เท่านั้น ยังไม่ได้กำไร</td></tr>
+    <tr><td>เทียบกับกำไรดำเนินงานหลังภาษีปัจจุบัน</td><td class="num">15% ของ 800 ล้าน</td><td>ต้องเพิ่มกำไรถาวรอีก 15% จากดีลเดียว — ถามว่าเป็นไปได้ไหม</td></tr>
+  </table>
+  <div class="tbl-cap">การแปลงส่วนเกินให้เป็น “ผลประโยชน์ร่วมรายปีที่ต้องทำให้ได้” คือวิธีตรวจสอบดีลที่ทรงพลังที่สุด และใช้เวลาไม่ถึงหนึ่งนาที <span class="src src-demo">ตัวอย่างสอน</span></div>
+
+  <h2>จ่ายด้วยเงินสด หรือจ่ายด้วยหุ้น — สัญญาณต่างกันสิ้นเชิง</h2>
+  <p><span class="src src-book">จากหนังสือ</span> นี่คือหนึ่งในสัญญาณที่มีค่าที่สุดที่นักลงทุนอ่านได้ฟรี</p>
+  <ul style="font-family:'Noto Serif Thai',serif;font-size:15.5px;line-height:1.9;color:var(--ink-soft);">
+    <li><strong>จ่ายด้วยเงินสด</strong> — ผู้ซื้อรับความเสี่ยงทั้งหมดไว้เอง มักแปลว่าผู้บริหารมั่นใจในผลประโยชน์ร่วม และ/หรือเชื่อว่าหุ้นตัวเองไม่ได้แพงเกินไป</li>
+    <li><strong>จ่ายด้วยหุ้น</strong> — ผู้ซื้อแบ่งความเสี่ยงให้ผู้ถือหุ้นเป้าหมายร่วมรับ และมักส่งสัญญาณว่าผู้บริหารคิดว่าหุ้นตัวเอง <em>ไม่ถูก</em> จึงใช้เป็นสกุลเงินได้คุ้ม</li>
+  </ul>
+
+  <div class="warn-box">
+    <div class="lbl">สิ่งที่นักลงทุนมักเข้าใจผิด</div>
+    <p><strong>“ดีลนี้เพิ่มกำไรต่อหุ้นทันที = ดีล”</strong> — หนังสือโจมตีเรื่องนี้ตรง ๆ การเพิ่มขึ้นของกำไรต่อหุ้นเกิดขึ้นได้ง่ายมากเพียงแค่ผู้ซื้อมี P/E สูงกว่าเป้าหมาย โดยไม่ต้องมีผลประโยชน์ร่วมแม้แต่บาทเดียว มันเป็นเลขคณิต ไม่ใช่การสร้างมูลค่า</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">เช็กลิสต์ตรวจดีล (ใช้ได้ทันทีที่มีข่าว)</div>
+    <ol>
+      <li>ส่วนเกินที่จ่ายเป็นกี่ % และคิดเป็นกี่ % ของมูลค่าตลาดผู้ซื้อ (SVAR)</li>
+      <li>แปลงส่วนเกินเป็นผลประโยชน์ร่วมรายปีที่ต้องทำให้ได้ = ส่วนเกิน × ต้นทุนเงินทุน แล้วเทียบกับกำไรปัจจุบัน</li>
+      <li>ผลประโยชน์ร่วมที่ผู้บริหารอ้าง มาจากการลดต้นทุน (เชื่อได้มากกว่า) หรือการเพิ่มรายได้ (เชื่อได้น้อยกว่า)</li>
+      <li>จ่ายด้วยเงินสดหรือหุ้น และนั่นบอกอะไรเกี่ยวกับมุมมองของผู้บริหารต่อราคาหุ้นตัวเอง</li>
+      <li>ผู้บริหารชุดนี้เคยซื้อกิจการมาแล้วกี่ครั้ง และผลลัพธ์ในอดีตเป็นอย่างไร</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>ดีลล่าสุดของบริษัทที่คุณถือ — คุณคำนวณ SVAR ของมันหรือยัง</li>
+      <li>ถ้าผู้บริหารเลือกจ่ายด้วยหุ้นในขณะที่บอกว่าหุ้นตัวเองถูก คุณจะเชื่อคำพูดหรือการกระทำ</li>
+      <li>เงินที่ใช้ซื้อกิจการก้อนนี้ ถ้าเอาไปซื้อหุ้นคืนแทน ผู้ถือหุ้นจะได้มากกว่าหรือน้อยกว่า</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 11 ============ -->
+<div class="ch-open">
+  <div class="ch-num">11</div>
+  <div class="ch-label">Chapter Eleven · บทที่ 11</div>
+  <div class="ch-title">Share Buybacks<em>กฎทองข้อเดียวที่ตัดสินว่าการซื้อหุ้นคืนดีหรือแย่</em></div>
+  <div class="ch-essence">การซื้อหุ้นคืนไม่ได้สร้างมูลค่าโดยตัวมันเอง มันแค่ “ย้าย” มูลค่าระหว่างคนที่ขายกับคนที่ถืออยู่ — ทิศทางการย้ายขึ้นอยู่กับราคาเทียบมูลค่าเท่านั้น</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>กฎทอง: ซื้อคืนเมื่อราคาต่ำกว่ามูลค่าคาดหวังเท่านั้น</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> หนังสือเรียกหลักนี้ว่า <strong>กฎทองของโครงการซื้อหุ้นคืน</strong> และเพิ่ม <strong>หลักการอนุรักษ์มูลค่า</strong> (<span class="en">value conservation principle</span>) เข้ามาในฉบับปรับปรุง — ความคิดคือการซื้อหุ้นคืนไม่ได้เสกมูลค่าขึ้นมา มันคือการแลกเงินสด (สินทรัพย์ที่มีมูลค่าแน่นอน) กับหุ้น (สินทรัพย์ที่มีมูลค่าไม่แน่นอน) ผลลัพธ์จึงขึ้นกับว่าแลกในราคาเท่าไร</p>
+
+  <p><span class="src src-demo">ตัวอย่างสอน</span> สมมติมูลค่าคาดหวังของบริษัทคือ 20 บาทต่อหุ้น มีหุ้น 1,000 ล้านหุ้น (มูลค่ารวม 20,000 ล้านบาท) บริษัทซื้อหุ้นคืน 100 ล้านหุ้น</p>
+
+  <table>
+    <tr><th>กรณี</th><th style="text-align:right">ราคาที่ซื้อคืน</th><th style="text-align:right">เงินสดที่ใช้</th><th style="text-align:right">มูลค่าต่อหุ้นหลังซื้อคืน</th><th style="text-align:right">ผลต่อผู้ถือหุ้นที่ยังอยู่</th></tr>
+    <tr><td>ซื้อคืนต่ำกว่ามูลค่า</td><td class="num">15.50</td><td class="num">1,550</td><td class="num pos">20.50</td><td class="num pos">+2.5%</td></tr>
+    <tr><td>ซื้อคืนสูงกว่ามูลค่า</td><td class="num">25.00</td><td class="num">2,500</td><td class="num neg">19.44</td><td class="num neg">−2.8%</td></tr>
+  </table>
+  <div class="tbl-cap">คำนวณจาก (มูลค่ารวม 20,000 − เงินสดที่จ่ายออก) ÷ หุ้นที่เหลือ 900 ล้านหุ้น · สังเกตว่าจำนวนหุ้นที่ลดลงเท่ากันทั้งสองกรณี แต่ผลลัพธ์ตรงข้ามกัน <span class="src src-demo">ตัวอย่างสอน</span></div>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · การซื้อหุ้นคืนเป็นสัญญาณ ไม่ใช่ของขวัญ</div>
+    <p>เมื่อผู้บริหารซื้อหุ้นคืนอย่างจริงจังในราคาต่ำ นั่นคือหลักฐานว่าคนที่รู้เรื่องบริษัทดีที่สุดคิดว่าตลาดกำลังคาดหวังต่ำเกินไป — เป็นเหตุผลให้เราทบทวนความคาดหวังของเราขึ้น</p>
+    <p>แต่ถ้าซื้อคืนตอนราคาสูงสุดของรอบ หรือซื้อคืนเพียงเพื่อชดเชยหุ้นที่ออกให้พนักงาน นั่นไม่ใช่สัญญาณอะไรเลย นอกจากการบริหารตัวเลขกำไรต่อหุ้น</p>
+  </div>
+
+  <div class="warn-box">
+    <div class="lbl">เหตุผลยอดนิยมที่ฟังดูดีแต่ไม่ผ่านกฎทอง</div>
+    <p><strong>“ซื้อคืนเพื่อเพิ่มกำไรต่อหุ้น”</strong> — กำไรต่อหุ้นเพิ่มขึ้นได้แม้ซื้อคืนในราคาแพงเกินไป จึงไม่ใช่หลักฐานว่าสร้างมูลค่า</p>
+    <p><strong>“ซื้อคืนเพื่อพยุงราคาหุ้น”</strong> — การพยุงราคาชั่วคราวด้วยเงินของผู้ถือหุ้น คือการใช้ทรัพยากรของทุกคนเพื่อประโยชน์ของคนที่กำลังจะขายออก</p>
+    <p><strong>“มีเงินสดเหลือเลยซื้อคืน”</strong> — เงินสดเหลือควรถูกเทียบระหว่างสามทาง: ลงทุนในธุรกิจ ซื้อหุ้นคืน หรือจ่ายปันผล ทางไหนให้ผลตอบแทนต่อผู้ถือหุ้นสูงสุดจึงควรเลือกทางนั้น</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>เมื่อมีข่าวซื้อหุ้นคืน ให้เทียบราคาที่ซื้อคืนกับมูลค่าคาดหวังของคุณเองก่อนตัดสิน</li>
+      <li>ดูย้อนหลังว่าบริษัทนี้เคยซื้อคืนตอนราคาไหน — ผู้บริหารที่ซื้อคืนตอนตลาดตกคือผู้บริหารที่คิดแบบเจ้าของ</li>
+      <li>ตรวจว่าจำนวนหุ้นทั้งหมดลดลงจริงหรือไม่ หรือแค่ทรงตัวเพราะออกหุ้นใหม่ให้พนักงานเท่ากับที่ซื้อคืน</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>บริษัทที่คุณถือซื้อหุ้นคืนในราคาเฉลี่ยเท่าไรในสามปีที่ผ่านมา และตอนนั้นราคาถูกหรือแพง</li>
+      <li>ถ้าคุณเป็นผู้บริหาร ณ ราคาปัจจุบัน คุณจะเลือกลงทุนขยายกิจการ ซื้อหุ้นคืน หรือจ่ายปันผล เพราะอะไร</li>
+      <li>คุณเคยดีใจกับข่าวซื้อหุ้นคืนโดยไม่ได้ดูราคาที่ซื้อหรือไม่</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ CH 12 ============ -->
+<div class="ch-open">
+  <div class="ch-num">12</div>
+  <div class="ch-label">Chapter Twelve · บทที่ 12</div>
+  <div class="ch-title">Sources of Expectations Opportunities<em>โอกาสมักซ่อนอยู่ในสถานการณ์แบบไหน</em></div>
+  <div class="ch-essence">บทใหม่ในฉบับปรับปรุง รวบรวมสถานการณ์ที่การปรับความคาดหวังมักเกิดขึ้นจริง — เป็นเหมือนรายการเฝ้าระวังสำหรับนักลงทุนที่รู้วิธีอ่านราคาแล้ว</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The Core Idea · แก่นสาร</div>
+  <h1>รู้ว่าจะไปหาโอกาสที่ไหน สำคัญพอ ๆ กับรู้วิธีวิเคราะห์</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> บทที่ 12 เป็นบทที่เขียนขึ้นใหม่ทั้งบทในฉบับปี 2021 โดยรวบรวมกรณีที่ผู้เขียนพบว่าต้องอธิบายให้นักศึกษาและนักลงทุนฟังบ่อยที่สุด ตัวอย่างสถานการณ์ที่หนังสือระบุไว้ ได้แก่ <strong>ภาวะช็อกทางเศรษฐกิจมหภาค การเปลี่ยนตัวผู้บริหาร การเปลี่ยนแปลงกฎระเบียบ คดีความ การแตกพาร์ และการออกหุ้นใหม่</strong></p>
+
+  <table>
+    <tr><th>สถานการณ์</th><th>ทำไมความคาดหวังถึงเคลื่อน</th><th>สิ่งที่ต้องตรวจ</th></tr>
+    <tr><td><strong>ภาวะช็อกมหภาค</strong></td><td>ตลาดปรับราคาทั้งกลุ่มพร้อมกัน โดยไม่แยกว่าบริษัทไหนกระทบจริงเท่าไร</td><td>ผลกระทบนั้นแตะตัวขับเคลื่อนตัวไหน และเป็นการเปลี่ยนถาวรหรือชั่วคราว</td></tr>
+    <tr><td><strong>เปลี่ยนผู้บริหาร</strong></td><td>ผู้บริหารใหม่มักเปลี่ยนนโยบายจัดสรรเงินทุน ซึ่งกระทบอัตราการลงทุนโดยตรง</td><td>ประวัติการจัดสรรเงินทุนของคนใหม่ ไม่ใช่คำแถลงวิสัยทัศน์</td></tr>
+    <tr><td><strong>เปลี่ยนกฎระเบียบ</strong></td><td>กระทบทั้งอัตรากำไรและอุปสรรคในการเข้าสู่ตลาดพร้อมกัน</td><td>กฎใหม่ทำให้คู่แข่งเข้ามายากขึ้นหรือง่ายขึ้น — บางครั้งกฎที่ดูแย่กลับสร้างคูเมือง</td></tr>
+    <tr><td><strong>คดีความ</strong></td><td>ตลาดมักตีมูลค่าความเสี่ยงแบบสุดโต่ง ทั้งมากไปและน้อยไป</td><td>มูลค่าความเสียหายสูงสุดที่เป็นไปได้ เทียบกับมูลค่าตลาดที่หายไปแล้ว</td></tr>
+    <tr><td><strong>แตกพาร์ / ออกหุ้นใหม่</strong></td><td>ไม่เปลี่ยนกระแสเงินสด แต่ส่งสัญญาณเรื่องมุมมองของผู้บริหารต่อราคาหุ้น</td><td>บริษัทออกหุ้นใหม่ตอนราคาสูง = ผู้บริหารอาจเห็นว่าราคาไม่ถูก</td></tr>
+  </table>
+  <div class="tbl-cap">ห้าแถวนี้อ้างอิงสถานการณ์ที่ระบุไว้ในหนังสือ ส่วนคอลัมน์ “สิ่งที่ต้องตรวจ” เป็นการเรียบเรียงของผมเพื่อให้ใช้งานได้ <span class="src src-interp">ตีความ</span></div>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · หลักการเดียวที่ใช้ได้กับทุกสถานการณ์</div>
+    <p>ทุกครั้งที่เกิดเหตุการณ์เหล่านี้ ให้ถามคำถามเดิมสามข้อ: <strong>(1)</strong> ราคาก่อนหน้านี้คาดหวังอะไร <strong>(2)</strong> เหตุการณ์นี้เปลี่ยนตัวขับเคลื่อนตัวไหน กี่เปอร์เซ็นต์ <strong>(3)</strong> ราคาที่เปลี่ยนไปสะท้อนการเปลี่ยนแปลงมากเกินไปหรือน้อยเกินไป</p>
+    <p>โอกาสเกิดจากช่องว่างในข้อ (3) เสมอ ไม่ใช่จากตัวเหตุการณ์เอง</p>
+  </div>
+
+  <div class="apply-box">
+    <div class="lbl">วิธีใช้กับหุ้นจริง</div>
+    <ol>
+      <li>ทำรายการเฝ้าระวัง: หุ้นที่คุณเข้าใจธุรกิจดีอยู่แล้ว 10–15 ตัว พร้อมความคาดหวังที่ราคาสะท้อนอยู่ของแต่ละตัว จดวันที่ไว้</li>
+      <li>เมื่อเกิดเหตุการณ์ในตารางข้างบนกับตัวใดตัวหนึ่ง คุณจะพร้อมกว่าคนอื่นทันที เพราะคุณรู้อยู่แล้วว่า “ก่อนหน้านี้ราคาคาดหวังอะไร”</li>
+      <li>อย่าเริ่มวิเคราะห์ตอนข่าวออก — งานวิเคราะห์ต้องเสร็จก่อนข่าว ตอนข่าวออกเหลือแค่การตัดสินใจ</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">Reflection</div>
+    <ol>
+      <li>ครั้งล่าสุดที่หุ้นตัวหนึ่งตกแรงเพราะข่าว คุณรู้ไหมว่าก่อนหน้านั้นราคาคาดหวังอะไรไว้</li>
+      <li>คุณมีรายการเฝ้าระวังที่ “วิเคราะห์เสร็จแล้ว รอราคา” อยู่กี่ตัว</li>
+      <li>ในหุ้นที่คุณพลาดโอกาสไป คุณพลาดเพราะไม่รู้จักบริษัท หรือเพราะรู้จักแต่ยังไม่ได้ทำการบ้านไว้ล่วงหน้า</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ SYNTHESIS ============ -->
+<div class="ch-open">
+  <div class="ch-num">13</div>
+  <div class="ch-label">Synthesis · บทตกผลึก</div>
+  <div class="ch-title">Your Expectations Workflow<em>จากหนังสือ 12 บท สู่กระบวนการที่ใช้ได้พรุ่งนี้เช้า</em></div>
+  <div class="ch-essence">ถ้าจำได้แค่อย่างเดียวจากทั้งเล่ม ให้จำสิ่งนี้ — และถ้าทำได้แค่อย่างเดียว ให้ทำกระบวนการแปดขั้นข้างล่างนี้กับหุ้นตัวถัดไปที่คุณจะซื้อ</div>
+</div>
+
+<div class="page">
+  <div class="eyebrow">The One Thing · แก่นเดียวของทั้งเล่ม</div>
+
+  <div class="blockquote-full">
+    <div class="q">Don’t forecast the future. Read the future that is already priced in.</div>
+    <div class="qth">อย่าพยากรณ์อนาคต — ให้อ่านอนาคตที่ถูกใส่ไว้ในราคาแล้ว<br><span style="font-size:13px;color:var(--ink-faint)">(ประโยคนี้ผมเรียบเรียงขึ้นเองเพื่อสรุปแก่นของหนังสือ ไม่ใช่คำพูดของผู้เขียน)</span></div>
+    <div class="qa">Master One-Liner</div>
+  </div>
+
+  <h1>“บริษัทดี” กับ “หุ้นดี” เป็นคนละคำถาม</h1>
+
+  <p><span class="src src-book">จากหนังสือ</span> นี่คือข้อสรุปที่มีผลต่อพอร์ตของคุณมากที่สุด และเป็นสิ่งที่ทั้งเล่มพยายามพิสูจน์ — บริษัทที่ยอดเยี่ยมมักมีราคาที่สะท้อนความยอดเยี่ยมนั้นไว้แล้ว การซื้อบริษัทยอดเยี่ยมในราคาที่คาดหวังความยอดเยี่ยมระดับสมบูรณ์แบบ จึงให้ผลตอบแทนแค่ระดับปกติในกรณีที่ดีที่สุด และเลวร้ายมากในกรณีที่บริษัททำได้ต่ำกว่าคาดเพียงเล็กน้อย</p>
+
+  <table>
+    <tr><th></th><th>บริษัทดี</th><th>หุ้นดี</th></tr>
+    <tr><td><strong>คำถามที่ตอบ</strong></td><td>ธุรกิจนี้สร้างผลตอบแทนเหนือต้นทุนทุนได้ไหม</td><td>ราคานี้คาดหวังไว้มากเกินหรือน้อยเกินไป</td></tr>
+    <tr><td><strong>เครื่องมือ</strong></td><td>วิเคราะห์การแข่งขัน, ROIC, คูเมือง</td><td>Reverse DCF + การประเมินความน่าจะเป็นของการปรับความคาดหวัง</td></tr>
+    <tr><td><strong>เมื่อไรที่สองอย่างนี้ตรงกัน</strong></td><td colspan="2">เมื่อธุรกิจดี <em>และ</em> ตลาดยังไม่รับรู้ว่ามันดีขนาดนั้น — ซึ่งเกิดไม่บ่อย และมักเกิดตอนที่ทุกคนกำลังกลัว</td></tr>
+    <tr><td><strong>กับดักที่พบบ่อย</strong></td><td colspan="2">เอาคำตอบของคอลัมน์ซ้ายไปตอบคำถามของคอลัมน์ขวา — “บริษัทนี้ดีมาก เพราะฉะนั้นซื้อเลย”</td></tr>
+  </table>
+
+  <div class="ladder">
+    <div class="ladder-step wrong"><div class="ladder-tag">ความเชื่อเดิม</div><div class="ladder-text">ถ้าเลือกบริษัทที่ดีที่สุดได้ ผลตอบแทนจะตามมาเอง</div></div>
+    <div class="ladder-arrow">↓</div>
+    <div class="ladder-step truth"><div class="ladder-tag">ความจริง</div><div class="ladder-text">ผลตอบแทนส่วนเกินมาจากความแตกต่างระหว่างความคาดหวังกับผลลัพธ์จริง ไม่ใช่จากคุณภาพของบริษัทโดยตรง บริษัทธรรมดาที่ตลาดคาดต่ำเกินไป ให้ผลตอบแทนดีกว่าบริษัทยอดเยี่ยมที่ตลาดคาดสูงเกินไป</div></div>
+    <div class="ladder-arrow">↓</div>
+    <div class="ladder-step action"><div class="ladder-tag">ลงมือทำ</div><div class="ladder-text">แยกกระบวนการเป็นสองขั้นชัดเจน: ขั้นแรกตัดสินคุณภาพธุรกิจ ขั้นที่สองตัดสินความคาดหวังในราคา — และห้ามข้ามขั้นที่สองไม่ว่าจะรักบริษัทนั้นแค่ไหน</div></div>
+  </div>
+
+  <h2>อะไรทำให้ตลาดเปลี่ยนความคาดหวัง</h2>
+  <p><span class="src src-interp">ตีความ</span> รวบรวมจากทั้งเล่ม การปรับความคาดหวังที่มีนัยสำคัญมักมาจากสามระดับ เรียงจากผลกระทบน้อยไปมาก</p>
+  <ul style="font-family:'Noto Serif Thai',serif;font-size:15.5px;line-height:1.9;color:var(--ink-soft);">
+    <li><strong>ระดับที่ 1 — ผลประกอบการรายไตรมาส</strong> เปลี่ยนความคาดหวังระยะสั้น ผลต่อมูลค่ามักน้อย แต่ทำให้ราคาผันผวนมาก</li>
+    <li><strong>ระดับที่ 2 — การเปลี่ยนแปลงของตัวขับเคลื่อนอย่างถาวร</strong> เช่น อัตรากำไรที่ยกระดับขึ้นจากขนาดที่ใหญ่ขึ้นจริง หรืออัตราการลงทุนที่ลดลงถาวรจากรูปแบบธุรกิจใหม่ — นี่คือระดับที่ให้ผลตอบแทนมากที่สุด</li>
+    <li><strong>ระดับที่ 3 — การเปลี่ยนแปลงของช่วงเวลาที่ได้เปรียบ</strong> ตลาดเปลี่ยนความเชื่อว่าบริษัทจะเก่งได้ “นานแค่ไหน” — ผลกระทบใหญ่ที่สุดและมองเห็นยากที่สุด มักเกิดพร้อมกับการเปลี่ยนโครงสร้างอุตสาหกรรม</li>
+  </ul>
+  <p><span class="src src-ext">ต่อยอด</span> ข้อสังเกตเชิงปฏิบัติของผม: นักลงทุนส่วนใหญ่แข่งกันที่ระดับ 1 ซึ่งเป็นระดับที่มีคนแข่งเยอะที่สุดและได้ผลตอบแทนน้อยที่สุด ความได้เปรียบที่ยั่งยืนอยู่ที่ระดับ 2 และ 3 ซึ่งต้องใช้ความเข้าใจธุรกิจ ไม่ใช่ความเร็วในการอ่านงบ</p>
+
+  <h2>Expectations Investing Workflow — แปดขั้นตอน</h2>
+  <div class="flow">
+    <div class="flow-step"><div class="n">ขั้นที่ 1</div><div class="t">Business Understanding · เข้าใจธุรกิจก่อน</div><div class="d">บริษัทหาเงินจากอะไร ใครคือลูกค้า อะไรคือต้นทุนหลัก จัดประเภทเป็นธุรกิจกายภาพ บริการ หรือความรู้ (บทที่ 9)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 2</div><div class="t">Reverse Market Expectations · ถอดความคาดหวังจากราคา</div><div class="d">ทำ Reverse DCF หา “มูลค่าถ้าไม่โต” และ “จำนวนปีที่ราคาสะท้อนอยู่” แปลงเป็นประโยคภาษาคน (บทที่ 5)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 3</div><div class="t">Identify Critical Assumptions · หาสมมติฐานชี้ขาด</div><div class="d">ทดสอบความไวเพื่อหา turbo trigger — ตัวแปรตัวเดียวที่ขยับมูลค่ามากที่สุด (บทที่ 6)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 4</div><div class="t">Research Fundamental Reality · วิจัยความจริงของธุรกิจ</div><div class="d">ใช้การวิเคราะห์การแข่งขันเพื่อตัดสินว่าสมมติฐานชี้ขาดนั้นเป็นไปได้แค่ไหน และ CAP ควรเป็นกี่ปี (บทที่ 4)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 5</div><div class="t">Find the Expectations Gap · หาช่องว่าง</div><div class="d">เปรียบเทียบความคาดหวังของตลาดกับข้อสรุปของคุณ ระบุให้ชัดว่าคุณเห็นต่างตรงตัวแปรไหน และมีหลักฐานอะไร</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 6</div><div class="t">Bear / Base / Bull · วางฉากทัศน์พร้อมความน่าจะเป็น</div><div class="d">แต่ละฉากทัศน์ต้องมีทั้งตัวเลขและเรื่องเล่า ความน่าจะเป็นรวมกันเป็น 100% (บทที่ 6–7)</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 7</div><div class="t">Investment Thesis · เขียนวิทยานิพนธ์การลงทุน</div><div class="d">สามย่อหน้า: ตลาดคาดอะไร ผมเห็นต่างอย่างไร และอะไรจะทำให้ตลาดเปลี่ยนใจภายในกรอบเวลาไหน</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step"><div class="n">ขั้นที่ 8</div><div class="t">Falsification &amp; Monitoring · เขียนเงื่อนไขที่พิสูจน์ว่าผิด แล้วเฝ้าดู</div><div class="d">ระบุตัวเลขหรือเหตุการณ์ที่ถ้าเกิดขึ้นแปลว่าคุณคิดผิด แล้วตรวจทุกไตรมาสโดยไม่ต่อรองกับตัวเอง</div></div>
+  </div>
+
+  <div class="insight-box">
+    <div class="lbl">Insight · ขั้นที่ 8 คือขั้นที่คนข้ามมากที่สุด และแพงที่สุด</div>
+    <p>ถ้าคุณไม่เขียนเงื่อนไขที่พิสูจน์ว่าคุณผิดไว้ล่วงหน้า สมองจะหาเหตุผลเข้าข้างตัวเองได้เสมอเมื่อข้อมูลใหม่ขัดแย้งกับสิ่งที่คุณเชื่อ</p>
+    <p>เขียนไว้ตอนที่ยังไม่มีเงินอยู่ในเกม เพราะตอนนั้นคือตอนเดียวที่คุณคิดได้อย่างเป็นกลาง</p>
+  </div>
+</div>
+
+<!-- ============ CHECKLIST ============ -->
+<div class="page" style="background:var(--paper-mid);border-top:1px solid var(--paper-shadow);">
+  <div class="eyebrow">The Checklist · ใช้กับหุ้นตัวใหม่ได้ทันที</div>
+  <h1>Expectations Investing Checklist — 25 คำถาม</h1>
+  <p>พิมพ์ออกมาหรือคัดลงสมุด แล้วตอบให้ครบก่อนกดซื้อ — คำถามที่ตอบไม่ได้ คือขนาดของความเสี่ยงที่คุณกำลังรับโดยไม่รู้ตัว</p>
+
+  <div class="checklist">
+    <div class="ck-group">ก · เข้าใจธุรกิจ (1–4)</div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>1.</b> บริษัทนี้หาเงินจากอะไร และรายได้แต่ละก้อนมาจากไหนบ้าง</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>2.</b> เป็นธุรกิจกายภาพ บริการ หรือความรู้ — และตัวชี้วัดที่สำคัญของประเภทนี้คืออะไร</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>3.</b> ยอดขายที่เพิ่ม 100 บาท ต้องใช้เงินลงทุนเพิ่มกี่บาท</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>4.</b> ROIC ห้าปีย้อนหลังเป็นเท่าไร และสูงกว่าต้นทุนเงินทุนหรือไม่</div></div>
+
+    <div class="ck-group">ข · อ่านความคาดหวังจากราคา (5–10)</div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>5.</b> <b>What is priced in?</b> ราคานี้กำลังคาดหวังอัตราการเติบโตเท่าไร อัตรากำไรเท่าไร นานกี่ปี</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>6.</b> มูลค่าของ “ธุรกิจปัจจุบันที่ไม่โตเลย” เป็นกี่ % ของราคาปัจจุบัน</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>7.</b> ตลาดคาดว่าบริษัทจะสร้างผลตอบแทนเหนือต้นทุนทุนได้อีกกี่ปี และตัวเลขนั้นสมเหตุสมผลไหมเมื่อเทียบกับประวัติศาสตร์ของอุตสาหกรรม</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>8.</b> ถ้าเปลี่ยนชุดสมมติฐานเป็นอีกแบบ (โตแรงระยะสั้น vs โตช้าระยะยาว) ราคาเดียวกันนี้อธิบายได้ด้วยเรื่องเล่ากี่แบบ</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>9.</b> Assumption ไหนสำคัญที่สุด — turbo trigger ของหุ้นตัวนี้คืออะไร</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>10.</b> ผมทำ Reverse DCF ก่อนหรือหลังอ่านบทวิเคราะห์ของคนอื่น</div></div>
+
+    <div class="ck-group">ค · ตรวจสอบความจริงของธุรกิจ (11–16)</div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>11.</b> ROIC ระดับนี้ยั่งยืนหรือไม่ และอะไรคือสิ่งที่ค้ำมันไว้</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>12.</b> อะไรจะทำให้อัตรากำไรหรือ ROIC ถดถอยกลับสู่ค่าเฉลี่ย และมีสัญญาณอะไรบ้างแล้วหรือยัง</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>13.</b> บริษัทเคยขึ้นราคาสินค้าโดยไม่เสียลูกค้าหรือไม่ — มีอำนาจตั้งราคาจริงหรือเปล่า</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>14.</b> การเติบโตที่ผ่านมา มาจากปริมาณ ราคา หรือส่วนผสมสินค้า กี่เปอร์เซ็นต์</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>15.</b> ส่วนแบ่งตลาดเปลี่ยนมือบ่อยแค่ไหนในสิบปีที่ผ่านมา</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>16.</b> มีคู่แข่งที่เริ่มจากตลาดล่างแล้วกำลังไต่ขึ้นมาหรือไม่</div></div>
+
+    <div class="ck-group">ง · หาช่องว่างความคาดหวัง (17–20)</div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>17.</b> ผมเห็นต่างจากตลาดตรงตัวแปรไหนบ้าง และต่างกันกี่เปอร์เซ็นต์</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>18.</b> หลักฐานอะไรสนับสนุนความเห็นต่างนี้ และหลักฐานนั้นคนอื่นเข้าถึงได้ไหม</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>19.</b> ทำไมตลาดถึงยังมองไม่เห็นสิ่งที่ผมเห็น — มีเหตุผลเชิงโครงสร้างรองรับหรือแค่ผมคิดไปเอง</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>20.</b> อะไรจะทำให้ตลาดเปลี่ยนใจ และคาดว่าจะใช้เวลานานแค่ไหน</div></div>
+
+    <div class="ck-group">จ · ตัดสินใจและเฝ้าติดตาม (21–25)</div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>21.</b> ฉากทัศน์ขาลง ฐาน ขาขึ้น ให้มูลค่าเท่าไร และผมให้ความน่าจะเป็นเท่าไรกับแต่ละอัน</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>22.</b> มูลค่าคาดหวังถ่วงน้ำหนักสูงกว่าราคากี่ % และผ่านเกณฑ์ส่วนเผื่อความปลอดภัยที่ผมตั้งไว้ล่วงหน้าหรือไม่</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>23.</b> ในฉากทัศน์ขาลง ผมจะขาดทุนกี่ % และขนาดสถานะที่ถือทำให้ผมนอนหลับได้ไหม</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>24.</b> อะไรเกิดขึ้นแล้วแปลว่า thesis ของผมผิด — เขียนเป็นตัวเลขหรือเหตุการณ์ที่ตรวจสอบได้อย่างน้อย 3 ข้อ</div></div>
+    <div class="ck"><div class="ck-box"></div><div class="ck-txt"><b>25.</b> ผมจะทบทวนความคาดหวังชุดนี้เมื่อไร และจะใช้ข้อมูลอะไรเป็นตัวตรวจ</div></div>
+  </div>
+
+  <h2>อ่านต่อจากที่นี่</h2>
+  <table>
+    <tr><th>หนังสือ / เอกสาร</th><th>ผู้เขียน</th><th>เชื่อมกับเล่มนี้อย่างไร</th></tr>
+    <tr><td><em>Measuring the Moat</em> (รายงานวิจัย เผยแพร่ฟรี)</td><td>Michael J. Mauboussin</td><td>ขยายบทที่ 4 เรื่องการวัดคูเมืองแบบละเอียด — เนื้อหาส่วนหนึ่งถูกนำมาใส่ในฉบับปรับปรุงของเล่มนี้</td></tr>
+    <tr><td><em>Creating Shareholder Value</em></td><td>Alfred Rappaport</td><td>ต้นทางของกรอบ value drivers ทั้งหมดที่ใช้ในบทที่ 2</td></tr>
+    <tr><td><em>Narrative and Numbers</em></td><td>Aswath Damodaran</td><td>เสริมด้านการผูก “เรื่องเล่า” เข้ากับตัวเลขในฉากทัศน์ (บทที่ 6)</td></tr>
+    <tr><td><em>More Than You Know</em></td><td>Michael J. Mauboussin</td><td>ขยายเรื่องกับดักทางพฤติกรรมและการคิดเชิงความน่าจะเป็น (บทที่ 7)</td></tr>
+    <tr><td><em>Thinking in Bets</em></td><td>Annie Duke</td><td>ฝึกแยก “คุณภาพการตัดสินใจ” ออกจาก “ผลลัพธ์” ซึ่งจำเป็นมากเมื่อทำงานกับความน่าจะเป็น</td></tr>
+  </table>
+
+  <div class="apply-box">
+    <div class="lbl">พิธีกรรมก่อนกดซื้อ — ทำ 7 ข้อนี้ทุกครั้ง</div>
+    <ol>
+      <li>เขียนประโยค “ราคานี้กำลังคาดหวังว่า…” ให้ได้หนึ่งประโยคเต็ม</li>
+      <li>คำนวณว่ามูลค่าธุรกิจปัจจุบันคิดเป็นกี่ % ของราคา</li>
+      <li>ระบุ turbo trigger และหลักฐานที่คุณมีเกี่ยวกับมัน</li>
+      <li>เขียนฉากทัศน์สามแบบพร้อมความน่าจะเป็นที่รวมกันได้ 100%</li>
+      <li>คำนวณมูลค่าคาดหวังและส่วนต่างจากราคา แล้วเทียบกับเกณฑ์ที่ตั้งไว้ล่วงหน้า</li>
+      <li>เขียนเงื่อนไขที่พิสูจน์ว่าคุณผิดอย่างน้อย 3 ข้อ</li>
+      <li>ลงวันที่ แล้วเก็บไว้ทบทวนในอีก 3 เดือน</li>
+    </ol>
+  </div>
+
+  <div class="reflection">
+    <div class="lbl">คำถามสุดท้าย</div>
+    <ol>
+      <li>ถ้าคุณต้องอธิบายให้ตัวเองเมื่อห้าปีก่อนฟังว่าทำไมการอ่านราคาสำคัญกว่าการทำนายราคา คุณจะพูดว่าอย่างไร</li>
+      <li>หุ้นตัวไหนในพอร์ตที่คุณ “รัก” มากที่สุด — และคุณกล้าทำ Reverse DCF กับมันไหม</li>
+      <li>ในสามเดือนข้างหน้า คุณจะใช้กระบวนการนี้กับหุ้นกี่ตัว และตัวแรกคือตัวไหน</li>
+    </ol>
+  </div>
+</div>
+
+<div class="book-footer">
+  <div class="book-footer-mark">◆</div>
+  <div class="book-footer-text">ราคาหุ้นไม่ได้บอกว่าบริษัทดีแค่ไหน มันบอกว่าตลาดคาดหวังอะไรไว้แล้วบ้าง — และผลตอบแทนของคุณเกิดขึ้นในช่องว่างระหว่างความคาดหวังกับความจริง</div>
+  <div class="book-footer-author">Expectations Investing · Personal Study Edition</div>
+</div>
+
+</div>
+</body>
+</html>

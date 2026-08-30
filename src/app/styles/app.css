@@ -1,0 +1,4 @@
+/* Tailwind CSS 4 CSS-first configuration.
+   Scoped to the app shell only — this stylesheet must never reach
+   uploaded HTML rendered inside the content-origin iframe (AGENT.md §22). */
+@import "tailwindcss";
