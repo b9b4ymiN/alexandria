@@ -339,16 +339,16 @@ Required nodes: `G5.1 G5.2 G5.3`
 
 | Node | Status | Depends On | Blocks | Parallel With |
 |---|---|---|---|---|
-| G1.0 | IN_PROGRESS | — | G1.1, G1.2 | — |
-| G1.1 | BLOCKED | G1.0 | G1.5, G1.9 | G1.2 |
-| G1.2 | BLOCKED | G1.0 | G1.3, G1.4, G1.6 | G1.1 |
-| G1.3 | BLOCKED | G1.2 | G1.5 | G1.4, G1.6 |
-| G1.4 | BLOCKED | G1.2 | G1.5 | G1.3, G1.6 |
+| G1.0 | DONE | — | G1.1, G1.2 | — |
+| G1.1 | DONE | G1.0 | G1.5, G1.9 | G1.2 |
+| G1.2 | DONE | G1.0 | G1.3, G1.4, G1.6 | G1.1 |
+| G1.3 | DONE | G1.2 | G1.5 | G1.4, G1.6, G1.9 |
+| G1.4 | IN_PROGRESS | G1.2 | G1.5 | G1.3, G1.6, G1.9 |
 | G1.5 | BLOCKED | G1.1, G1.3, G1.4 | G1.7, G1.8 | G1.6 |
-| G1.6 | BLOCKED | G1.2 | G1.7 | G1.3, G1.4, G1.5 |
+| G1.6 | IN_PROGRESS | G1.2 | G1.7 | G1.3, G1.4, G1.5, G1.9 |
 | G1.7 | BLOCKED | G1.5, G1.6 | G1.11 | G1.8, G1.9 |
 | G1.8 | BLOCKED | G1.5 | G1.10 | G1.7, G1.9 |
-| G1.9 | BLOCKED | G1.1 | G1.12 | G1.7, G1.8 |
+| G1.9 | REVIEW | G1.1 | G1.12 | G1.7, G1.8, G1.2 |
 | G1.10 | BLOCKED | G1.8 | G1.11, G1.12 | — |
 | G1.11 | BLOCKED | G1.7, G1.10 | G1.12 | — |
 | G1.12 | BLOCKED | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
@@ -388,6 +388,30 @@ Total execution nodes: **33**
 
 ---
 
+## 12.1 Branch & Commit Policy
+
+Decided 2026-08-30. The orchestrator owns branching; executors never create, switch, rename or merge a branch, and never open a pull request.
+
+```text
+main                          default branch, protected by convention
+├── feat/m1-vertical-slice    G1.1 … G1.12   -> merge at CHECKPOINT A
+├── feat/m2-categories-tags   G2.1 … G2.6    -> merge at CHECKPOINT B
+├── feat/m3-versioning        G3.1 … G3.5    -> merge at CHECKPOINT C
+├── feat/m4-search            G4.1 … G4.2    -> merge at CHECKPOINT D
+├── feat/m5-mcp               G5.1 … G5.3    -> merge at CHECKPOINT E
+└── chore/m6-release          G6.1 … G6.4    -> merge at RELEASE GATE
+```
+
+Rules:
+
+1. `main` starts at commit `db8ac2d`, the verified G1.0 scaffold, and receives work only through a milestone merge.
+2. One commit per node, using that node's `Suggested Commit` line, in Conventional Commits form: lowercase, imperative, no trailing period.
+3. A milestone branch merges into `main` only after its checkpoint gate has passed and the orchestrator has verified the evidence — six merges in total, matching the six review points.
+4. Commit messages carry no generated-by footer.
+5. An executor that believes it needs a branch operation must STOP and report instead.
+
+---
+
 # Nodes
 
 ---
@@ -397,7 +421,7 @@ Total execution nodes: **33**
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -546,13 +570,55 @@ chore(scaffold): initialize alexandria workspace, workers and toolchain
 
 ### Evidence
 
-> Executor fills, Opus verifies
+> Verified independently by the orchestrator on 2026-08-30, not accepted on report.
 
 ```text
 Changed:
+  22 files created; commit db8ac2d "chore(scaffold): initialize alexandria
+  workspace, workers and toolchain" on branch chore/scaffold.
+  Repo: github.com/b9b4ymiN/alexandria — confirmed PRIVATE via gh repo view.
+
 Tests:
-Verification:
+  pnpm test -> 1 file, 2 tests passed. Smoke test loads both Worker entry
+  points and carries a @ts-expect-error strict-mode guard that fails
+  typecheck if strict is ever disabled.
+
+Verification (re-run by the orchestrator, not copied from the report):
+  pnpm typecheck -> exit 0 (both tsconfig.json and tsconfig.worker.json)
+  pnpm lint      -> exit 0
+  pnpm test      -> exit 0
+  pnpm build     -> exit 0; emits dist/alexandria/index.js (Worker) and
+                    dist/client/{index.html,assets/*} (SPA)
+  wrangler       -> 4.127.1
+  gh repo view   -> visibility PRIVATE, owner b9b4ymiN
+  secret scan    -> the single history match is this plan's own grep pattern
+                    on line 7120 of IMPLEMENTATION_PLAN.md, not a value.
+                    No .dev.vars tracked. No account id committed.
+
+Resolved versions (all inside the TECHSTACK §25 families):
+  react 19.2.8 · vite 8.2.2 · react-router 8.3.1 · tailwindcss 4.3.3
+  typescript 6.0.3 · hono 4.13.5 · zod 4.5.4 · wrangler 4.127.1
+  @cloudflare/vite-plugin 1.54.2 · vitest 4.1.11
+  @cloudflare/vitest-pool-workers 0.22.0 · @playwright/test 1.62.1
+  TypeScript 7.0.2 is the npm latest dist-tag and was correctly NOT used,
+  because TECHSTACK §25 pins the 6.0.x family.
+
+Accepted deviations (both verified by the orchestrator):
+  1. compatibility_date is 2026-08-22, not today. The workerd binary in
+     @cloudflare/vitest-pool-workers 0.22.0 supports dates only up to
+     2026-08-22, and a later date prevents the local Workers runtime from
+     starting at all. Choosing the newest supported date keeps the test
+     runtime real instead of stubbed. Revisit when the tooling advances;
+     it is a one-line change in both wrangler configs.
+  2. vitest.config.ts uses cloudflareTest() from the package root rather
+     than defineWorkersConfig from a "./config" subpath. Verified against
+     the installed package's exports map, which publishes only ".",
+     "./types" and "./codemods/*". Same approved package, current API.
+
 Notes:
+  Empty directories (src/api, src/domain, migrations, tests/integration,
+  tests/browser) exist on disk but are untracked, since git does not track
+  empty directories. G1.1 and G1.2 populate them.
 ```
 
 ---
@@ -562,7 +628,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -719,11 +785,48 @@ feat(db): add phase 1 schema, indexes and category seed migrations
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30.
+
 ```text
 Changed:
-Tests:
-Verification:
+  migrations/0001_init.sql, migrations/0002_seed_categories.sql,
+  tests/integration/schema.test.ts (new); wrangler.jsonc (D1 binding "DB").
+
+Verification (re-run by the orchestrator):
+  DDL equivalence — a normalising script compared each CREATE TABLE block in
+  migrations/0001_init.sql against the corresponding block in SPEC.md §5.
+  Result: all 5 tables identical after comment and whitespace normalisation.
+  Checked, not eyeballed.
+  pnpm test -- tests/integration/schema.test.ts -> 18/18 passed
+  Phase 1.5 leakage scan over migrations/ -> no index_state, embedding,
+  dria or ai_ column present.
+  Test source inspected: it imports the real migration files with Vite's
+  ?raw suffix, so the suite exercises the SQL that ships rather than a
+  hand-copied approximation.
+
+Negative constraints proven (all 8 required, each its own named test):
+  duplicate root slug · duplicate sibling slug · delete category with child ·
+  delete category with document · duplicate version_no · duplicate r2_key ·
+  created_by outside ('admin','agent') · document with unknown category.
+  Foreign key enforcement asserted behaviourally and by pragma, not assumed.
+
+Accepted deviation:
+  The "migrations applied twice is a no-op" regression is evidenced at the
+  wrangler CLI level rather than inside vitest. That is correct rather than a
+  gap: idempotency is provided by wrangler's d1_migrations bookkeeping table,
+  which the in-test raw-SQL runner does not and should not reproduce. The
+  executor reported this openly instead of fabricating synthetic coverage.
+
+Carried forward as a note for later migration nodes:
+  The test helper splits migration SQL on ';' after stripping '--' comments.
+  That is safe for the current files, but a future migration containing a
+  semicolon inside a string literal or a trigger body would break it. Any
+  node adding a migration must check this helper still holds.
+
 Notes:
+  wrangler.jsonc carries database_id 00000000-0000-0000-0000-000000000000 as
+  a clearly-commented placeholder; local migrations accept it. G1.12 replaces
+  it with the real id.
 ```
 
 ---
@@ -733,7 +836,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -885,11 +988,59 @@ feat(api): add error model, response envelope and hono app skeleton
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30.
+
 ```text
 Changed:
-Tests:
-Verification:
+  src/shared/{errors,envelope,types}.ts, src/api/app.ts, three routes/*/
+  index.ts and eleven empty leaf route files, tests/unit/errors.test.ts,
+  tests/integration/app-skeleton.test.ts; src/index.ts modified.
+
+Verification (re-run by the orchestrator):
+  pnpm test      -> 4 files, 37 tests passed
+  pnpm typecheck -> exit 0
+  pnpm lint      -> exit 0
+  pnpm build     -> exit 0
+  CORS scan over src/ -> matches appear only inside explanatory comments;
+    no middleware, no Access-Control header anywhere.
+  Phase 1.5 scan over src/ -> no DRIA_* or AI_* code; the only match is a
+    comment stating they are deliberately absent.
+  Routing skeleton -> 15 files under src/api, each leaf carrying an
+    ownership header naming its future node.
+
+ErrorCode union: 25 codes, exactly the SPEC §24 Phase 1 subset. Status
+mapping is total and enforced twice — by Record<ErrorCode, number> at
+compile time and by a runtime test iterating ERROR_CODES.
+
+Cross-node contracts recorded by the orchestrator (three items):
+
+  1. UNCHANGED is mapped to 409 in ERROR_STATUS, but the version-create
+     path must NOT surface it through fail(). G3.1 returns HTTP 200 with
+     { unchanged: true }, and G5.2 reports it to the agent as a successful
+     no-op. The code exists because SPEC §24 lists it; the 409 mapping is
+     a fallback for a caller that deliberately treats it as an error. See
+     the clarification block on node G3.1.
+
+  2. src/index.ts declares env and ctx as OPTIONAL so the handler stays
+     callable with a bare Request, matching the G1.0 smoke test's calling
+     convention that G1.2 was not permitted to edit. Accepted: the failure
+     mode is a loud TypeError in a test that forgets bindings, not silent
+     wrong behaviour. Every later route node must exercise its routes with
+     real bindings through the Workers pool, never through a bare
+     fetch(request) call. This instruction is carried into the G1.7, G1.8
+     and G5.1 execution packets.
+
+  3. The 404 and unexpected-error paths emit transport-level codes
+     NOT_FOUND and INTERNAL_ERROR, which are deliberately outside the
+     ErrorCode union because SPEC §24 defines no generic route-missing or
+     internal-failure code. The envelope's code field is a string in SPEC
+     §18, so this is compliant. Recorded so no later node "fixes" it by
+     inventing domain codes for transport concerns.
+
 Notes:
+  admin/documents.ts (G1.7) and admin/versions.ts (G3.1) intentionally
+  share the /documents mount prefix with disjoint sub-paths, documented in
+  both file headers. Hono supports repeated .route() calls on one prefix.
 ```
 
 ---
@@ -899,7 +1050,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -1038,11 +1189,42 @@ feat(domain): add deterministic slug generation and validation
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30, including an
+> orchestrator-authored fuzz check beyond the executor's own suite.
+
 ```text
 Changed:
-Tests:
-Verification:
+  src/domain/documents/slug.ts, tests/unit/slug.test.ts (new).
+  package.json and pnpm-lock.yaml untouched — no dependency added.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tests/unit/slug.test.ts -> 25/25 passed
+  pnpm test (full suite)               -> 5 files, 62/62 passed
+  Source read in full: no database access, no transliteration library,
+  no code path that mutates an existing slug.
+
+Independent fuzz check written and run by the orchestrator, then removed:
+  26 hostile inputs — empty, whitespace, punctuation-only, emoji-only,
+  hyphen-only, leading/trailing separators, accented Latin, 200-character
+  titles, a 40-word hyphen chain, Thai, Japanese, Greek, tab and newline,
+  hidden filenames, extensionless filenames — crossed with 5 document ids
+  including a UUID, an empty id and a punctuation-only id. 130 combinations.
+  Result: every produced slug matched ^[a-z0-9]+(?:-[a-z0-9]+)*$, none
+  exceeded 80 characters, and generation was byte-identical on repeat.
+
+Behaviour confirmed by direct execution:
+  "Expectations Investing"                 -> expectations-investing
+  Thai title + Latin filename              -> falls through to the filename
+  Thai title + Thai filename               -> doc-{shortId}, deterministic
+  base taken through base-3                -> base-4
+  always-taken predicate                   -> AppError SLUG_CONFLICT after
+                                              exactly 51 probes, bounded
+
 Notes:
+  Diacritics are handled with native NFKD normalisation plus combining-mark
+  stripping, so no transliteration dependency was needed. A non-Latin title
+  deliberately normalises to empty, which is the mechanism that drives the
+  SPEC §10 fallback rather than a bug.
 ```
 
 ---
@@ -1052,7 +1234,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
@@ -1423,7 +1605,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
@@ -1924,8 +2106,12 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+REVIEW
 ```
+
+### Orchestrator clarification (2026-08-30)
+
+The content Worker serves HTML, not the JSON API envelope, so it **must not import from `src/shared/`**. Its 404 is a minimal HTML page and its failure logging uses local literal strings. This removes a soft coupling to G1.2, which is why this node can run concurrently with it. The `Read First` reference to `src/shared/errors.ts` below is informational only; do not create an import.
 
 ### Goal
 
@@ -3595,6 +3781,10 @@ Notes:
 ```text
 BLOCKED
 ```
+
+### Orchestrator clarification (2026-08-30)
+
+`ERROR_STATUS` in `src/shared/errors.ts` maps `UNCHANGED` to 409. **Do not use that mapping on this route.** An upload whose bytes match the current version is a successful no-op: return HTTP 200 with `{ unchanged: true }` through `ok()`, never through `fail()`. The union entry exists only because SPEC §24 lists the code.
 
 ### Goal
 
@@ -5478,6 +5668,7 @@ The sandbox attribute, the no-cookie rule, the read-only content Worker
 
 - A secret value appearing only in a source map → the scan must include source maps or source maps must not ship
 - A secret name appearing as a harmless type declaration → the scan distinguishes a name from a value and does not produce a false alarm that trains people to ignore it
+- **Known self-match:** this plan file contains the scan's own grep pattern, so a naive history scan reports one hit against `IMPLEMENTATION_PLAN.md`. The scan must exclude Markdown documentation or match on value shapes rather than names. Confirmed during G1.0 verification on 2026-08-30.
 - The content origin attempting a no-credentials fetch → allowed if the endpoint is public, which is correct and must not be reported as a failure
 - An uploaded document opening a popup → permitted by the sandbox, must not gain access to the opener's storage
 - A document attempting `window.top` access → blocked by the opaque origin
