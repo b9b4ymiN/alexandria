@@ -6,5 +6,32 @@
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "alexandria-db",
+      // Placeholder — no remote D1 database exists yet. Node G1.12 creates
+      // the real database and replaces this id when it applies remote
+      // migrations (IMPLEMENTATION_PLAN.md Node G1.1 scope: local only).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Node G1.6 (Admin Auth & Login Rate Limit): defence-in-depth throttle on
+  // POST /api/admin/login, keyed only on the trusted CF-Connecting-IP
+  // header (never X-Forwarded-For). 10 attempts per 60s window, so the
+  // 11th attempt inside a minute is the first to be rejected with 429 —
+  // matching the Node G1.6 edge case exactly. `namespace_id` is an
+  // account-scoped identifier Cloudflare assigns; this value is a
+  // placeholder like the D1 `database_id` above and needs no live account
+  // for local dev/test (the Workers Rate Limiting binding runs
+  // local-only under wrangler dev / vitest-pool-workers).
+  "ratelimits": [
+    {
+      "name": "LOGIN_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
 }
