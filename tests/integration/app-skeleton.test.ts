@@ -27,18 +27,24 @@ describe("routing skeleton — JSON 404 under /api/**", () => {
     }
   });
 
-  it("returns a JSON 404 envelope for /api/public itself and each empty leaf mount", async () => {
+  // Orchestrator update (2026-08-30): this test originally asserted that
+  // EVERY leaf mount answered 404, which was true only while every leaf was
+  // an empty router. G1.7 and G1.8 have since implemented real handlers on
+  // /api/public/documents, /api/public/categories and /api/admin/*, so the
+  // list below keeps only the mounts that are still genuinely unclaimed,
+  // plus unrouted sub-paths that must stay JSON 404 forever. The invariant
+  // under test is unchanged: nothing under /api/** ever answers with the
+  // SPA HTML shell.
+  it("returns a JSON 404 envelope for unclaimed mounts and unrouted /api paths", async () => {
     const app = createApp();
     const paths = [
-      "/api/public/documents",
-      "/api/public/categories",
       "/api/public/tags",
-      "/api/admin/documents",
-      "/api/admin/categories",
-      "/api/admin/tags",
       "/api/agent/documents",
       "/api/agent/categories",
       "/api/agent/tags",
+      "/api/public/documents/not-a-real-route/deeper",
+      "/api/admin/nothing-here",
+      "/api/nothing-here-either",
     ];
     for (const path of paths) {
       const res = await app.fetch(new Request(`https://example.com${path}`));

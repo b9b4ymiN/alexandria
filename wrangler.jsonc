@@ -7,6 +7,15 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  // Origins are configuration, never literals in source, so moving to a
+  // custom domain later is a config change rather than a code change.
+  // CONTENT_ORIGIN must stay a DIFFERENT hostname from APP_ORIGIN: that
+  // separation is the browser-security boundary for uploaded HTML
+  // (SPEC.md §2, §16; IMPLEMENTATION_PLAN.md §5 Architecture Constraint 1).
+  "vars": {
+    "APP_ORIGIN": "https://alexandria.vcp-scanner.workers.dev",
+    "CONTENT_ORIGIN": "https://alexandria-content.vcp-scanner.workers.dev"
+  },
   "d1_databases": [
     {
       "binding": "DB",

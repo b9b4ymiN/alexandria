@@ -19,9 +19,19 @@
 //                        AGENT_API_KEY (G5.1),
 //                        CONTENT_PREVIEW_SIGNING_SECRET (G3.4)
 // ---------------------------------------------------------------------------
+// ORCHESTRATOR ADDITION (2026-08-30): APP_ORIGIN and CONTENT_ORIGIN are
+// plain configuration vars, not secrets. They are declared on the shared
+// contract rather than re-extended locally by each consumer because BOTH
+// G1.7 (which returns an absolute reader URL) and G1.8 (which returns an
+// absolute contentUrl) need them, and a shared value declared twice drifts.
+// Keeping them in configuration is what lets Alexandria move to a custom
+// domain later without a code change (IMPLEMENTATION_PLAN.md §3 Non-Goals,
+// "Custom domain ... swappable via configuration").
 export interface Env {
   DB: D1Database;
   DOCS: R2Bucket;
+  APP_ORIGIN: string;
+  CONTENT_ORIGIN: string;
   ADMIN_PASSWORD: string;
   ADMIN_SESSION_SIGNING_SECRET: string;
   AGENT_API_KEY: string;
