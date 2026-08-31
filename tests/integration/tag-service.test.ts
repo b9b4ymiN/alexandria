@@ -309,7 +309,7 @@ describe("TagService", () => {
       expect(await linkedTagNames(db(), documentId)).toEqual([]);
     });
 
-    it("rejects 21 supplied tags with TOO_MANY_TAGS and writes nothing", async () => {
+    it("rejects 21 supplied tags with TAG_LIMIT_EXCEEDED and writes nothing", async () => {
       const categoryId = await seedCategory(db());
       const documentId = await seedDocument(db(), categoryId);
       const names = Array.from({ length: MAX_DOCUMENT_TAGS + 1 }, (_, i) => `tag-${i}`);

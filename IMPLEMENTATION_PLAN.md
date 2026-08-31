@@ -3355,11 +3355,50 @@ feat(tags): add tag service with normalization, merge and document linking
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-30. Commit b9f5389.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/tags/tag-service.ts, tests/integration/tag-service.test.ts,
+  tests/integration/tag-api.test.ts (new);
+  src/api/routes/admin/tags.ts, src/shared/errors.ts,
+  tests/unit/errors.test.ts modified.
+  src/domain/tags/normalize.ts NOT touched — confirmed by diff against main.
+  Existing production tag rows therefore keep their identity.
+
+Verification (re-run by the orchestrator):
+  pnpm test -- tag-service, tag-api, errors -> 44/44 passed
+  The six authorized codes are present with EXACTLY the amended statuses:
+    TAG_NAME_REQUIRED 400 · TAG_NAME_TOO_LONG 400 · TAG_SELF_MERGE 400
+    TAG_LIMIT_EXCEEDED 400 · TAG_NOT_FOUND 404 · TAG_NAME_CONFLICT 409
+  Both amendments were applied: TAG_SELF_MERGE is 400 rather than the
+  proposed 409, and TOO_MANY_TAGS is gone entirely in favour of
+  TAG_LIMIT_EXCEEDED. No occurrence of the old name survives.
+  `git diff main -- src/shared/errors.ts` contains NO deletions, so the
+  edit is provably append-only and no shipped code lost a code it uses.
+  Route thinness: no .prepare, no .batch, no env.DB use and no SQL keyword
+  in src/api/routes/admin/tags.ts.
+  Merge atomicity read from the source, not taken on report: the link copy,
+  the source-link delete and the tag delete are assembled into one array
+  and executed by a single db.batch() call.
+
+Protocol note worth keeping:
+  This node hit a genuine gap — SPEC §24 names no TAG_* code — and it
+  STOPPED AND REPORTED with evidence rather than editing the shared error
+  union on its own initiative, which is the behaviour the packet asks for
+  and the opposite of what happened in G1.9. The ruling and its reasoning
+  are recorded above this Evidence block.
+
+Judgment calls accepted:
+  1. The routes parse the JSON body defensively and let a missing field
+     surface as a domain error (TAG_NAME_REQUIRED, TAG_NOT_FOUND) rather
+     than inventing a transport-level "bad body" code. Every path still
+     resolves to a meaningful code and none falls through to a raw 500.
+  2. mergeTags reads the moved/skipped link counts just before the batch
+     rather than inside it, so the reported counts could in principle be
+     stale under a concurrent writer. The MERGE ITSELF stays atomic; only
+     the reported numbers could drift, and Phase 1 has exactly one admin.
+     Recorded rather than fixed.
 ```
 
 ---
