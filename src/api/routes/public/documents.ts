@@ -21,10 +21,17 @@ function numberParam(raw: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function textParam(raw: string | undefined): string | undefined {
+  const value = raw?.trim();
+  return value === "" || value === undefined ? undefined : value;
+}
+
 documents.get("/", async (c) => {
   const result = await listDocuments(c.env.DB, {
     page: numberParam(c.req.query("page")),
     pageSize: numberParam(c.req.query("pageSize")),
+    query: textParam(c.req.query("query")),
+    categoryId: textParam(c.req.query("categoryId")),
   });
   return ok(result);
 });

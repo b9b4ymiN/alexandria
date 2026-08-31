@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "test:pwa": "pnpm build && playwright test -c playwright.pwa.config.ts",
     "db:migrate:local": "wrangler d1 migrations apply alexandria-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply alexandria-db --remote",
     "seed:local": "wrangler d1 execute alexandria-db --local --file tests/browser/seed-local.sql"

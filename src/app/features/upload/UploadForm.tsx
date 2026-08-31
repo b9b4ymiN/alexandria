@@ -131,16 +131,16 @@ export function UploadForm({ onSessionExpired }: { onSessionExpired: () => void 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div>
-        <label htmlFor="file" className="block text-sm font-medium text-stone-800">
+        <label htmlFor="file" className="block text-sm font-black text-[#071e4a]">
           HTML file
         </label>
         <input
           id="file"
           type="file"
           accept=".html"
-          className="mt-1.5 block w-full text-sm text-stone-700 file:mr-3 file:rounded-md file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium"
+          className="mt-2 block w-full border-2 border-dashed border-[#071e4a]/55 bg-white px-3 py-3 text-sm text-[#27416c] file:mr-3 file:border-0 file:bg-[#071e4a] file:px-3 file:py-2 file:text-sm file:font-bold file:text-[#f7f5ef]"
           onChange={(event) => {
             const chosen = event.target.files?.[0];
             if (chosen) void chooseFile(chosen);
@@ -149,7 +149,7 @@ export function UploadForm({ onSessionExpired }: { onSessionExpired: () => void 
       </div>
 
       {error !== null && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p role="alert" className="border border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}
         </p>
       )}
@@ -180,14 +180,14 @@ export function UploadForm({ onSessionExpired }: { onSessionExpired: () => void 
           />
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-stone-800">
+            <label htmlFor="category" className="block text-sm font-black text-[#071e4a]">
               Category
             </label>
             <select
               id="category"
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
-              className="mt-1.5 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm"
+              className="mt-2 block w-full border-2 border-[#071e4a] bg-white px-3 py-3 text-sm focus:outline-2 focus:outline-offset-2 focus:outline-[#0e9e85]"
             >
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -201,7 +201,7 @@ export function UploadForm({ onSessionExpired }: { onSessionExpired: () => void 
             type="button"
             disabled={phase.name === "publishing" || categoryId === ""}
             onClick={() => void publish()}
-            className="w-full rounded-md bg-stone-900 px-4 py-2.5 text-sm font-medium text-white transition disabled:opacity-50 sm:w-auto"
+            className="w-full bg-[#f26b21] px-4 py-3 text-sm font-black text-[#071e4a] transition hover:bg-[#ff873f] disabled:cursor-not-allowed disabled:bg-[#f4c3a6] disabled:text-[#071e4a] disabled:hover:bg-[#f4c3a6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a] sm:w-auto"
           >
             {phase.name === "publishing" ? "Publishing…" : "Publish"}
           </button>
@@ -227,14 +227,14 @@ function Field({
   onChange: (value: string) => void;
 }) {
   const shared =
-    "mt-1.5 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900";
+    "mt-2 block w-full border-2 border-[#071e4a] bg-white px-3 py-3 text-sm text-[#071e4a] focus:outline-2 focus:outline-offset-2 focus:outline-[#0e9e85]";
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <label htmlFor={id} className="block text-sm font-medium text-stone-800">
+        <label htmlFor={id} className="block text-sm font-black text-[#071e4a]">
           {label}
         </label>
-        <span className="text-xs text-stone-500">{edited ? "edited" : "read from the file"}</span>
+        <span className="text-xs font-medium text-[#526889]">{edited ? "edited" : "read from the file"}</span>
       </div>
       {multiline ? (
         <textarea id={id} rows={3} value={value} onChange={(e) => onChange(e.target.value)} className={shared} />
@@ -255,13 +255,13 @@ function PublishedPanel({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-stone-700">
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-[#27416c]">
         Published as version {result.versionNo}. This URL is permanent — updating the document later
         will not change it.
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <code className="flex-1 truncate rounded-md bg-stone-100 px-3 py-2 text-xs text-stone-800">
+        <code className="flex-1 truncate border border-[#071e4a]/30 bg-white px-3 py-2 text-xs text-[#071e4a]">
           {result.url}
         </code>
         <button
@@ -272,7 +272,7 @@ function PublishedPanel({
               () => setCopied(false),
             );
           }}
-          className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-800"
+          className="border border-[#071e4a] px-3 py-2 text-sm font-bold text-[#071e4a] hover:bg-[#d9f4eb]"
         >
           {copied ? "Copied" : "Copy link"}
         </button>
@@ -280,15 +280,15 @@ function PublishedPanel({
       <div className="flex gap-3">
         <a
           href={`/docs/${result.slug}`}
-          className="text-sm font-medium text-stone-900 underline"
+          className="text-sm font-bold text-[#071e4a] underline decoration-[#f26b21] decoration-2 underline-offset-4"
         >
           Open in the Reader
         </a>
-        <button type="button" onClick={onPublishAnother} className="text-sm text-stone-600 underline">
+        <button type="button" onClick={onPublishAnother} className="text-sm font-semibold text-[#27416c] underline">
           Publish another
         </button>
       </div>
-      <dl className="border-t border-stone-200 pt-3 text-xs text-stone-600">
+      <dl className="border-t-2 border-[#071e4a] pt-3 text-xs text-[#27416c]">
         <div className="flex gap-2">
           <dt className="font-medium">Title</dt>
           <dd>{result.title}</dd>

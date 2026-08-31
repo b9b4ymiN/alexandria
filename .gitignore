@@ -13,6 +13,11 @@ dist/
 /blob-report/
 /playwright/.cache/
 
+# Local Impeccable design exploration artifacts
+/.impeccable/mocks/
+/.impeccable/screenshots/
+/.impeccable/visual-check.py
+
 # Editors / OS
 .vscode/*
 !.vscode/extensions.json

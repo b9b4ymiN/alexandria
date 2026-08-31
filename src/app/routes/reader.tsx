@@ -72,24 +72,25 @@ export function Reader() {
   return (
     // The header keeps its own height and the frame takes the rest, so the
     // document scrolls inside the frame and the header never scrolls away.
-    <div className="flex h-[100dvh] flex-col bg-stone-50">
-      <header className="flex shrink-0 items-center gap-3 border-b border-stone-200 bg-white px-3 py-2.5 sm:px-5">
+    <div className="flex h-[100dvh] flex-col bg-[#f7f5ef] text-[#071e4a]">
+      <header className="shrink-0 border-b-2 border-[#071e4a] bg-[#071e4a] px-3 py-3 text-[#f7f5ef] sm:px-5">
+        <div className="mx-auto flex max-w-[110rem] items-center gap-3">
         <Link
           to="/"
-          className="shrink-0 rounded-md px-2 py-1 text-sm font-medium text-stone-600 transition hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+          className="shrink-0 px-2 py-1 text-sm font-bold text-[#bcefe1] transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]"
         >
           ← Library
         </Link>
 
         <div className="min-w-0 flex-1">
           <h1
-            className="truncate font-serif text-sm text-stone-900 sm:text-base"
+            className="truncate text-sm font-black tracking-[-0.01em] text-[#f7f5ef] sm:text-base"
             title={document?.title ?? ""}
           >
             {document?.title ?? (state.status === "missing" ? "Not found" : "Loading…")}
           </h1>
           {document !== null && (
-            <p className="truncate text-xs text-stone-500">
+            <p className="truncate text-xs text-[#b9c5dc]">
               {document.categoryPath.map((entry) => entry.name).join(" / ")}
               {document.categoryPath.length > 0 && " · "}
               {new Date(document.updatedAt).toLocaleDateString(undefined, {
@@ -102,6 +103,7 @@ export function Reader() {
         </div>
 
         {document !== null && <ShareButton title={document.title} />}
+        </div>
       </header>
 
       <main className="min-h-0 flex-1">
@@ -112,10 +114,10 @@ export function Reader() {
         {state.status === "missing" && (
           <div className="flex h-full items-center justify-center px-6 text-center">
             <div>
-              <p className="text-sm text-stone-600">
+              <p className="text-sm text-[#27416c]">
                 No document lives at this address, or it has been removed.
               </p>
-              <Link to="/" className="mt-3 inline-block text-sm font-medium text-stone-900 underline">
+              <Link to="/" className="mt-3 inline-block text-sm font-bold text-[#071e4a] underline">
                 Back to the Library
               </Link>
             </div>
@@ -124,7 +126,7 @@ export function Reader() {
 
         {state.status === "error" && (
           <div className="flex h-full items-center justify-center px-6 text-center" role="alert">
-            <p className="text-sm text-stone-600">{state.message}</p>
+            <p className="text-sm text-[#27416c]">{state.message}</p>
           </div>
         )}
 

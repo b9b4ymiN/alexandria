@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Alexandria",
+  "short_name": "Alexandria",
+  "description": "An open library for discovering and reading original documents.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#071e4a",
+  "categories": ["books", "education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/alexandria-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/alexandria-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

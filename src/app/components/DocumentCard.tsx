@@ -16,35 +16,42 @@ function formatUpdated(iso: string): string {
 
 export function DocumentCard({ document }: { document: DocumentSummary }) {
   return (
-    <article className="group border-b border-stone-200 py-5 last:border-b-0">
+    <article className="group border-b border-[#071e4a]/20 py-5 last:border-b-0 sm:py-6">
       <Link
         to={`/docs/${document.slug}`}
-        className="block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-stone-900"
+        className="grid gap-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#071e4a] sm:grid-cols-[minmax(0,1fr)_7rem_auto] sm:items-start sm:gap-6"
       >
-        <h2 className="font-serif text-lg leading-snug text-stone-900 group-hover:underline sm:text-xl">
-          {document.title}
-        </h2>
+        <div>
+          {document.categoryPath.length > 0 && (
+            <p className="text-xs font-black uppercase tracking-[0.13em] text-[#087465]">
+              {document.categoryPath.map((entry) => entry.name).join(" / ")}
+            </p>
+          )}
+          <h2 className="mt-2 text-xl font-black leading-tight tracking-[-0.025em] text-[#071e4a] group-hover:underline sm:text-2xl">
+            {document.title}
+          </h2>
+          {document.description !== "" && (
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#3e5478] sm:text-base">{document.description}</p>
+          )}
+          {document.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {document.tags.map((tag) => (
+                <span key={tag} className="border border-[#071e4a]/25 px-2 py-1 text-xs font-semibold text-[#27416c]">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <time dateTime={document.updatedAt} className="text-sm font-medium tabular-nums text-[#526889] sm:pt-1 sm:text-right">
+          {formatUpdated(document.updatedAt)}
+        </time>
+        <span className="flex h-9 w-9 items-center justify-center border border-[#071e4a] text-[#071e4a] transition-transform group-hover:translate-x-1" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+            <path d="M5 12h13M13 6l6 6-6 6" />
+          </svg>
+        </span>
       </Link>
-
-      {document.description !== "" && (
-        <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-stone-600">
-          {document.description}
-        </p>
-      )}
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-stone-500">
-        {document.categoryPath.length > 0 && (
-          <span className="font-medium text-stone-600">
-            {document.categoryPath.map((entry) => entry.name).join(" / ")}
-          </span>
-        )}
-        {document.tags.map((tag) => (
-          <span key={tag} className="rounded-full bg-stone-100 px-2 py-0.5 text-stone-600">
-            {tag}
-          </span>
-        ))}
-        <span className="ml-auto tabular-nums">{formatUpdated(document.updatedAt)}</span>
-      </div>
     </article>
   );
 }

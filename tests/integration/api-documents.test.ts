@@ -382,6 +382,44 @@ describe("Public API — list and get (G1.8)", () => {
     expect(body.data.pageSize).toBe(100);
   });
 
+  it("filters the full public collection by metadata and an exact category id", async () => {
+    const architectureId = await seedCategory(db(), "cat-architecture");
+    const readingListsId = "cat-reading-lists";
+    const now = "2026-08-30T00:00:00.000Z";
+    await db()
+      .prepare(
+        "INSERT INTO categories (id, parent_id, name, slug, sort_order, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, ?, ?)",
+      )
+      .bind(readingListsId, "Reading lists", "reading-lists-test", 1, now, now)
+      .run();
+
+    const app = createApp();
+    await publish(
+      app,
+      "architecture-notes.html",
+      SIMPLE_HTML.replaceAll("Quarterly Review", "Architecture Notes"),
+      architectureId,
+    );
+    await publish(
+      app,
+      "architecture-guide.html",
+      SIMPLE_HTML.replaceAll("Quarterly Review", "Architecture Guide"),
+      readingListsId,
+    );
+
+    const res = await app.fetch(
+      new Request(`https://app.test/api/public/documents?query=architecture&categoryId=${readingListsId}`),
+      testEnv(),
+    );
+    const body = (await res.json()) as {
+      data: { total: number; items: Array<{ slug: string; categoryPath: Array<{ id: string }> }> };
+    };
+    expect(body.data.total).toBe(1);
+    expect(body.data.items).toHaveLength(1);
+    expect(body.data.items[0]?.slug).toBe("architecture-guide");
+    expect(body.data.items[0]?.categoryPath[0]?.id).toBe(readingListsId);
+  });
+
   it("orders by updated_at descending with a stable secondary key", async () => {
     const categoryId = await seedCategory(db());
     const app = createApp();

@@ -40,13 +40,20 @@ export function ShareButton({ title }: ShareButtonProps) {
     window.setTimeout(() => setState("idle"), 2000);
   }
 
+  const message = state === "copied" ? "Link copied." : state === "failed" ? "Copy failed." : "";
+
   return (
-    <button
-      type="button"
-      onClick={() => void share()}
-      className="rounded-md border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
-    >
-      {state === "copied" ? "Link copied" : state === "failed" ? "Copy failed" : "Share"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => void share()}
+        className="shrink-0 border border-[#b9c5dc] px-3 py-1.5 text-sm font-bold text-[#f7f5ef] transition hover:bg-white hover:text-[#071e4a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]"
+      >
+        {state === "copied" ? "Link copied" : state === "failed" ? "Copy failed" : "Share"}
+      </button>
+      <span role="status" aria-live="polite" className="sr-only">
+        {message}
+      </span>
+    </>
   );
 }

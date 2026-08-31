@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Library } from "./routes/library";
 import { Reader } from "./routes/reader";
+import { registerOfflineReadingWorker } from "./lib/pwa";
 import "./styles/app.css";
 
 // The admin group is a LAZY route so its chunk never loads for a reader
@@ -34,3 +35,5 @@ createRoot(container).render(
     <RouterProvider router={router} />
   </StrictMode>,
 );
+
+registerOfflineReadingWorker();

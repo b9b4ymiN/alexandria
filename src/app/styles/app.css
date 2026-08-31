@@ -2,3 +2,32 @@
    Scoped to the app shell only — this stylesheet must never reach
    uploaded HTML rendered inside the content-origin iframe (AGENT.md §22). */
 @import "tailwindcss";
+
+:root {
+  color: #071e4a;
+  background: #f7f5ef;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+html {
+  background: #f7f5ef;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: #f7f5ef;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: #f26b21;
+  color: #071e4a;
+}

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-31T00:00:00+07:00",
+  "title": "Design System: Alexandria",
+  "extensions": {
+    "colorMeta": {
+      "ink-blue": { "role": "primary", "displayName": "Ink Blue", "canonical": "#071e4a", "tonalRamp": ["#03102b", "#071e4a", "#16315e", "#27416c", "#526889", "#91a0bb", "#c9d1df", "#f0f2f7"] },
+      "mineral-white": { "role": "neutral", "displayName": "Mineral White", "canonical": "#f7f5ef", "tonalRamp": ["#2c2b28", "#52504a", "#7d7a72", "#aaa69b", "#d1cec5", "#e8e5dd", "#f7f5ef", "#fdfcf9"] },
+      "route-orange": { "role": "primary", "displayName": "Route Orange", "canonical": "#f26b21", "tonalRamp": ["#3f1605", "#742b0b", "#aa430f", "#d85b19", "#f26b21", "#fb9b62", "#ffc8a9", "#ffede2"] },
+      "route-mint": { "role": "secondary", "displayName": "Route Mint", "canonical": "#d9f4eb", "tonalRamp": ["#063c33", "#087465", "#0e9e85", "#4bc4a9", "#71d6be", "#a9e8d8", "#d9f4eb", "#f2fcf8"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Index Display", "purpose": "Library arrival statements and primary editorial hierarchy." },
+      "headline": { "displayName": "Record Headline", "purpose": "Section headings and document titles." },
+      "body": { "displayName": "Reading Body", "purpose": "Descriptions, instructions, and public explanatory copy." },
+      "label": { "displayName": "Route Label", "purpose": "Navigation, controls, and compact metadata." }
+    },
+    "shadows": [
+      { "name": "search-lift", "value": "8px 10px 22px rgba(7,30,74,0.12)", "purpose": "Lift the public search field from the mineral page field." },
+      { "name": "admin-sheet", "value": "14px 16px 32px rgba(0,0,0,0.24)", "purpose": "Separate the operational panel from the ink-blue Admin background." }
+    ],
+    "motion": [
+      { "name": "route-shift", "value": "transform 150ms ease", "purpose": "Small directional movement for document-row arrows and state changes." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "action-primary",
+      "description": "A decisive square action for publishing or sign-in.",
+      "html": "<button class=\"ds-action-primary\">Publish</button>",
+      "css": ".ds-action-primary { background:#f26b21; color:#071e4a; padding:12px 16px; border:0; border-radius:0; font:900 14px/1 ui-sans-serif,system-ui,sans-serif; cursor:pointer; transition:background 150ms ease; } .ds-action-primary:hover { background:#ff873f; } .ds-action-primary:focus-visible { outline:2px solid #071e4a; outline-offset:2px; }"
+    },
+    {
+      "name": "Library Search",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "The large public search entry point.",
+      "html": "<input class=\"ds-search-field\" aria-label=\"Search the library\" placeholder=\"Search the collection\">",
+      "css": ".ds-search-field { width:100%; box-sizing:border-box; background:#fff; color:#071e4a; border:2px solid #071e4a; border-radius:0; padding:16px 20px; font:600 16px/1.25 ui-sans-serif,system-ui,sans-serif; } .ds-search-field::placeholder { color:#526889; } .ds-search-field:focus-visible { outline:2px solid #071e4a; outline-offset:2px; }"
+    },
+    {
+      "name": "Route Control",
+      "kind": "nav",
+      "description": "A category route that exposes selection through a colored marker and clear pressed state.",
+      "html": "<button class=\"ds-route\"><span class=\"ds-route-dot\"></span><span>Books</span><span>12</span></button>",
+      "css": ".ds-route { display:flex; align-items:center; gap:12px; width:100%; background:transparent; color:#071e4a; border:0; border-bottom:1px solid rgba(7,30,74,.2); border-radius:0; padding:12px 4px; font:600 14px/1.2 ui-sans-serif,system-ui,sans-serif; text-align:left; cursor:pointer; } .ds-route:hover { background:#d9f4eb; } .ds-route:focus-visible { outline:2px solid #071e4a; outline-offset:2px; } .ds-route-dot { width:10px; height:10px; border-radius:9999px; background:#f26b21; } .ds-route span:last-child { margin-left:auto; color:#526889; }"
+    },
+    {
+      "name": "Document Record",
+      "kind": "card",
+      "description": "A whole-record library link organized by a single horizontal rule.",
+      "html": "<article class=\"ds-record\"><p>BOOKS</p><h3>Expectations Investing</h3><span>Aug 30, 2026 →</span></article>",
+      "css": ".ds-record { display:grid; gap:8px; border-bottom:1px solid rgba(7,30,74,.2); padding:20px 0; color:#071e4a; font-family:ui-sans-serif,system-ui,sans-serif; } .ds-record p { margin:0; color:#087465; font-size:12px; font-weight:900; letter-spacing:.13em; } .ds-record h3 { margin:0; font-size:24px; line-height:1.15; letter-spacing:-.025em; } .ds-record span { color:#526889; font-size:14px; font-weight:600; }"
+    },
+    {
+      "name": "Metadata Chip",
+      "kind": "chip",
+      "description": "A square metadata marker, never a raised pill.",
+      "html": "<span class=\"ds-chip\">Research</span>",
+      "css": ".ds-chip { display:inline-block; border:1px solid rgba(7,30,74,.25); border-radius:0; padding:4px 8px; color:#27416c; font:600 12px/1 ui-sans-serif,system-ui,sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Civic Reading Index",
+    "overview": "Alexandria is a useful public institution expressed as an interface: confident, orderly, and deliberately non-antiquarian. Ink-blue rules turn navigation and grouping into visible wayfinding; a warm mineral field makes the material approachable instead of sterile.",
+    "keyCharacteristics": ["Search-first public discovery with a visible route structure.", "Strong, square editorial rules instead of soft consumer-app cards.", "Sparse route signals rather than decorative color.", "System typography, high contrast, and complete tap targets."],
+    "rules": [
+      { "name": "Route-Signal Rule", "body": "Orange, mint, green, and violet identify a route, state, or action. Do not use them as broad decorative fills.", "section": "colors" },
+      { "name": "One-Voice Rule", "body": "Do not introduce a display serif or decorative font. Alexandria’s authority comes from hierarchy, rules, and spacing.", "section": "typography" },
+      { "name": "Flat-By-Default Rule", "body": "Do not add shadows to every document row or card. Lift only a surface that needs spatial priority.", "section": "elevation" }
+    ],
+    "dos": ["Do use Ink Blue rules and mineral space to establish hierarchy before adding a new container.", "Do make search, filters, buttons, and complete document rows keyboard reachable with visible focus.", "Do use route color sparingly to make category paths and primary actions faster to scan."],
+    "donts": ["Don't use rounded, shadowed dashboard cards for ordinary library records.", "Don't use parchment textures, faux bookshelves, classical columns, or antique-library imagery.", "Don't cache API or authenticated Admin responses in the PWA shell."]
+  }
+}

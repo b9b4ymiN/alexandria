@@ -49,6 +49,13 @@ export interface CategoryListEntry {
   documentCount: number;
 }
 
+export interface DocumentListParams {
+  page?: number;
+  pageSize?: number;
+  query?: string;
+  categoryId?: string;
+}
+
 /**
  * Clamps caller-supplied paging into a sane range rather than rejecting it.
  * A nonsense page size is a client bug, not a reason to fail a public read.
@@ -111,26 +118,51 @@ async function tagsFor(db: D1Database, documentIds: readonly string[]): Promise<
  * stable when several documents share a timestamp, which is common when a
  * batch is published together.
  */
-export async function listDocuments(
-  db: D1Database,
-  params: { page?: number; pageSize?: number } = {},
-): Promise<PaginatedResult<DocumentSummary>> {
+export async function listDocuments(db: D1Database, params: DocumentListParams = {}): Promise<PaginatedResult<DocumentSummary>> {
   const { page, pageSize } = clampPagination(params.page, params.pageSize);
+  const query = params.query?.trim().slice(0, 160);
+  const categoryId = params.categoryId?.trim().slice(0, 160);
+  const filters = ["d.current_version_id IS NOT NULL"];
+  const bindings: string[] = [];
+
+  if (categoryId !== undefined && categoryId !== "") {
+    filters.push("d.category_id = ?");
+    bindings.push(categoryId);
+  }
+
+  if (query !== undefined && query !== "") {
+    const pattern = `%${query.toLocaleLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
+    filters.push(`(
+      LOWER(d.title) LIKE ? ESCAPE '\\'
+      OR LOWER(d.description) LIKE ? ESCAPE '\\'
+      OR LOWER(c.name) LIKE ? ESCAPE '\\'
+      OR EXISTS (
+        SELECT 1
+        FROM document_tags dt
+        JOIN tags t ON t.id = dt.tag_id
+        WHERE dt.document_id = d.id AND LOWER(t.name) LIKE ? ESCAPE '\\'
+      )
+    )`);
+    bindings.push(pattern, pattern, pattern, pattern);
+  }
+
+  const where = filters.join(" AND ");
 
   const totalRow = await db
-    .prepare("SELECT COUNT(*) AS total FROM documents WHERE current_version_id IS NOT NULL")
+    .prepare(`SELECT COUNT(*) AS total FROM documents d JOIN categories c ON c.id = d.category_id WHERE ${where}`)
+    .bind(...bindings)
     .first<{ total: number }>();
   const total = totalRow?.total ?? 0;
 
   const rows = await db
     .prepare(
-      `SELECT id, slug, title, description, category_id AS categoryId, updated_at AS updatedAt
-       FROM documents
-       WHERE current_version_id IS NOT NULL
-       ORDER BY updated_at DESC, id ASC
+      `SELECT d.id, d.slug, d.title, d.description, d.category_id AS categoryId, d.updated_at AS updatedAt
+       FROM documents d JOIN categories c ON c.id = d.category_id
+       WHERE ${where}
+       ORDER BY d.updated_at DESC, d.id ASC
        LIMIT ? OFFSET ?`,
     )
-    .bind(pageSize, (page - 1) * pageSize)
+    .bind(...bindings, pageSize, (page - 1) * pageSize)
     .all<{
       id: string;
       slug: string;
