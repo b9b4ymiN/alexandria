@@ -32,6 +32,11 @@ documents.get("/", async (c) => {
     pageSize: numberParam(c.req.query("pageSize")),
     query: textParam(c.req.query("query")),
     categoryId: textParam(c.req.query("categoryId")),
+    tag: textParam(c.req.query("tag")),
+    // Anything other than the literal "self" stays the subtree default —
+    // an unrecognized value is a client typo, not a reason to fail a
+    // public read (same philosophy as clampPagination).
+    depth: c.req.query("depth") === "self" ? "self" : undefined,
   });
   return ok(result);
 });

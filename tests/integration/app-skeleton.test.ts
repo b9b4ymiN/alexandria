@@ -35,10 +35,14 @@ describe("routing skeleton — JSON 404 under /api/**", () => {
   // plus unrouted sub-paths that must stay JSON 404 forever. The invariant
   // under test is unchanged: nothing under /api/** ever answers with the
   // SPA HTML shell.
+  //
+  // Node G2.4 update (2026-09-03): /api/public/tags now has a real GET
+  // handler (see tests/integration/public-browse.test.ts), so it is
+  // dropped from this "still unclaimed" list the same way G1.7/G1.8's
+  // routes were.
   it("returns a JSON 404 envelope for unclaimed mounts and unrouted /api paths", async () => {
     const app = createApp();
     const paths = [
-      "/api/public/tags",
       "/api/agent/documents",
       "/api/agent/categories",
       "/api/agent/tags",
