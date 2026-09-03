@@ -354,8 +354,8 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.12 | DONE | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
 | G2.1 | DONE | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
 | G2.2 | DONE | CHECKPOINT A | G2.4, G2.5 | G2.1 |
-| G2.3 | READY | G2.1 | G2.5 | — |
-| G2.4 | READY (needs revision, see §12.2) | G2.1, G2.2 | G2.6 | G2.3 |
+| G2.3 | IN_PROGRESS | G2.1 | G2.5 | — |
+| G2.4 | IN_PROGRESS | G2.1, G2.2 | G2.6 | G2.3 |
 | G2.5 | BLOCKED | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
 | G2.6 | BLOCKED | G2.4 | CHECKPOINT B | G2.5 |
 | G2.7 | IN_PROGRESS | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
@@ -3537,7 +3537,7 @@ Judgment calls accepted:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
@@ -3695,7 +3695,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
