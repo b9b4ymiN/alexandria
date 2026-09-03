@@ -354,11 +354,11 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.12 | DONE | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
 | G2.1 | DONE | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
 | G2.2 | DONE | CHECKPOINT A | G2.4, G2.5 | G2.1 |
-| G2.3 | IN_PROGRESS | G2.1 | G2.5 | — |
-| G2.4 | IN_PROGRESS | G2.1, G2.2 | G2.6 | G2.3 |
-| G2.5 | BLOCKED | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
-| G2.6 | BLOCKED | G2.4 | CHECKPOINT B | G2.5 |
-| G2.7 | IN_PROGRESS | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
+| G2.3 | DONE | G2.1 | G2.5 | — |
+| G2.4 | DONE | G2.1, G2.2 | G2.6 | G2.3 |
+| G2.5 | IN_PROGRESS | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
+| G2.6 | IN_PROGRESS | G2.4 | CHECKPOINT B | G2.5 |
+| G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
 | G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
 | G3.2 | BLOCKED | G3.1 | G3.3, G3.5 | G3.4 |
 | G3.3 | BLOCKED | G3.2 | G3.5 | G3.4 |
@@ -3537,7 +3537,7 @@ Judgment calls accepted:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -3681,12 +3681,43 @@ feat(documents): add metadata update and category move with slug immutability
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-09-03. Commit c181303.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/documents/document-service.ts and
+  src/api/routes/admin/documents.ts (both additive — G1.7's POST / untouched);
+  tests/integration/document-metadata.test.ts (19 tests) new.
+
+Verification (re-run by the orchestrator, not copied from the report):
+  Full suite 305/305 across 18 files - typecheck exit 0 - lint exit 0
+  SLUG-MUTATION SCAN, written and run by the orchestrator over all of src/
+  with comments stripped, looking for UPDATE documents SET ... slug:
+  CLEAN. No statement anywhere can move a document's slug.
+  SLUG_IMMUTABLE is enforced on BOTH routes, and enforced against the RAW
+  parsed body BEFORE Zod runs, so the field cannot be stripped by a schema
+  and silently ignored on its way through.
+  Route thinness re-checked: no .prepare, no .batch, no env.DB and no
+  env.DOCS use in the route file.
+
+Design choices worth keeping:
+  updateDocumentMetadata and moveDocument take `db: D1Database` rather than
+  the Storage wrapper createDocument uses. There is therefore no R2 handle
+  in scope at all on these paths - the impossibility is structural, not a
+  promise. A Proxy spy on the bucket confirms zero calls, which is belt and
+  braces on top of that.
+  setDocumentTags is called BEFORE the title and description UPDATE, so a
+  rejected tag set (too many, too long) leaves the rest of the metadata
+  untouched rather than half-applied.
+
+Note carried forward:
+  The source-assertion test strips comments before scanning, and the
+  executor confirmed the strip is load-bearing: its own header comment
+  quotes the literal phrase it searches for. This is the same false-alarm
+  class recorded against G6.2's secret scan. A scan that trips on prose
+  trains people to ignore it.
 ```
+
 
 ---
 
@@ -3695,7 +3726,7 @@ Notes:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -3835,12 +3866,42 @@ feat(api): add public category tree, tag list and document filters
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-09-03. Commit 594a431.
+> Executed against Plan Delta 1, which narrowed this node to what the
+> owner's out-of-graph commit had not already delivered.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/documents/document-read.ts,
+  src/api/routes/public/{documents,categories,tags}.ts;
+  tests/integration/public-browse.test.ts (17 tests) new;
+  tests/integration/app-skeleton.test.ts updated to drop /api/public/tags
+  from its "still unclaimed mounts" list, the same way that list was
+  trimmed when G1.7 and G1.8 claimed their routes.
+
+Verification (re-run by the orchestrator):
+  Full suite 305/305 - typecheck exit 0 - lint exit 0
+  Named tests confirm every item Plan Delta 1 still owed:
+    subtree by default, and depth=self narrowing - including the case where
+      depth=self returns nothing because the documents live in descendants
+    tag filter matched by NORMALIZED name, regardless of casing or spacing
+    tree with direct AND descendant counts at every level, one recursive
+      query
+    /api/public/tags implemented, returning an empty array rather than an
+      error for a library with no tags
+    category and tag filters combining with AND, and returning an empty
+      page when they share no document
+    unknown categoryId rejected with CATEGORY_NOT_FOUND for BOTH depths
+    a deeply nested subtree resolved without failing or timing out
+  Regression held: ordering and the page-size clamp still behave under a
+  tag filter, and no R2 operation or HTML body content appears on any of
+  the three endpoints, each proven by its own spy assertion.
+
+Instruction respected:
+  The node was told not to rewrite the pre-existing LIKE search, which
+  belongs to G4.1 behind CHECKPOINT C. It did not.
 ```
+
 
 ---
 
@@ -3849,7 +3910,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
@@ -4005,7 +4066,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+IN_PROGRESS
 ```
 
 ### Goal
@@ -6586,7 +6647,7 @@ protocol) and a further approval before execution resumes.
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -6723,9 +6784,37 @@ test(pwa): prove the service worker's api, origin and auth exclusions
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-09-03. Commit e05121a.
+> Node created by Plan Delta 1.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  tests/browser/pwa/service-worker-boundaries.spec.ts (9 tests) new;
+  tests/browser/pwa/offline.spec.ts kept.
+  public/sw.js NOT modified - the node's job was to prove the worker's
+  behaviour, not to change it, and it did not change it.
+
+Verification (re-run by the orchestrator):
+  pnpm exec playwright test -c playwright.pwa.config.ts -> 10/10 passed
+  pnpm exec playwright test                             -> 24/24 passed
+  typecheck exit 0 - lint exit 0
+
+All three exclusions are now proven rather than merely readable:
+  no /api/* response is ever placed in any cache
+  no content-origin URL is ever cached, and the Reader's iframe still loads
+    from the content origin with the worker active
+  a request carrying an Authorization header is never served from cache
+Plus the redeploy path: a stale cache version created by hand is deleted at
+activate, so a reader is never stranded on an old bundle talking to a newer
+API. And an /api/* request made while offline fails normally instead of
+being faked from cache, which is the behaviour that keeps stale metadata
+from ever looking authoritative.
+
+Went beyond the packet, and correctly:
+  The executor added two attack-path tests the orchestrator had not asked
+  for - offering an /api/* URL, and a content-origin URL, directly to the
+  worker's own CACHE_PUBLIC_ASSETS message channel. Both are refused. The
+  packet only required proving the fetch-handler exclusions; the message
+  channel is a second way in, and testing it was the right instinct.
 ```
+
