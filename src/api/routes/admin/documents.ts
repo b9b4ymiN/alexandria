@@ -3,9 +3,11 @@
 //
 // Mounted at /api/admin/documents by src/api/routes/admin/index.ts.
 // Implements (SPEC.md §18 Admin):
-//   POST /api/admin/documents -> "/"
-// PATCH and DELETE on /:slug belong to later nodes (G2.3, G3.3); version
-// sub-routes live in src/api/routes/admin/versions.ts (G3.1).
+//   POST  /api/admin/documents             -> "/"
+//   PATCH /api/admin/documents/:slug       -> "/:slug"             (G2.3)
+//   POST  /api/admin/documents/:slug/move  -> "/:slug/move"        (G2.3)
+// DELETE on /:slug belongs to a later node (G3.3); version sub-routes
+// live in src/api/routes/admin/versions.ts (G3.1).
 //
 // TRANSPORT ONLY. This file parses the request, authorizes it, hands off to
 // DocumentService, and shapes the response. It contains no SQL, no R2
@@ -18,7 +20,11 @@ import type { Env } from "../../../shared/types";
 import { AppError } from "../../../shared/errors";
 import { ok } from "../../../shared/envelope";
 import { requireAdmin } from "../../middleware/admin-auth";
-import { createDocument } from "../../../domain/documents/document-service";
+import {
+  createDocument,
+  moveDocument,
+  updateDocumentMetadata,
+} from "../../../domain/documents/document-service";
 
 const documents = new Hono<{ Bindings: Env }>();
 
@@ -107,6 +113,77 @@ documents.post("/", requireAdmin, async (c) => {
     { ...result, url: `${c.env.APP_ORIGIN.replace(/\/+$/, "")}/docs/${result.slug}` },
     { status: 201 },
   );
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /:slug and POST /:slug/move — node G2.3.
+// ---------------------------------------------------------------------------
+
+function documentUrl(env: Env, slug: string): string {
+  return `${env.APP_ORIGIN.replace(/\/+$/, "")}/docs/${slug}`;
+}
+
+/**
+ * Requirement 1: a request body carrying `slug` is REJECTED with
+ * SLUG_IMMUTABLE rather than silently ignored — a caller must learn the
+ * operation is impossible, not have it quietly no-op the field (node G2.3
+ * requirement 1). Checked against the RAW parsed body, before any schema
+ * strips or renames fields, so the field can never slip through unnoticed.
+ */
+function rejectSlugField(body: unknown): void {
+  if (body !== null && typeof body === "object" && !Array.isArray(body) && "slug" in body) {
+    throw new AppError("SLUG_IMMUTABLE", {
+      message: "The document slug is stable and cannot be changed through this API.",
+    });
+  }
+}
+
+const patchMetadataSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).max(MAX_TAGS).optional(),
+});
+
+documents.patch("/:slug", requireAdmin, async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  rejectSlugField(body);
+
+  const parsed = patchMetadataSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new AppError("INVALID_HTML", {
+      message: "Metadata fields failed validation.",
+      detail: parsed.error.issues,
+    });
+  }
+
+  const result = await updateDocumentMetadata(c.env.DB, c.req.param("slug"), {
+    title: parsed.data.title,
+    description: parsed.data.description,
+    tags: parsed.data.tags,
+  });
+
+  return ok({ ...result, url: documentUrl(c.env, result.slug) });
+});
+
+const moveSchema = z.object({
+  categoryId: z.string().trim().min(1),
+});
+
+documents.post("/:slug/move", requireAdmin, async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  rejectSlugField(body);
+
+  const parsed = moveSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new AppError("CATEGORY_REQUIRED", {
+      message: "A target category is required to move a document.",
+      detail: parsed.error.issues,
+    });
+  }
+
+  const result = await moveDocument(c.env.DB, c.req.param("slug"), parsed.data.categoryId);
+
+  return ok({ ...result, url: documentUrl(c.env, result.slug) });
 });
 
 export default documents;
