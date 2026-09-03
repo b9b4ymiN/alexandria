@@ -358,6 +358,7 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G2.4 | READY (needs revision, see §12.2) | G2.1, G2.2 | G2.6 | G2.3 |
 | G2.5 | BLOCKED | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
 | G2.6 | BLOCKED | G2.4 | CHECKPOINT B | G2.5 |
+| G2.7 | IN_PROGRESS | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
 | G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
 | G3.2 | BLOCKED | G3.1 | G3.3, G3.5 | G3.4 |
 | G3.3 | BLOCKED | G3.2 | G3.5 | G3.4 |
@@ -384,7 +385,7 @@ DONE
 FAILED
 ```
 
-Total execution nodes: **33**
+Total execution nodes: **34** (33 planned, plus G2.7 from Plan Delta 1)
 
 ---
 
@@ -414,8 +415,10 @@ Rules:
 
 ## 12.2 PLAN DELTA 1 — unplanned scope arrived on main (2026-08-31)
 
-Status: **AWAITING APPROVAL.** Recorded by the orchestrator; execution of the
-remaining M2 nodes is paused until the project owner rules on it.
+Status: **APPROVED 2026-08-31 by the project owner** — all three decisions
+taken at their fullest scope: G2.7 is added, G4.1 keeps its relevance tiering
+AND gains the missing tests including Thai, and the §12.1 branch policy is
+reinstated. Execution resumed.
 
 ### What happened
 
@@ -6575,3 +6578,154 @@ APPROVED AT:  2026-08-30
 Approved. Graph execution has begun. Any change to scope, architecture or the
 node graph from this point requires a Plan Delta (§17 of the orchestrator
 protocol) and a further approval before execution resumes.
+
+---
+
+## Node G2.7 — PWA & Offline Shell Hardening
+
+### Status
+
+```text
+IN_PROGRESS
+```
+
+### Goal
+
+The service worker and offline shell that arrived in commit `79a7e5c` are held
+to the same standard as every other boundary in this project: proven by test,
+not by reading the source.
+
+### Why
+
+`public/sw.js` sits between every reader and the app. It is currently correct
+by inspection — it declines `/api/*`, declines cross-origin requests, and
+declines anything carrying an `Authorization` header — but nothing stops a
+future edit from quietly removing one of those guards. A service worker that
+began caching API responses would serve stale metadata; one that cached the
+content origin would break the guarantee that a published update is what
+readers see.
+
+### Dependencies
+
+```text
+depends_on: CHECKPOINT A
+blocks:     CHECKPOINT B
+can_parallel_with: G2.3, G2.4, G2.5, G2.6
+```
+
+### Scope
+
+- Tests asserting the three exclusions the worker already implements
+- A test that the Reader still renders with the worker active
+- A cache-versioning test covering the redeploy path
+- Documentation of the offline story in `docs/` if one is missing
+
+### Out of Scope
+
+- Redesigning the worker or changing its caching strategy
+- Offline support for the Admin surface — admin work needs the network
+- Any change to `DocumentFrame.tsx` or the sandbox contract
+- Push notifications, background sync, install prompts
+
+### Read First
+
+- `public/sw.js`, `src/app/lib/pwa.ts`, `tests/browser/pwa/offline.spec.ts`
+- `IMPLEMENTATION_PLAN.md` §5 Architecture Constraints 1, 2 and 5
+- `AGENT.md` §8 iframe security, §25 performance rules
+- `SPEC.md` §16
+
+### Files
+
+Create: `tests/browser/pwa/service-worker-boundaries.spec.ts`
+
+Modify: `tests/browser/pwa/offline.spec.ts` only if it needs extending
+
+Read: `public/sw.js`, `src/app/lib/pwa.ts`, `playwright.pwa.config.ts`
+
+### Interfaces / Contracts
+
+Must not change:
+
+```text
+The service worker's three exclusions: /api/*, cross-origin, and any request
+carrying an Authorization header.
+```
+
+### Implementation Requirements
+
+1. Assert that no `/api/*` response is ever placed in the cache, by driving a
+   real page load and inspecting `caches.keys()` and the cached entries.
+2. Assert that no content-origin URL is ever cached, and that the Reader's
+   iframe still loads from the content origin with the worker active.
+3. Assert that a request carrying an `Authorization` header bypasses the
+   worker, so an admin response can never be served from cache.
+4. Assert that the Reader renders correctly with the worker registered and
+   activated, not only on a cold first load.
+5. Cover the redeploy path: with a cache from an older version name present,
+   the activate handler deletes it, so a reader is never stranded on an old
+   bundle talking to a newer API.
+6. Do not weaken any existing assertion to make a test pass. If the worker is
+   found to violate one of its own stated exclusions, STOP and report it as a
+   security finding rather than adjusting the test.
+
+### Edge Cases
+
+- Worker registered but not yet activated on a first visit
+- A second visit served from cache while the network is available
+- An older cache version present at activate time
+- The Reader opened directly by URL with the worker already active
+- A navigation request while offline falling back to the cached shell
+- An `/api/*` request while offline failing normally rather than being faked
+
+### Tests Required
+
+Positive: the shell is cached and an offline navigation succeeds; the Reader
+renders with the worker active.
+Negative: no `/api/*` entry in any cache; no content-origin entry in any
+cache; an `Authorization`-bearing request is not served from cache.
+Regression: an old cache version is deleted on activate.
+
+### Verification Commands
+
+```bash
+pnpm exec playwright test -c playwright.pwa.config.ts
+pnpm exec playwright test
+pnpm typecheck
+pnpm lint
+```
+
+Expected:
+
+```text
+exit 0 throughout; every boundary assertion passing
+```
+
+### Definition of Done
+
+- [ ] All three exclusions proven by test, not by inspection
+- [ ] Reader verified with the worker active
+- [ ] Redeploy path leaves no stale cache
+- [ ] Offline navigation serves the shell
+- [ ] No existing assertion weakened
+- [ ] No change to the worker's caching strategy
+
+### Stop Conditions
+
+- The worker is found to cache an `/api/*` response, a content-origin
+  response, or an authenticated response — report as a security finding
+- Playwright cannot observe the Cache Storage API in this setup
+
+### Suggested Commit
+
+```text
+test(pwa): prove the service worker's api, origin and auth exclusions
+```
+
+### Evidence
+
+```text
+Changed:
+Tests:
+Verification:
+Notes:
+```
