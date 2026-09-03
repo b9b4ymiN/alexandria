@@ -6816,5 +6816,42 @@ Went beyond the packet, and correctly:
   worker's own CACHE_PUBLIC_ASSETS message channel. Both are refused. The
   packet only required proving the fetch-handler exclusions; the message
   channel is a second way in, and testing it was the right instinct.
+
+MUTATION TESTING - the most valuable result of this node:
+  The executor did not merely write passing tests. It deliberately BROKE
+  public/sw.js to check the tests would notice, then reverted. Confirmed by
+  the orchestrator: `git diff` shows sw.js byte-identical to what landed in
+  79a7e5c, so nothing was left mutated.
+  1. Allowing "/api/" through isCacheablePublicAsset and removing the fetch
+     handler's /api/ exclusion made the new direct-message test FAIL, as it
+     should - but the "drive a real page load, then inspect the caches"
+     test STILL PASSED under the same mutation.
+     The reason is a genuine timing race: pwa.ts posts CACHE_PUBLIC_ASSETS
+     from performance.getEntriesByType("resource") right after
+     serviceWorker.ready, so an /api/ fetch completing just after that
+     message can be missed entirely. A naive load-and-inspect test would
+     therefore have given false confidence about a REAL regression. This is
+     exactly the failure mode this project worries about - a test that
+     passes for the wrong reason - and it was caught by deliberately trying
+     to break the thing rather than by reasoning about it.
+  2. Dropping the origin check and allowlisting a "/d/" path did NOT make
+     the content-origin test fail, because the content Worker sends no
+     Access-Control-Allow-Origin header, so the cross-origin fetch dies
+     before cache.put is reached.
+     HONEST CONSEQUENCE, recorded rather than glossed: the content-origin
+     guarantee currently rests on TWO independent layers, the worker's own
+     origin check AND the absence of CORS headers on the content origin. If
+     the content Worker ever gains permissive CORS for some other reason,
+     the worker's own guard becomes the only remaining protection. Not an
+     action item now; a thing to remember if CORS is ever added there.
+     The executor wrote this into the test's comment instead of claiming
+     the test isolates the service worker's logic alone.
+
+One reported caveat did NOT reproduce:
+  The node reported that `wrangler d1 execute --local` crashes on this
+  machine. The orchestrator re-ran it afterwards and it succeeded, exit 0.
+  Most likely contention with a running `pnpm dev` holding the local D1
+  state at that moment. Recorded so the claim does not propagate as a
+  standing limitation - `pnpm seed:local` is fine.
 ```
 
