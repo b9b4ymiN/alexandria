@@ -352,10 +352,10 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.10 | DONE | G1.8 | G1.11, G1.12 | — |
 | G1.11 | DONE | G1.7, G1.10 | G1.12 | — |
 | G1.12 | DONE | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
-| G2.1 | BLOCKED | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
-| G2.2 | BLOCKED | CHECKPOINT A | G2.4, G2.5 | G2.1 |
-| G2.3 | BLOCKED | G2.1 | G2.5 | — |
-| G2.4 | BLOCKED | G2.1, G2.2 | G2.6 | G2.3 |
+| G2.1 | DONE | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
+| G2.2 | DONE | CHECKPOINT A | G2.4, G2.5 | G2.1 |
+| G2.3 | READY | G2.1 | G2.5 | — |
+| G2.4 | READY (needs revision, see §12.2) | G2.1, G2.2 | G2.6 | G2.3 |
 | G2.5 | BLOCKED | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
 | G2.6 | BLOCKED | G2.4 | CHECKPOINT B | G2.5 |
 | G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
