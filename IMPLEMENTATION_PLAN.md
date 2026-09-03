@@ -412,6 +412,87 @@ Rules:
 
 ---
 
+## 12.2 PLAN DELTA 1 — unplanned scope arrived on main (2026-08-31)
+
+Status: **AWAITING APPROVAL.** Recorded by the orchestrator; execution of the
+remaining M2 nodes is paused until the project owner rules on it.
+
+### What happened
+
+Commit `79a7e5c` "feat: redesign library and add offline PWA shell", authored
+by the project owner in a separate session, landed 31 files (+1138/−109) and
+the M2 branch was then fast-forward merged to `main` and pushed. This is not a
+rogue change — it is the owner's own work — but it moved the codebase ahead of
+the plan in three ways that the graph must absorb rather than ignore.
+
+Verified state after it: 269 tests pass, typecheck and lint are clean, and the
+two security invariants most at risk survived intact. `DocumentFrame.tsx` was
+not touched at all, so the sandbox is still exactly
+`allow-scripts allow-popups allow-downloads`; `reader.tsx` changed only in
+styling. The service worker explicitly declines to handle `/api/*`, any
+cross-origin request, and any request carrying an `Authorization` header,
+which is precisely the boundary the architecture needs it to respect.
+
+### INVALIDATED NODES
+
+None. Nothing already verified was undone.
+
+### NEEDS REVISION
+
+| Node | Why | What remains |
+|---|---|---|
+| G2.4 Public API — tree, tags, filters | A `categoryId` filter now exists, but it is EXACT-MATCH, not subtree | Subtree semantics with a `depth=self` option, tag filter by normalized name, tree with `descendantDocumentCount`, and `/api/public/tags`, which is still an empty stub |
+| G4.1 Metadata search | LIKE search over title, description, category and tag names already landed, with wildcard escaping and `LOWER()` — genuinely careful work | No Thai-query test exists anywhere. That is the exact risk decision D2 was written to guard against, and it is now unguarded on main. Also missing: the relevance tiering the node specifies, and an explicit no-duplicate-row assertion |
+| G1.10 / G1.11 evidence | The Library, Reader header, Admin and upload surfaces were restyled after those nodes were verified | Their browser specs were updated in the same commit and pass; the evidence text is stale but the contracts hold. No re-execution needed, only a note |
+
+### NEW NODE PROPOSED
+
+**G2.7 — PWA & Offline Shell Hardening.** The service worker is on `main` and
+on production-bound code with one 13-line offline spec. Its correctness is
+currently a matter of reading the source. It needs the same treatment every
+other boundary in this project got: tests asserting that it never caches an
+`/api/*` response, never caches or serves anything from the content origin,
+never serves an admin surface from cache, and that the Reader still renders
+with the worker active and after an update. Also a stale-shell story: the
+cache is versioned by name, so a redeploy must not strand a reader on an old
+bundle that talks to a newer API.
+
+### REMOVED NODES
+
+None.
+
+### DEPENDENCY CHANGES
+
+- G4.1 no longer starts from nothing; it starts from a working implementation
+  that needs its contract proven and its gaps closed. It stays gated behind
+  CHECKPOINT C so search is not declared done before versioning is.
+- G2.7, if approved, is independent of G2.3–G2.6 and can run in parallel with
+  them, since it touches `public/sw.js`, `src/app/lib/pwa.ts` and a browser
+  spec that no other node owns.
+
+### PROCESS FINDINGS
+
+1. **CHECKPOINT B was not reached before the merge to `main`.** Policy §12.1
+   says a milestone branch merges only after its gate passes. `main` now
+   carries a partial M2 — G2.3, G2.5 and G2.6 are still outstanding. The
+   honest fix is to record this rather than to pretend the gate ran; the gate
+   items themselves remain unmet and are still owed.
+2. **Two executors sharing one branch produced a commit amend across node
+   boundaries.** Recovered with no loss, but every future parallel pair must
+   be told explicitly never to run `git commit --amend`.
+
+### DECISIONS REQUESTED
+
+1. Approve G2.7, or accept the PWA as-is and record it as an explicit
+   non-goal for Phase 1 verification.
+2. For G4.1: keep the specified relevance tiering, or accept the simpler
+   flat LIKE match that now exists and reduce the node to adding the missing
+   tests, Thai included.
+3. Confirm whether `main` should continue to receive milestone work before
+   its checkpoint passes, or whether the branch policy is reinstated.
+
+---
+
 # Nodes
 
 ---
@@ -3042,7 +3123,7 @@ effect, so this item belongs to the project owner and is not claimed here.
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -3194,11 +3275,56 @@ feat(categories): add category tree service with cycle and deletion guards
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-08-31. Commit 5a7c3c4.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/categories/category-service.ts,
+  tests/integration/category-service.test.ts (32 tests),
+  tests/integration/category-api.test.ts (16 tests) — new;
+  src/api/routes/admin/categories.ts modified, with G1.7's GET "/" intact.
+
+Verification (re-run by the orchestrator):
+  Full suite 269/269 · typecheck exit 0 · lint exit 0
+  Route thinness: no .prepare, no .batch, no env.DB use, no SQL keyword in
+  src/api/routes/admin/categories.ts.
+  Every critical invariant has a NAMED test, confirmed by reading the test
+  titles rather than trusting the summary:
+    cycle — into own subtree, and into itself
+    slug  — two roots sharing a slug (the partial-index hole), two siblings
+            sharing a slug, same slug allowed under different parents,
+            auto-suffix rather than error on a same-named root
+    delete — non-empty rejected
+    agent  — no POST/PATCH/DELETE category route exists under /api/agent
+    depth  — a move exceeding the maximum rejected
+    auth   — unauthenticated rejected on all four endpoints
+  STABLE SLUG, the invariant this node most endangers, has two dedicated
+  tests: rename "changes name only, never the slug" plus "never changes a
+  document's slug", and move "never changes any document slug or public URL".
+
+Judgment calls accepted:
+  1. CATEGORY_REQUIRED is reused as the category domain's single 400 code
+     for blank name, malformed explicit slug and max-depth-exceeded, with a
+     distinguishing message and detail, documented in the service header.
+     Accepted: SPEC §24 gives this domain exactly one 400 code, and the node
+     asked whether to reuse rather than inventing codes silently. G2.2 was
+     authorized to ADD codes because its cases had no existing code at all;
+     here one exists. Revisit only if a client ever needs to branch on the
+     three cases separately, which nothing in Phase 1 does.
+  2. Depth accounting for a move is depth(newParent) + 1 + height(subtree),
+     so moving a subtree accounts for its descendants and not just the node.
+     Only the single-node case is covered by test. Gap noted, not fatal:
+     the formula is right and the ceiling is a guard rail, not an invariant.
+
+Incident during execution, resolved with no loss:
+  The parallel G2.2 executor amended THIS node's commit (reflog 028b17f)
+  while trying to fix a test title of its own, then reset back to 5a7c3c4.
+  Verified: the amend differed only in one line of tag-service.test.ts, and
+  5a7c3c4 stands unmodified on main with its full content. G2.1 reported the
+  transient failure it saw from that concurrent write and explicitly declined
+  to attribute it without evidence, which is the behaviour the packet asks
+  for. Two executors committing to one branch is the root cause; future
+  parallel pairs should be told never to run `git commit --amend`.
 ```
 
 ---
@@ -3208,7 +3334,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
