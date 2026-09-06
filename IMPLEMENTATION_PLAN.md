@@ -356,8 +356,8 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G2.2 | DONE | CHECKPOINT A | G2.4, G2.5 | G2.1 |
 | G2.3 | DONE | G2.1 | G2.5 | — |
 | G2.4 | DONE | G2.1, G2.2 | G2.6 | G2.3 |
-| G2.5 | IN_PROGRESS | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
-| G2.6 | IN_PROGRESS | G2.4 | CHECKPOINT B | G2.5 |
+| G2.5 | DONE | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
+| G2.6 | DONE | G2.4 | CHECKPOINT B | G2.5 |
 | G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
 | G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
 | G3.2 | BLOCKED | G3.1 | G3.3, G3.5 | G3.4 |
@@ -3910,7 +3910,7 @@ Instruction respected:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -4066,7 +4066,7 @@ Notes:
 ### Status
 
 ```text
-IN_PROGRESS
+DONE
 ```
 
 ### Goal
@@ -6855,3 +6855,82 @@ One reported caveat did NOT reproduce:
   standing limitation - `pnpm seed:local` is fine.
 ```
 
+
+---
+
+## CHECKPOINT B — Organization complete
+
+Verified by the orchestrator on 2026-09-03, on a stable tree with every M2
+node landed. Evidence is the suite run, not the node statuses.
+
+```text
+Suites:  305 vitest across 18 files - 54 browser - 10 PWA
+Static:  typecheck (3 projects) - lint - build, all exit 0
+Bundle:  the admin chunk is still split from the public entry
+```
+
+Gate items:
+
+- [x] Nested categories created, renamed, moved and deleted from the Admin
+      UI with no code change — `admin-categories.spec.ts`, including a
+      ten-level tree navigable at 375px
+- [x] Cycle, self-parent and non-empty-delete attempts rejected with the
+      specified codes, and the guards surfaced as readable messages rather
+      than raw codes
+- [x] Tags created, renamed, merged and unlinked, with the merge naming both
+      tags and the affected document count before it commits
+- [x] A document moved between categories keeps its slug and public URL —
+      proven in the domain layer by G2.3 and again end to end in the browser
+- [x] Public category browse and tag filter work anonymously
+
+### Two defects found while running this gate, both now fixed
+
+Neither was reported by an executor; both surfaced only because the whole
+suite was run on a tree nobody was still writing to.
+
+**1. The browser suite exhausted the product's own login rate limiter.**
+Node G1.6 limits `POST /api/admin/login` to 10 attempts per minute per IP.
+Every admin spec signed in through the UI on every test — more than twenty
+logins a minute between them — so later logins returned 429 and specs failed
+with "the upload form never appeared", a symptom that points nowhere near
+the cause. Confirmed directly: the eleventh login in a minute returns 429.
+
+The limiter is correct and was not touched. What was wrong was signing in
+through the UI in specs that are not about signing in. `tests/browser/
+admin-session.ts` now obtains ONE token per suite run — shared across
+Playwright's eight workers through a short-lived temp file, because a
+per-worker cache still cost eight logins — and plants it in sessionStorage
+with an init script. Two tests in `admin-upload.spec.ts` still drive the
+real login form, so the login screen keeps its coverage.
+
+Known and accepted: running the whole suite several times inside one minute
+can still trip the limiter on those two deliberate UI logins. That is the
+limiter working. A single run is deterministic — verified across repeated
+runs once the window had reset.
+
+**2. Specs fought over one shared fixture.** The admin metadata-edit test
+mutated `expectations-investing` — title, description, tags AND category —
+while `reader.spec.ts`, `public-browse.spec.ts` and the PWA specs read that
+same document and assert on it. `seed-local.sql` now seeds a document that
+exists solely for the mutating test. The coupling is removed at its root
+rather than hidden by serialising the suite.
+
+### A misdiagnosis by the orchestrator, corrected by the executor
+
+While chasing the remaining intermittent failure the orchestrator read the
+form's `useState("")` initialisers and concluded the form was editable
+before its fetch resolved — a genuine data-loss path in production. That was
+wrong, and the executor sent to fix it checked rather than complied: the
+`if (doc === null) return <Loading…>` gate was already present in G2.5's
+original commit, so the form was never editable early.
+
+The real cause was narrower. `<StrictMode>` double-invokes the mount effect
+in development, so TWO `load()` chains run for one mount; whichever resolved
+last reapplied the pre-edit document over whatever had been typed since.
+The fix is a generation counter stamped on each `load()`, with stale
+responses dropped — which also covers any future path that calls `load()`
+twice in quick succession.
+
+Consequence worth recording plainly: because StrictMode's double-invoke is
+development-only, this never affected a production build. The orchestrator's
+description of it as production data loss overstated the impact.
