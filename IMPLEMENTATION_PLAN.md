@@ -368,9 +368,9 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
 | G3.1 | DONE | CHECKPOINT B | G3.2, G3.4 | — |
 | G3.2 | DONE | G3.1 | G3.3, G3.5 | — |
-| G3.3 | READY | G3.2 | G3.5 | G3.4 |
-| G3.4 | READY | G3.1 | G3.5 | G3.3 |
-| G3.5 | BLOCKED | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
+| G3.3 | DONE | G3.2 | G3.5 | G3.4 |
+| G3.4 | DONE | G3.1 | G3.5 | G3.3 |
+| G3.5 | READY | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
 | G4.1 | BLOCKED | CHECKPOINT C | G4.2 | — |
 | G4.2 | BLOCKED | G4.1 | CHECKPOINT D | — |
 | G5.1 | BLOCKED | CHECKPOINT D | G5.2 | — |
@@ -4649,7 +4649,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4797,10 +4797,56 @@ feat(documents): add confirmed document deletion with best-effort r2 cleanup
 ### Evidence
 
 ```text
+Executed by the ORCHESTRATOR, not an executor. Both wave-2 executors
+(G3.3, G3.4) died on dispatch with "session limit reached", leaving a
+completely clean tree — no partial work to recover. The orchestrator
+implemented both nodes directly rather than stalling the milestone. The
+verification discipline is unchanged, since the orchestrator was already
+the one re-running every command.
+
 Changed:
+  src/domain/documents/document-service.ts — deleteDocument(): confirmation,
+    key collection before the cascade, D1-then-R2 ordering, honest counts.
+  src/api/routes/admin/documents.ts        — DELETE /:slug. Transport only.
+  src/shared/errors.ts, tests/unit/errors.test.ts — CONFIRMATION_MISMATCH
+    added (see Notes).
+  tests/integration/document-delete.test.ts — created, 18 tests.
+
 Tests:
+  349 -> 367 vitest across 21 -> 22 files. Delta exactly +18 / +1.
+
 Verification:
+  pnpm typecheck && pnpm lint && pnpm test   exit 0, 367 passed (22 files)
+
+  The D1 cascade is asserted rather than assumed: the test counts rows in
+  documents, document_versions AND document_tags after the call, so the
+  schema's ON DELETE CASCADE is proven to fire in the Workers runtime.
+  Partial R2 failure is exercised at the 3-of-12 shape the node asks for,
+  through a bucket proxy that fails three named keys, and the structured
+  log line is parsed and asserted key by key.
+
 Notes:
+  DEFECT FOUND AND FIXED DURING THE NODE. The first implementation let two
+  concurrent deletes BOTH return 200 with identical counts, because both
+  had read the row before either delete committed. The batch result's
+  `changes` count now settles which caller actually removed the row; the
+  loser returns DOCUMENT_NOT_FOUND and stops before touching R2, which is
+  what the node's Edge Case asked for. Found by the test, not by review.
+
+  CONFIRMATION_MISMATCH was added to the ErrorCode union, authorized by the
+  orchestrator on the same footing as G2.2's TAG_* codes (SPEC §24 opens
+  with "At minimum"). Reusing INVALID_HTML — the create route's catch-all —
+  for a JSON body carrying no HTML would have told an operator to fix the
+  wrong thing. tests/unit/errors.test.ts holds a hand-written list, which is
+  what forced the new code through review instead of letting it appear
+  silently; that file and src/shared/errors.ts are outside this node's
+  declared Files list and were changed deliberately, not by drift.
+
+  An R2 object that had already vanished is NOT counted as a failure: R2's
+  delete is idempotent, nothing failed, and reporting otherwise would be the
+  dishonest answer. This deliberately differs from G3.2's per-version delete,
+  where the node's Edge Cases required distinguishing the two cases and a
+  head() check was added for exactly that purpose.
 ```
 
 ---
@@ -4810,7 +4856,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4964,10 +5010,56 @@ feat(content): add signed short-lived preview urls for historical versions
 ### Evidence
 
 ```text
+Executed by the ORCHESTRATOR — see the note on node G3.3.
+
 Changed:
+  src/shared/signing.ts                    — created. Import-free WebCrypto:
+    signPreviewClaim / verifyPreviewClaim / buildPreviewUrl, claim binds
+    documentId + versionId + exp, constant-time comparison, no grace period.
+  src/content/handler.ts                   — GET /p/:documentId/:versionId.
+  src/api/routes/admin/versions.ts         — GET .../versions/:versionNo/preview-url.
+  src/domain/versions/version-service.ts   — resolveVersionIdentity(), so the
+    route needs no SQL of its own (AGENT.md §10).
+  tests/integration/content-worker-readonly.test.ts — the G1.9 shared-import
+    assertion becomes an allowlist (see Notes).
+  tests/integration/preview-signing.test.ts — created, 17 tests.
+
 Tests:
+  367 -> 384 vitest across 22 -> 23 files. Delta exactly +17 / +1.
+
 Verification:
+  pnpm typecheck && pnpm lint && pnpm test        exit 0, 384 passed (23 files)
+  grep -riE "insert |update |delete " src/content/  no match — still read-only
+  pnpm build                                      clean
+
+  All four replay directions return a bare 403: expired, tampered exp,
+  cross-version, cross-document — plus a forged signature, a missing sig, a
+  missing exp, junk hex, and an absent secret. Each rejection body is
+  asserted to reveal nothing about which check failed.
+
 Notes:
+  BOUNDARY DECISION 1 — wrangler.content.jsonc was deliberately NOT modified,
+  despite this node's Files list naming it. CONTENT_PREVIEW_SIGNING_SECRET is
+  a runtime secret set with `wrangler secret put` and already present on the
+  deployed content Worker; secrets are never declared in wrangler config. So
+  no secret name is checked in, and every existing binding-boundary assertion
+  stays green untouched. The forbidden-name list keeps the entry so a future
+  change that moves it into `vars` fails loudly.
+
+  BOUNDARY DECISION 2 — the G1.9 assertion "does not import from src/shared/"
+  became an allowlist of exactly ["../shared/signing"]. G1.9's stated reason
+  was to keep the JSON envelope, the AppError vocabulary and the domain layer
+  off the content origin; G3.4's contract explicitly calls for a signing
+  utility "shared by both Workers". signing.ts imports nothing, touches no
+  storage and reads no environment, so admitting it widens nothing, and the
+  alternative — a second copy of the signature formula on the content origin
+  — is exactly the drift that turns a security boundary into a bug. Any other
+  shared import still fails the assertion.
+
+  The content Worker reads r2_key from D1 rather than rebuilding it from the
+  two ids, so it never learns the key format owned by r2-keys.ts, and a
+  version id that does not belong to the named document resolves to nothing
+  even if a signature somehow covered it.
 ```
 
 ---
