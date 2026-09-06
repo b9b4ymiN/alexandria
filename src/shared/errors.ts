@@ -31,6 +31,13 @@ export type ErrorCode =
   | "DOCUMENT_NOT_FOUND"
   | "SLUG_CONFLICT"
   | "SLUG_IMMUTABLE"
+  // Destructive-operation confirmation (IMPLEMENTATION_PLAN.md node G3.3,
+  // authorized by the orchestrator 2026-09-06 on the same footing as the
+  // TAG_* codes below: SPEC.md §24 opens with "At minimum". Document
+  // deletion is the only irreversible operation in Phase 1 and its
+  // confirmation contract deserves a code an operator can act on, rather
+  // than reusing INVALID_HTML for a JSON body that carries no HTML.)
+  | "CONFIRMATION_MISMATCH"
   // Version
   | "VERSION_NOT_FOUND"
   | "VERSION_IS_CURRENT"
@@ -93,6 +100,9 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   // comment on the ErrorCode union above).
   TAG_SELF_MERGE: 400,
   TAG_LIMIT_EXCEEDED: 400,
+  // The caller asked to delete a document but did not confirm the exact
+  // slug. Nothing is deleted, and the request can never succeed as sent.
+  CONFIRMATION_MISMATCH: 400,
 
   // 413 — request body exceeds an accepted size
   FILE_TOO_LARGE: 413,

@@ -23,6 +23,11 @@
 import { AppError } from "../../shared/errors";
 import { buildR2Key } from "./r2-keys";
 import { sha256Hex } from "./hash";
+import {
+  DEFAULT_MAX_UPLOAD_BYTES,
+  validateHtmlUpload,
+  type UploadLimits,
+} from "../documents/html-validation";
 
 /**
  * The two storage bindings the domain layer needs. Services take this
@@ -275,4 +280,369 @@ export async function appendVersion(
     versionNo: await readVersionNo(storage.db, versionId),
     unchanged: false,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Update & version history — node G3.1.
+//
+// Both operations resolve the document by its STABLE SLUG, matching the
+// public update contract (SPEC.md §11: "stable slug + new .html"). Neither
+// function ever writes `documents.slug`; the slug is only ever read back so
+// the caller can echo the unchanged public URL.
+// ---------------------------------------------------------------------------
+
+const MAX_NOTE_LENGTH = 500;
+
+interface DocumentIdentityRow {
+  id: string;
+  currentVersionId: string | null;
+}
+
+/** Resolves a document's internal id (and current pointer) by slug. */
+async function resolveDocumentBySlug(db: D1Database, slug: string): Promise<DocumentIdentityRow> {
+  const row = await db
+    .prepare("SELECT id, current_version_id AS currentVersionId FROM documents WHERE slug = ?")
+    .bind(slug)
+    .first<DocumentIdentityRow>();
+  if (row === null) {
+    throw new AppError("DOCUMENT_NOT_FOUND", {
+      message: "No document with that slug.",
+      detail: { slug },
+    });
+  }
+  return row;
+}
+
+export interface UpdateDocumentVersionInput {
+  slug: string;
+  bytes: ArrayBuffer;
+  filename: string;
+  createdBy: "admin" | "agent";
+  note?: string;
+  limits?: UploadLimits;
+}
+
+export interface UpdateDocumentVersionResult extends AppendVersionResult {
+  slug: string;
+}
+
+/**
+ * Update entry point for an existing document (SPEC.md §11 Update
+ * Contract, steps 1-9). Resolves the document by slug FIRST so an unknown
+ * slug fails with `DOCUMENT_NOT_FOUND` before any byte is even validated,
+ * then runs the incoming file through the identical validation chain a
+ * create goes through (node G3.1 requirement 2) before ever reaching
+ * `appendVersion` — a rejected file therefore never disturbs the current
+ * version, because nothing has been written yet at the point validation
+ * throws.
+ *
+ * `appendVersion`'s SHA-256 comparison (against the CURRENT version only),
+ * `force`-free UNCHANGED short-circuit, R2-then-D1 ordering and
+ * compensation are reused completely unchanged — this function does not
+ * duplicate any of that logic, it only resolves the slug and validates the
+ * incoming bytes first.
+ */
+export async function updateDocumentVersion(
+  storage: Storage,
+  input: UpdateDocumentVersionInput,
+): Promise<UpdateDocumentVersionResult> {
+  const document = await resolveDocumentBySlug(storage.db, input.slug);
+
+  const limits: UploadLimits = input.limits ?? { maxBytes: DEFAULT_MAX_UPLOAD_BYTES };
+  await validateHtmlUpload({ filename: input.filename, bytes: input.bytes }, limits);
+
+  if (input.note !== undefined && input.note.length > MAX_NOTE_LENGTH) {
+    throw new AppError("INVALID_HTML", {
+      message: `Note must be at most ${MAX_NOTE_LENGTH} characters.`,
+    });
+  }
+
+  const result = await appendVersion(storage, {
+    documentId: document.id,
+    bytes: input.bytes,
+    createdBy: input.createdBy,
+    note: input.note,
+  });
+
+  return { ...result, slug: input.slug };
+}
+
+export interface VersionHistoryEntry {
+  versionNo: number;
+  versionId: string;
+  sizeBytes: number;
+  sha256: string;
+  createdBy: "admin" | "agent";
+  createdAt: string;
+  note: string;
+  restoredFromVersionNo: number | null;
+  isCurrent: boolean;
+}
+
+interface VersionHistoryRow {
+  versionId: string;
+  versionNo: number;
+  sizeBytes: number;
+  sha256: string;
+  createdBy: "admin" | "agent";
+  createdAt: string;
+  note: string;
+  restoredFromVersionNo: number | null;
+}
+
+/**
+ * Full version history for a document, resolved by its stable slug, newest
+ * first, flagging the current version. Never selects `r2_key` or reads the
+ * object body — this is metadata only (node G3.1 requirement 7).
+ */
+export async function listVersionHistory(db: D1Database, slug: string): Promise<VersionHistoryEntry[]> {
+  const document = await resolveDocumentBySlug(db, slug);
+
+  const rows = await db
+    .prepare(
+      `SELECT id AS versionId, version_no AS versionNo, size_bytes AS sizeBytes, sha256,
+              created_by AS createdBy, created_at AS createdAt, note,
+              restored_from_version_no AS restoredFromVersionNo
+       FROM document_versions
+       WHERE document_id = ?
+       ORDER BY version_no DESC`,
+    )
+    .bind(document.id)
+    .all<VersionHistoryRow>();
+
+  return rows.results.map((row) => ({
+    ...row,
+    isCurrent: row.versionId === document.currentVersionId,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Restore & version delete guards — node G3.2.
+//
+// Both operations resolve by stable slug like G3.1's update and history
+// functions above, and neither ever writes `documents.slug` (SPEC.md §11,
+// §12, §13).
+// ---------------------------------------------------------------------------
+
+interface VersionRow {
+  id: string;
+  r2Key: string;
+}
+
+/** Looks up one version row by its document-scoped version number. */
+async function findVersionRow(
+  db: D1Database,
+  documentId: string,
+  versionNo: number,
+): Promise<VersionRow | null> {
+  return db
+    .prepare("SELECT id, r2_key AS r2Key FROM document_versions WHERE document_id = ? AND version_no = ?")
+    .bind(documentId, versionNo)
+    .first<VersionRow>();
+}
+
+export interface RestoreVersionInput {
+  slug: string;
+  versionNo: number;
+  createdBy: "admin" | "agent";
+}
+
+export interface RestoreVersionResult {
+  slug: string;
+  versionId: string;
+  versionNo: number;
+  restoredFromVersionNo: number;
+}
+
+/**
+ * Restore entry point (SPEC.md §12 Restore Contract, GOAL.md §4). Reads the
+ * source version's bytes from R2 and hands them to `appendVersion` as a
+ * brand-new version — the source row and its R2 object are never touched,
+ * so restore is append-only by construction, not by a separate check.
+ *
+ * `force: true` is the deliberate divergence from the upload UNCHANGED rule
+ * (see `AppendVersionInput.force`): restoring identical bytes is still an
+ * explicit editorial act, and history must record that it happened, so a
+ * restore never returns `unchanged`.
+ */
+export async function restoreVersion(
+  storage: Storage,
+  input: RestoreVersionInput,
+): Promise<RestoreVersionResult> {
+  const document = await resolveDocumentBySlug(storage.db, input.slug);
+
+  const source = await findVersionRow(storage.db, document.id, input.versionNo);
+  if (source === null) {
+    throw new AppError("VERSION_NOT_FOUND", {
+      message: "No version with that number.",
+      detail: { slug: input.slug, versionNo: input.versionNo },
+    });
+  }
+
+  const object = await storage.docs.get(source.r2Key);
+  if (object === null) {
+    // Nothing has been written yet at this point — the failure surfaces
+    // before any R2 put or D1 statement runs (node G3.2 Edge Cases).
+    throw new AppError("R2_READ_FAILED", {
+      message: "The source version's content could not be read.",
+      detail: { documentId: document.id, versionId: source.id, r2Key: source.r2Key },
+    });
+  }
+  const bytes = await object.arrayBuffer();
+
+  const result = await appendVersion(storage, {
+    documentId: document.id,
+    bytes,
+    createdBy: input.createdBy,
+    restoredFromVersionNo: input.versionNo,
+    force: true,
+  });
+
+  return {
+    slug: input.slug,
+    versionId: result.versionId,
+    versionNo: result.versionNo,
+    restoredFromVersionNo: input.versionNo,
+  };
+}
+
+export interface DeleteVersionInput {
+  slug: string;
+  versionNo: number;
+}
+
+export interface DeleteVersionResult {
+  deletedVersionNo: number;
+}
+
+/**
+ * Best-effort R2 cleanup for a version whose D1 row has already been
+ * removed. Mirrors `compensateOrphanedObject`'s trade-off: the metadata
+ * (already deleted) is authoritative, so any R2 outcome here is logged, not
+ * thrown. A `head()` first distinguishes "the object was already gone" from
+ * "the delete call itself failed" so both cases in node G3.2's Edge Cases
+ * produce a distinct, identifiable log line.
+ */
+async function deleteR2ObjectBestEffort(
+  storage: Storage,
+  ids: { documentId: string; versionId: string; r2Key: string },
+): Promise<void> {
+  try {
+    const existing = await storage.docs.head(ids.r2Key);
+    if (existing === null) {
+      console.error(
+        JSON.stringify({
+          event: "r2_version_object_already_missing",
+          documentId: ids.documentId,
+          versionId: ids.versionId,
+          r2Key: ids.r2Key,
+        }),
+      );
+      return;
+    }
+    await storage.docs.delete(ids.r2Key);
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "r2_version_delete_failed",
+        documentId: ids.documentId,
+        versionId: ids.versionId,
+        r2Key: ids.r2Key,
+        cause: String(error),
+      }),
+    );
+  }
+}
+
+/**
+ * Version delete (SPEC.md §13 Delete Rules). Guard order is fixed and
+ * load-bearing: `LAST_VERSION_CANNOT_DELETE` is checked BEFORE
+ * `VERSION_IS_CURRENT`, so a single-version document — which is always
+ * both the last and the current version — reports the more specific
+ * last-version code (node G3.2, requirement 5).
+ *
+ * Deletion order mirrors create's R2-then-D1 in reverse: the D1 row goes
+ * first, then the R2 object best-effort, because once the metadata is gone
+ * the object can never be reached through the API again regardless of
+ * whether the R2 delete itself succeeds.
+ */
+export async function deleteVersion(
+  storage: Storage,
+  input: DeleteVersionInput,
+): Promise<DeleteVersionResult> {
+  const document = await resolveDocumentBySlug(storage.db, input.slug);
+
+  const target = await findVersionRow(storage.db, document.id, input.versionNo);
+  if (target === null) {
+    throw new AppError("VERSION_NOT_FOUND", {
+      message: "No version with that number.",
+      detail: { slug: input.slug, versionNo: input.versionNo },
+    });
+  }
+
+  const countRow = await storage.db
+    .prepare("SELECT COUNT(*) AS c FROM document_versions WHERE document_id = ?")
+    .bind(document.id)
+    .first<{ c: number }>();
+  if ((countRow?.c ?? 0) <= 1) {
+    throw new AppError("LAST_VERSION_CANNOT_DELETE", {
+      message: "The only remaining version of a document cannot be deleted.",
+      detail: { slug: input.slug, versionNo: input.versionNo },
+    });
+  }
+
+  if (target.id === document.currentVersionId) {
+    throw new AppError("VERSION_IS_CURRENT", {
+      message: "The current version cannot be deleted.",
+      detail: { slug: input.slug, versionNo: input.versionNo },
+    });
+  }
+
+  await storage.db.prepare("DELETE FROM document_versions WHERE id = ?").bind(target.id).run();
+
+  await deleteR2ObjectBestEffort(storage, {
+    documentId: document.id,
+    versionId: target.id,
+    r2Key: target.r2Key,
+  });
+
+  return { deletedVersionNo: input.versionNo };
+}
+
+// ---------------------------------------------------------------------------
+// Version identity lookup — node G3.4.
+// ---------------------------------------------------------------------------
+
+export interface VersionIdentity {
+  documentId: string;
+  versionId: string;
+  versionNo: number;
+}
+
+/**
+ * Resolves the internal identity of one version of a document, addressed
+ * the way every Admin surface addresses it: stable slug plus version
+ * number.
+ *
+ * Node G3.4 needs this to mint a preview signature, which must bind the
+ * document and the version together. Without it the route would have to
+ * issue its own SQL, and a transport file that knows the schema is exactly
+ * what AGENT.md §10 forbids.
+ */
+export async function resolveVersionIdentity(
+  db: D1Database,
+  slug: string,
+  versionNo: number,
+): Promise<VersionIdentity> {
+  const document = await resolveDocumentBySlug(db, slug);
+
+  const row = await findVersionRow(db, document.id, versionNo);
+  if (row === null) {
+    throw new AppError("VERSION_NOT_FOUND", {
+      message: "No version with that number.",
+      detail: { slug, versionNo },
+    });
+  }
+
+  return { documentId: document.id, versionId: row.id, versionNo };
 }

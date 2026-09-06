@@ -9,11 +9,16 @@ import {
 import { ok, fail } from "../../src/shared/envelope";
 
 // SPEC.md §24 "at minimum" list, Phase 1 subset, PLUS the six TAG_* codes
-// node G2.2 was authorized to add additively on 2026-08-30 (SPEC.md §24
-// opens with "At minimum," so this is an authorized extension, not a
-// deviation — see the ErrorCode union's TAG block comment in
+// node G2.2 was authorized to add additively on 2026-08-30, PLUS
+// CONFIRMATION_MISMATCH, authorized for node G3.3 on 2026-09-06 on the same
+// footing (SPEC.md §24 opens with "At minimum," so these are authorized
+// extensions, not deviations — see the block comments in
 // src/shared/errors.ts). DRIA_* and AI_* codes are the Phase 1.5 Dria
 // contract (AGENT.md §3, §19) and must be absent.
+//
+// This list is deliberately hand-written rather than derived from the
+// implementation: adding a code to the union alone fails this test, which
+// is what forces a new code through review.
 const SPEC_PHASE_1_CODES: ErrorCode[] = [
   "AUTH_REQUIRED",
   "AUTH_INVALID",
@@ -32,6 +37,7 @@ const SPEC_PHASE_1_CODES: ErrorCode[] = [
   "DOCUMENT_NOT_FOUND",
   "SLUG_CONFLICT",
   "SLUG_IMMUTABLE",
+  "CONFIRMATION_MISMATCH",
   "VERSION_NOT_FOUND",
   "VERSION_IS_CURRENT",
   "LAST_VERSION_CANNOT_DELETE",
@@ -99,6 +105,7 @@ describe("status mapping (total)", () => {
       TAG_NAME_TOO_LONG: 400,
       TAG_SELF_MERGE: 400,
       TAG_LIMIT_EXCEEDED: 400,
+      CONFIRMATION_MISMATCH: 400,
       // size -> 413
       FILE_TOO_LARGE: 413,
       // not-found -> 404

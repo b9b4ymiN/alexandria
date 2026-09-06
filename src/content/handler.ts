@@ -7,11 +7,16 @@
 // agent secret (IMPLEMENTATION_PLAN.md §5 Architecture Constraint 3, Node
 // G1.9 Implementation Requirements 1-2).
 //
-// This file intentionally does NOT import from src/shared/ — see the
-// Orchestrator clarification on Node G1.9. The content Worker serves HTML,
-// not the JSON API envelope, so it carries its own minimal 404 page and
-// logs failures with local literal strings rather than the API's
-// AppError/error-code vocabulary.
+// This file imports NOTHING from src/shared/ except src/shared/signing.ts
+// — see the Orchestrator clarification on Node G1.9 and the one exception
+// node G3.4 authorizes. The content Worker serves HTML, not the JSON API
+// envelope, so it carries its own minimal 404 page and logs failures with
+// local literal strings rather than the API's AppError/error-code
+// vocabulary. signing.ts is admitted because it is pure WebCrypto with no
+// imports, no storage and no environment access, and because the
+// alternative — a second copy of the signature formula living here — is
+// the kind of drift that turns a security boundary into a bug.
+import { verifyPreviewClaim } from "../shared/signing";
 
 export interface ContentEnv {
   DB: D1Database;
@@ -19,6 +24,12 @@ export interface ContentEnv {
   // Configuration, not a literal in source, so the value changes with the
   // deployment (Node G1.9 Implementation Requirement 7).
   APP_ORIGIN: string;
+  // The ONLY secret this Worker holds (node G3.4). It is set with
+  // `wrangler secret put` and never declared in wrangler.content.jsonc, so
+  // no secret name or value is ever checked in. An admin password, session
+  // signing secret or agent key must never join it — that separation IS the
+  // origin isolation guarantee (AGENT.md §8, §13).
+  CONTENT_PREVIEW_SIGNING_SECRET: string;
 }
 
 const NOT_FOUND_BODY = `<!doctype html>
@@ -163,6 +174,107 @@ async function handleGetDocument(slug: string, env: ContentEnv, request: Request
   return serveVersion(current, env, request);
 }
 
+// ---------------------------------------------------------------------------
+// Signed historical preview — node G3.4.
+//
+// /d/:slug serves the CURRENT version to anyone. /p/:documentId/:versionId
+// serves ONE historical version to whoever holds an unexpired signature for
+// exactly that document and version. The signature is the only credential:
+// this Worker holds no session, reads no cookie and cannot ask the app
+// Worker anything.
+//
+// The r2_key is read from D1 rather than rebuilt from the two ids, so this
+// file never has to know the key format (src/domain/versions/r2-keys.ts owns
+// it), and so a version id that does not actually belong to the named
+// document resolves to nothing even if a signature somehow covered it.
+// ---------------------------------------------------------------------------
+const PREVIEW_PATH = /^\/p\/([^/]+)\/([^/]+)$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const FORBIDDEN_BODY = `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Forbidden</title></head>
+<body><p>This preview link is not valid.</p></body>
+</html>
+`;
+
+/**
+ * One response for every rejection — expired, tampered, wrong document,
+ * wrong version, missing parameters. A caller learns that the link does not
+ * work and nothing else (node G3.4 requirement 3).
+ */
+function forbidden(): Response {
+  return new Response(FORBIDDEN_BODY, {
+    status: 403,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "cache-control": "private, no-store",
+    },
+  });
+}
+
+async function resolveVersionKey(
+  db: D1Database,
+  documentId: string,
+  versionId: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare("SELECT r2_key AS r2_key FROM document_versions WHERE id = ? AND document_id = ?")
+    .bind(versionId, documentId)
+    .first<{ r2_key: string }>();
+  return row?.r2_key ?? null;
+}
+
+async function handleGetPreview(
+  documentId: string,
+  versionId: string,
+  url: URL,
+  env: ContentEnv,
+): Promise<Response> {
+  if (!UUID_PATTERN.test(documentId) || !UUID_PATTERN.test(versionId)) {
+    return forbidden();
+  }
+
+  const expRaw = url.searchParams.get("exp");
+  const signature = url.searchParams.get("sig");
+  if (expRaw === null || signature === null || !/^[0-9]+$/.test(expRaw)) {
+    return forbidden();
+  }
+
+  const verification = await verifyPreviewClaim(
+    { documentId, versionId, exp: Number.parseInt(expRaw, 10) },
+    signature,
+    env.CONTENT_PREVIEW_SIGNING_SECRET ?? "",
+  );
+  if (!verification.ok) {
+    return forbidden();
+  }
+
+  const r2Key = await resolveVersionKey(env.DB, documentId, versionId);
+  if (r2Key === null) {
+    return notFound();
+  }
+
+  const object = await env.DOCS.get(r2Key);
+  if (object === null) {
+    console.error("content worker: R2_READ_FAILED", { r2Key });
+    return notFound();
+  }
+
+  return new Response(object.body, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": frameAncestorsHeader(env.APP_ORIGIN),
+      // A superseded version must never sit in a shared cache: the link is
+      // short-lived on purpose and the bytes are not published content.
+      "cache-control": "private, no-store",
+    },
+  });
+}
+
 const DOCUMENT_PATH = /^\/d\/([^/]+)$/;
 
 // The Worker never reads a cookie (no code path here inspects the Cookie
@@ -178,6 +290,11 @@ export async function handleContentRequest(request: Request, env: ContentEnv): P
 
   if (url.pathname === "/health") {
     return health();
+  }
+
+  const previewMatch = PREVIEW_PATH.exec(url.pathname);
+  if (previewMatch) {
+    return handleGetPreview(previewMatch[1] ?? "", previewMatch[2] ?? "", url, env);
   }
 
   const match = DOCUMENT_PATH.exec(url.pathname);

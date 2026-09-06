@@ -225,7 +225,7 @@ G1.3 || G1.4 || G1.6
 G1.7 || G1.8 || G1.9
 G2.1 || G2.2
 G2.5 || G2.6
-G3.2 || G3.4
+G3.3 || G3.4
 G6.1 || G6.2 || G6.3
 ```
 
@@ -236,7 +236,8 @@ Why each pairing is safe:
 - **G1.7 || G1.8 || G1.9** — safe **only because `G1.2` creates `src/api/app.ts` with empty public and admin routers already mounted**. `G1.7` writes `routes/admin/documents.ts`, `G1.8` writes `routes/public/documents.ts`, `G1.9` writes a different Worker entrypoint with its own wrangler config. No node in this set edits `app.ts`.
 - **G2.1 || G2.2** — `CategoryService` with `routes/admin/categories.ts` versus `TagService` with `routes/admin/tags.ts`. Each mounts itself into the admin router through its own file.
 - **G2.5 || G2.6** — admin surface under `src/app/routes/admin/` versus public surface under `src/app/routes/`. Shared layout files are not modified by either node.
-- **G3.2 || G3.4** — version guards live in `VersionService` and admin routes; signed-URL work lives in `src/shared/signing.ts` and the content Worker.
+- **G3.3 || G3.4** — `document-service.ts` with `routes/admin/documents.ts` versus `src/shared/signing.ts`, `src/content/handler.ts`, `wrangler.content.jsonc` and `routes/admin/versions.ts`. Disjoint files.
+- **CORRECTION, 2026-09-06 — `G3.2 || G3.4` was wrong and is withdrawn.** This section justified the pairing on the grounds that signed-URL work lives in `src/shared/signing.ts` and the content Worker, but `G3.4`'s own Files list also modifies `src/api/routes/admin/versions.ts` for the issuance endpoint — the same file `G3.2` extends. Running them in parallel would have put two executors in one route file. The work cannot be moved to a new leaf file either, because mounting one requires editing `routes/admin/index.ts`, which is single-writer. `G3.4` is therefore serialized after `G3.2` and pairs with `G3.3` instead, which costs no extra wave: M3 still runs `G3.2` → `G3.3 || G3.4` → `G3.5`. Found by the orchestrator while preparing the M3 dispatches, before any executor was launched.
 - **G6.1 || G6.2 || G6.3** — three distinct test suites; none is expected to modify production source. Any node that must change production code stops and reports so the change is reviewed once, serially.
 
 Conflict analysis:
@@ -301,13 +302,18 @@ Required nodes: `G2.1 … G2.6`
 
 Required nodes: `G3.1 … G3.5`
 
-- [ ] Re-upload of identical bytes returns `UNCHANGED` and creates no version
-- [ ] A modified upload creates a new immutable version and the public URL does not change
-- [ ] Version history lists every version with author, size and timestamp
-- [ ] An old version is previewable by Admin only through a signed, expiring URL
-- [ ] Restore appends a new highest version carrying `restored_from_version_no`
-- [ ] Current-version and last-version deletions are rejected
-- [ ] Document deletion cascades in D1 and best-effort cleans R2, logging any orphan keys
+**PASSED 2026-09-06**, verified by the orchestrator re-running every suite on
+a tree nobody was writing to: 384 vitest across 23 files, 63 browser, 10 PWA,
+clean typecheck, lint and build, admin chunk still split from the public
+entry.
+
+- [x] Re-upload of identical bytes returns `UNCHANGED` and creates no version — asserted against version count, `updated_at` AND R2 object count
+- [x] A modified upload creates a new immutable version and the public URL does not change — plus 20 sequential updates leaving v1's object hash untouched
+- [x] Version history lists every version with author, size and timestamp — and never carries body content
+- [x] An old version is previewable by Admin only through a signed, expiring URL — expired, tampered, cross-version, cross-document, forged, unsigned and secret-less requests all return a bare 403
+- [x] Restore appends a new highest version carrying `restored_from_version_no` — pointer monotonic across a 10-operation mixed sequence
+- [x] Current-version and last-version deletions are rejected — with last-version taking precedence when both apply
+- [x] Document deletion cascades in D1 and best-effort cleans R2, logging any orphan keys — cascade counted in all three tables, orphan log parsed key by key at the 3-of-12 shape
 
 ### CHECKPOINT D — Search complete
 
@@ -365,11 +371,11 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G2.5 | DONE | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
 | G2.6 | DONE | G2.4 | CHECKPOINT B | G2.5 |
 | G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
-| G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
-| G3.2 | BLOCKED | G3.1 | G3.3, G3.5 | G3.4 |
-| G3.3 | BLOCKED | G3.2 | G3.5 | G3.4 |
-| G3.4 | BLOCKED | G3.1 | G3.5 | G3.2, G3.3 |
-| G3.5 | BLOCKED | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
+| G3.1 | DONE | CHECKPOINT B | G3.2, G3.4 | — |
+| G3.2 | DONE | G3.1 | G3.3, G3.5 | — |
+| G3.3 | DONE | G3.2 | G3.5 | G3.4 |
+| G3.4 | DONE | G3.1 | G3.5 | G3.3 |
+| G3.5 | DONE | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
 | G4.1 | BLOCKED | CHECKPOINT C | G4.2 | — |
 | G4.2 | BLOCKED | G4.1 | CHECKPOINT D | — |
 | G5.1 | BLOCKED | CHECKPOINT D | G5.2 | — |
@@ -4235,7 +4241,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Orchestrator clarification (2026-08-30)
@@ -4396,9 +4402,46 @@ feat(versions): add document update with immutable versioning and history
 
 ```text
 Changed:
+  src/domain/versions/version-service.ts  — updateDocumentVersion() and
+    listVersionHistory() appended. appendVersion() untouched: the diff is
+    purely additive (one import block, one append after line 278), so the
+    G1.5 contract, its SHA-256 comparison, its R2-then-D1 ordering and its
+    compensation are reused rather than re-implemented.
+  src/api/routes/admin/versions.ts        — POST /:slug/versions and
+    GET /:slug/versions behind requireAdmin. Transport only.
+  tests/integration/document-update.test.ts — created, 18 tests.
+
 Tests:
-Verification:
+  305 -> 323 vitest across 18 -> 19 files. Delta is exactly +18 / +1;
+  nothing else moved.
+
+Verification (orchestrator re-ran every command itself on the same tree):
+  pnpm typecheck && pnpm lint && pnpm test   exit 0, 323 passed (19 files)
+  pnpm build                                 clean, admin chunk still split
+                                             from the public entry
+
+  Four highest-risk tests read line by line rather than trusted:
+  - UNCHANGED returns 200 through ok(), never 409, and writes nothing —
+    asserted against version count, documents.updated_at AND R2 object count
+  - injected D1 batch failure leaves current_version_id on v1, version count
+    at 1, and only v1's object surviving (orphan compensated away)
+  - 20 sequential updates produce 21 distinct R2 keys and leave v1's object
+    sha256 identical
+  - the route-thinness scan strips comments before asserting on source
+
 Notes:
+  A note longer than 500 characters is rejected with INVALID_HTML. That is
+  not this node's invention — the G1.7 create route already uses
+  INVALID_HTML as the catch-all for field validation — but M5 surfaces error
+  codes verbatim to agents (node G5.2 requirement 5), so an agent sending an
+  over-long note would be told to fix its HTML. Decide before G5.1 whether
+  to add a NOTE_TOO_LONG code, for which G2.2's TAG_NAME_TOO_LONG is the
+  precedent. Recorded, not silently fixed.
+
+  The executor also added a defence-in-depth 500-character check inside
+  updateDocumentVersion in addition to the route's zod cap, so the domain
+  function is correct when called directly. Harmless asymmetry with create,
+  left as is.
 ```
 
 ---
@@ -4408,7 +4451,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4424,7 +4467,7 @@ Append-only restore is what makes history trustworthy. If restore rewound the po
 ```text
 depends_on: G3.1
 blocks:     G3.3, G3.5
-can_parallel_with: G3.4
+can_parallel_with: — (was G3.4; corrected 2026-09-06, see §9)
 ```
 
 ### Scope
@@ -4562,9 +4605,46 @@ feat(versions): add append-only restore and guarded version deletion
 
 ```text
 Changed:
+  src/domain/versions/version-service.ts  — findVersionRow(), restoreVersion(),
+    deleteVersion(), deleteR2ObjectBestEffort(). Purely additive; G3.1's
+    functions and appendVersion() untouched.
+  src/api/routes/admin/versions.ts        — POST /:slug/restore/:versionNo (201)
+    and DELETE /:slug/versions/:versionNo (200). Guard precedence lives in the
+    domain layer, not the route.
+  tests/integration/version-restore.test.ts — created, 15 tests.
+  tests/integration/version-delete.test.ts  — created, 11 tests.
+
 Tests:
-Verification:
+  323 -> 349 vitest across 19 -> 21 files. Delta exactly +26 / +2.
+
+Verification (orchestrator re-ran every command itself):
+  pnpm typecheck && pnpm lint && pnpm test   exit 0, 349 passed (21 files)
+
+  Read line by line rather than trusted:
+  - the 10-operation monotonicity test is genuinely mixed (four updates, three
+    restores, two deletes, one update) and asserts the pointer after EVERY op,
+    ending at v9
+  - restore passes force: true, so identical bytes still append; the source row
+    and its R2 object are compared before and after and are unchanged
+  - the single-version case asserts LAST_VERSION_CANNOT_DELETE specifically,
+    not merely a 403
+  - the orphan-logging tests parse the actual JSON log line and assert
+    documentId, versionId and r2Key, for both "already missing" and
+    "delete call failed"
+  - no agent route: runtime 404 probes plus a source scan of all four agent
+    route files
+
 Notes:
+  Accepted design decision — deleteR2ObjectBestEffort() does a head() before
+  the delete. R2's delete() does not throw for a missing key, so without the
+  head there is no way to satisfy this node's Edge Case requiring an
+  already-gone object to both succeed AND log the orphan. Cost is one extra R2
+  read on a rare admin operation. Kept.
+
+  A malformed :versionNo path segment (non-numeric, zero, negative,
+  fractional) is reported as VERSION_NOT_FOUND rather than a generic 400. No
+  plan code exists for a malformed version number and such a segment can never
+  match a row. Accepted.
 ```
 
 ---
@@ -4574,7 +4654,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4722,10 +4802,56 @@ feat(documents): add confirmed document deletion with best-effort r2 cleanup
 ### Evidence
 
 ```text
+Executed by the ORCHESTRATOR, not an executor. Both wave-2 executors
+(G3.3, G3.4) died on dispatch with "session limit reached", leaving a
+completely clean tree — no partial work to recover. The orchestrator
+implemented both nodes directly rather than stalling the milestone. The
+verification discipline is unchanged, since the orchestrator was already
+the one re-running every command.
+
 Changed:
+  src/domain/documents/document-service.ts — deleteDocument(): confirmation,
+    key collection before the cascade, D1-then-R2 ordering, honest counts.
+  src/api/routes/admin/documents.ts        — DELETE /:slug. Transport only.
+  src/shared/errors.ts, tests/unit/errors.test.ts — CONFIRMATION_MISMATCH
+    added (see Notes).
+  tests/integration/document-delete.test.ts — created, 18 tests.
+
 Tests:
+  349 -> 367 vitest across 21 -> 22 files. Delta exactly +18 / +1.
+
 Verification:
+  pnpm typecheck && pnpm lint && pnpm test   exit 0, 367 passed (22 files)
+
+  The D1 cascade is asserted rather than assumed: the test counts rows in
+  documents, document_versions AND document_tags after the call, so the
+  schema's ON DELETE CASCADE is proven to fire in the Workers runtime.
+  Partial R2 failure is exercised at the 3-of-12 shape the node asks for,
+  through a bucket proxy that fails three named keys, and the structured
+  log line is parsed and asserted key by key.
+
 Notes:
+  DEFECT FOUND AND FIXED DURING THE NODE. The first implementation let two
+  concurrent deletes BOTH return 200 with identical counts, because both
+  had read the row before either delete committed. The batch result's
+  `changes` count now settles which caller actually removed the row; the
+  loser returns DOCUMENT_NOT_FOUND and stops before touching R2, which is
+  what the node's Edge Case asked for. Found by the test, not by review.
+
+  CONFIRMATION_MISMATCH was added to the ErrorCode union, authorized by the
+  orchestrator on the same footing as G2.2's TAG_* codes (SPEC §24 opens
+  with "At minimum"). Reusing INVALID_HTML — the create route's catch-all —
+  for a JSON body carrying no HTML would have told an operator to fix the
+  wrong thing. tests/unit/errors.test.ts holds a hand-written list, which is
+  what forced the new code through review instead of letting it appear
+  silently; that file and src/shared/errors.ts are outside this node's
+  declared Files list and were changed deliberately, not by drift.
+
+  An R2 object that had already vanished is NOT counted as a failure: R2's
+  delete is idempotent, nothing failed, and reporting otherwise would be the
+  dishonest answer. This deliberately differs from G3.2's per-version delete,
+  where the node's Edge Cases required distinguishing the two cases and a
+  head() check was added for exactly that purpose.
 ```
 
 ---
@@ -4735,7 +4861,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4751,7 +4877,7 @@ Previewing history is required by GOAL.md §3, but exposing every past version a
 ```text
 depends_on: G3.1
 blocks:     G3.5
-can_parallel_with: G3.2, G3.3
+can_parallel_with: G3.3 (was G3.2, G3.3; corrected 2026-09-06, see §9)
 ```
 
 ### Scope
@@ -4889,10 +5015,56 @@ feat(content): add signed short-lived preview urls for historical versions
 ### Evidence
 
 ```text
+Executed by the ORCHESTRATOR — see the note on node G3.3.
+
 Changed:
+  src/shared/signing.ts                    — created. Import-free WebCrypto:
+    signPreviewClaim / verifyPreviewClaim / buildPreviewUrl, claim binds
+    documentId + versionId + exp, constant-time comparison, no grace period.
+  src/content/handler.ts                   — GET /p/:documentId/:versionId.
+  src/api/routes/admin/versions.ts         — GET .../versions/:versionNo/preview-url.
+  src/domain/versions/version-service.ts   — resolveVersionIdentity(), so the
+    route needs no SQL of its own (AGENT.md §10).
+  tests/integration/content-worker-readonly.test.ts — the G1.9 shared-import
+    assertion becomes an allowlist (see Notes).
+  tests/integration/preview-signing.test.ts — created, 17 tests.
+
 Tests:
+  367 -> 384 vitest across 22 -> 23 files. Delta exactly +17 / +1.
+
 Verification:
+  pnpm typecheck && pnpm lint && pnpm test        exit 0, 384 passed (23 files)
+  grep -riE "insert |update |delete " src/content/  no match — still read-only
+  pnpm build                                      clean
+
+  All four replay directions return a bare 403: expired, tampered exp,
+  cross-version, cross-document — plus a forged signature, a missing sig, a
+  missing exp, junk hex, and an absent secret. Each rejection body is
+  asserted to reveal nothing about which check failed.
+
 Notes:
+  BOUNDARY DECISION 1 — wrangler.content.jsonc was deliberately NOT modified,
+  despite this node's Files list naming it. CONTENT_PREVIEW_SIGNING_SECRET is
+  a runtime secret set with `wrangler secret put` and already present on the
+  deployed content Worker; secrets are never declared in wrangler config. So
+  no secret name is checked in, and every existing binding-boundary assertion
+  stays green untouched. The forbidden-name list keeps the entry so a future
+  change that moves it into `vars` fails loudly.
+
+  BOUNDARY DECISION 2 — the G1.9 assertion "does not import from src/shared/"
+  became an allowlist of exactly ["../shared/signing"]. G1.9's stated reason
+  was to keep the JSON envelope, the AppError vocabulary and the domain layer
+  off the content origin; G3.4's contract explicitly calls for a signing
+  utility "shared by both Workers". signing.ts imports nothing, touches no
+  storage and reads no environment, so admitting it widens nothing, and the
+  alternative — a second copy of the signature formula on the content origin
+  — is exactly the drift that turns a security boundary into a bug. Any other
+  shared import still fails the assertion.
+
+  The content Worker reads r2_key from D1 rather than rebuilding it from the
+  two ids, so it never learns the key format owned by r2-keys.ts, and a
+  version id that does not belong to the named document resolves to nothing
+  even if a signature somehow covered it.
 ```
 
 ---
@@ -4902,7 +5074,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -5055,9 +5227,54 @@ feat(admin): add version history screen with preview, restore and delete
 
 ```text
 Changed:
+  src/app/features/versions/VersionTable.tsx    — created. Guard reasons are
+    always-visible text, never a title= tooltip, in the server's own
+    precedence (last-version beats current-version).
+  src/app/features/versions/VersionPreview.tsx  — created. Fresh signed URL on
+    every open plus a re-request shortly before expiry; the Reader's exact
+    sandbox attribute, no allow-same-origin.
+  src/app/routes/admin/document-edit.tsx        — upload-with-note, the table,
+    the preview dialog, and document delete gated on typing the slug.
+  src/app/lib/api-client.ts                     — TYPES ONLY (see Notes).
+  tests/browser/admin-versions.spec.ts          — created, 9 tests.
+
 Tests:
-Verification:
+  vitest unchanged at 384 across 23 files (no backend touched).
+  browser 54 -> 63 (+9). PWA unchanged at 10.
+
+Verification (orchestrator re-ran everything on a stable tree):
+  pnpm typecheck && pnpm lint && pnpm test    exit 0, 384 passed (23 files)
+  pnpm exec playwright test                   63 passed
+  pnpm test:pwa                               10 passed
+  pnpm build                                  clean; admin-C5e4Tulo.js 48.49 kB
+                                              still split from index-CKhOcuie.js
+
+  Read rather than trusted: the preview iframe's sandbox string is character
+  for character the Reader's (`allow-scripts allow-popups allow-downloads`,
+  no allow-same-origin); the preview URL is requested on mount and refreshed
+  on a timer derived from expiresAt, never stored; the delete guard reason
+  renders as a paragraph under the row, not a tooltip.
+
 Notes:
+  THE EXECUTOR HIT A REAL TRAP AND REPORTED IT INSTEAD OF HIDING IT. The node
+  said to add the six client functions to api-client.ts. Doing so broke two
+  frozen tests — library.spec.ts and public-browse.spec.ts both assert that
+  browsing never downloads admin code — because api-client.ts is imported by
+  public routes, so a static import of admin-session.ts pulls admin code into
+  every public page load (AGENT.md §25). Only the types stayed; the
+  adminRequest calls live in the admin components, matching categories, tags
+  and upload. api-client.ts now carries a comment saying why.
+
+  Not wired: the preview dialog shows an inline error rather than bouncing to
+  login if the admin session expires mid-request. Outside the node's required
+  tests and not a regression. Left for M6.
+
+  Separately, and committed on its own as 77a9ed2: two raw NUL bytes had been
+  sitting in document-edit.tsx since G2.3, which made git treat the file as
+  binary — so this node's 11KB of new UI arrived as "Bin 9098 -> 20400" with
+  no reviewable diff. Replaced with the equivalent unicode escape, identical
+  behaviour, file is text again. Found while reviewing this node, which is
+  exactly the review the defect was suppressing.
 ```
 
 ---
