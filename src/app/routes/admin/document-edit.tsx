@@ -238,7 +238,7 @@ export function DocumentEditPage({ onSessionExpired }: { onSessionExpired: () =>
       .map((tag) => tag.trim())
       .filter((tag) => tag !== "");
     const metadataChanged =
-      title.trim() !== doc.title || description.trim() !== doc.description || tags.join(" ") !== doc.tags.join(" ");
+      title.trim() !== doc.title || description.trim() !== doc.description || tags.join("\u0000") !== doc.tags.join("\u0000");
     const categoryChanged = categoryId !== doc.categoryId;
 
     try {
