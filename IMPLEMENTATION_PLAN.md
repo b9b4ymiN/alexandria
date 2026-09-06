@@ -10,6 +10,13 @@ Planner:      Opus Graph Architect
 Status:       EXECUTING
 Approved By:  THP (Thitipat)
 Approved At:  2026-08-30
+Progress:     20 of 34 nodes DONE — M1 and M2 complete and merged to main.
+              CHECKPOINT A passed except real-device mobile reading;
+              CHECKPOINT B passed 2026-09-03. M3 (G3.1-G3.5) is next.
+Deployed:     PRODUCTION IS RUNNING M1 ONLY. Every M2 change is undeployed;
+              see HANDOVER.md §2 before deploying, since the public
+              categories response shape changed.
+Last updated: 2026-09-06
 ```
 
 ---
