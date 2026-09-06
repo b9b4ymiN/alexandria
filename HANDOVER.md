@@ -1,6 +1,6 @@
 # HANDOVER — Alexandria
 
-**Written:** 2026-09-06 · **Branch:** `main` @ `1c37ae4` · **Phase:** 1, milestones 1 and 2 complete
+**Written:** 2026-09-06 · **Branch:** `main` · **Phase:** 1, milestones 1 and 2 complete and deployed
 
 Read this first, then `IMPLEMENTATION_PLAN.md` for the node graph. `AGENT.md`
 still governs how the work is done; nothing here overrides it.
@@ -32,39 +32,43 @@ the admin chunk is still split from the public entry
 
 ---
 
-## 2. ⚠️ Production is running M1, not `main`
+## 2. Production is current with `main`
 
-This is the most important thing to know before touching anything.
+M1 and M2 are both deployed. Verified live on 2026-09-06 immediately after
+deploying:
 
 ```text
-main         M1 + M2
-production   M1 only  — everything in M2 is undeployed
+GET /api/public/tags          200, returns the tag list      (was 404 on M1)
+GET /api/public/categories    nested tree with descendantDocumentCount
+GET /api/public/documents?tag=investing   filters correctly
+GET /api/public/documents?categoryId=does-not-exist   404 CATEGORY_NOT_FOUND
+GET /api/admin/categories     401 without a token
+/manifest.webmanifest, /sw.js 200
+content /health               200
 ```
 
-Verified 2026-09-06: `GET /api/public/tags` returns **404** in production (it
-is implemented on `main` by G2.4), and `GET /api/public/categories` still
-returns the flat M1 array rather than M2's nested tree.
+The acceptance document still serves byte-identically end to end: sha256 of
+the bytes fetched from the content origin equals the local source file.
 
-So the live site has no category tree, no tag list, no browse UI, no admin
-category or tag screens, and no PWA.
+Deployed versions: `alexandria` `c5abdc49`, `alexandria-content` `e5761b18`.
+A pre-deploy D1 snapshot is at `backup-pre-m2-deploy.sql` (git-ignored). No
+migration was needed — M2 added none.
 
-**Deploying is a deliberate decision, not a formality.** M2 changed the shape
-of `GET /api/public/categories` from a flat array to a nested tree. The
-deployed SPA expects the flat shape, so the app Worker and its assets must be
-deployed together, in the order `docs/DEPLOYMENT.md` gives. Do not deploy the
-Worker alone.
+**When you deploy again, the order and the config matter.** Content Worker
+first, then the app Worker, and the app Worker must be deployed from the
+config the BUILD emits, not from `wrangler.jsonc`: the Cloudflare Vite plugin
+supplies `assets.directory` at build time, so the source config alone fails
+with "missing the required `directory` property".
 
 ```bash
 pnpm build
-pnpm exec wrangler deploy -c wrangler.content.jsonc      # content first
+pnpm exec wrangler deploy -c wrangler.content.jsonc
 pnpm exec wrangler deploy -c dist/alexandria/wrangler.json
 ```
 
-The app Worker CANNOT be deployed from `wrangler.jsonc` directly — the
-Cloudflare Vite plugin supplies `assets.directory` at build time, so the
-source config alone fails. Deploy the config the build emits.
-
-No D1 migration is pending: M2 added no migration.
+Take a `wrangler d1 export --remote` snapshot before any deploy that carries
+a migration. M3 will carry none either, but M3 changes version and delete
+semantics, so snapshot anyway before deploying it.
 
 ---
 
