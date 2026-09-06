@@ -4,8 +4,14 @@
 // category path, tags, updated date — and deliberately no cover image
 // (AGENT.md §23) and no body excerpt, because list responses carry no HTML
 // body at all.
+//
+// Node G2.6 adds tag chips (requirement 4). They render as a SIBLING of the
+// title link rather than inside it — nesting an `<a>` inside an `<a>` is
+// invalid HTML and would make the chips unclickable, since the browser
+// closes the outer anchor at the first nested one it finds.
 import { Link } from "react-router";
 import type { DocumentSummary } from "../lib/api-client";
+import { TagChips } from "../features/browse/TagChips";
 
 function formatUpdated(iso: string): string {
   const date = new Date(iso);
@@ -33,15 +39,6 @@ export function DocumentCard({ document }: { document: DocumentSummary }) {
           {document.description !== "" && (
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#3e5478] sm:text-base">{document.description}</p>
           )}
-          {document.tags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {document.tags.map((tag) => (
-                <span key={tag} className="border border-[#071e4a]/25 px-2 py-1 text-xs font-semibold text-[#27416c]">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
         <time dateTime={document.updatedAt} className="text-sm font-medium tabular-nums text-[#526889] sm:pt-1 sm:text-right">
           {formatUpdated(document.updatedAt)}
@@ -52,6 +49,11 @@ export function DocumentCard({ document }: { document: DocumentSummary }) {
           </svg>
         </span>
       </Link>
+      {document.tags.length > 0 && (
+        <div className="mt-3 sm:pl-0">
+          <TagChips tags={document.tags} />
+        </div>
+      )}
     </article>
   );
 }

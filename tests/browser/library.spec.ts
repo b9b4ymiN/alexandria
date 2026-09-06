@@ -105,10 +105,18 @@ test.describe("Library", () => {
   });
 
   test("uses a category route as a category filter", async ({ page }) => {
+    // Node G2.6: category selection now navigates to the shareable
+    // `/category/*` route (tests/browser/public-browse.spec.ts covers that
+    // page's own behaviour in depth) rather than filtering in place.
     await page.goto("/");
 
-    await page.getByRole("button", { name: /Books/ }).click();
-    await expect(page.getByRole("heading", { name: "Recently updated in Books", level: 2 })).toBeVisible();
+    // Disambiguated by href: migration 0002 seeds its own unrelated
+    // "Books" category (slug "books"), alongside this spec's own "Books"
+    // fixture (slug "books-seed") — both share the display name "Books".
+    await page.locator('a[href="/category/books-seed"]').click();
+    await expect(page).toHaveURL(/\/category\/books-seed$/);
+    await expect(page.getByRole("heading", { name: "Books", level: 2 })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Expectations Investing/i }).first()).toBeVisible();
   });
 
   for (const viewport of VIEWPORTS) {

@@ -1,43 +1,55 @@
 // The public Library listing.
 //
-// Written by node G1.10. Search, category browsing and pagination controls
-// arrive in later nodes (G2.6, G4.2); this node ships the listing itself,
-// its loading state, its empty state and its error state, because a page
-// that only works when everything succeeds is not finished.
+// Written by node G1.10. Search was shipped there and stays untouched
+// here — it is out of scope for node G2.6 (the real search box is G4.2).
+//
+// Node G2.6 adds: the nested category tree as a sidebar/drawer that
+// navigates to shareable `/category/*` routes instead of filtering in
+// place, a `?tag=` filtered view fed by the same tag chips that appear on
+// every Document Card and on the Reader header, and explicit Prev/Next
+// pagination in place of the old accumulating "Load more" button — so a
+// listing page is always a plain, bookmarkable GET (requirement 6).
 import { useEffect, useState } from "react";
-import { listDocuments, listPublicCategories, type CategoryListEntry, type DocumentSummary } from "../lib/api-client";
+import { useSearchParams } from "react-router";
+import {
+  listPublicCategories,
+  listPublicTags,
+  type CategoryTreeNode,
+  type TagSummary,
+} from "../lib/api-client";
 import { DocumentCard } from "../components/DocumentCard";
+import { CategorySidebar } from "../features/browse/CategorySidebar";
+import { TagChips } from "../features/browse/TagChips";
+import { useDocumentListing } from "../features/browse/useDocumentListing";
 
-type LoadState =
+type CategoryState =
   | { status: "loading" }
-  | { status: "ready"; items: DocumentSummary[]; total: number }
-  | { status: "error"; message: string };
+  | { status: "ready"; tree: CategoryTreeNode[] }
+  | { status: "error" };
 
-const PAGE_SIZE = 20;
+type TagState = { status: "loading" | "error" } | { status: "ready"; tags: TagSummary[] };
 
 export function Library() {
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [categories, setCategories] = useState<CategoryListEntry[]>([]);
-  const [categoryRoutesUnavailable, setCategoryRoutesUnavailable] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tagParam = searchParams.get("tag");
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+
+  const [categoryState, setCategoryState] = useState<CategoryState>({ status: "loading" });
+  const [tagState, setTagState] = useState<TagState>({ status: "loading" });
   const [query, setQuery] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const searchTerm = query.trim();
-  const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
 
+  // The tree and the tag list are each fetched exactly once per page load
+  // (requirement 7) — never once per card and never once per chip.
   useEffect(() => {
     let cancelled = false;
     listPublicCategories()
-      .then(({ categories: publicCategories }) => {
-        if (!cancelled) {
-          setCategories(publicCategories);
-          setCategoryRoutesUnavailable(false);
-        }
+      .then(({ categories }) => {
+        if (!cancelled) setCategoryState({ status: "ready", tree: categories });
       })
       .catch(() => {
-        if (!cancelled) setCategoryRoutesUnavailable(true);
+        if (!cancelled) setCategoryState({ status: "error" });
       });
     return () => {
       cancelled = true;
@@ -46,66 +58,58 @@ export function Library() {
 
   useEffect(() => {
     let cancelled = false;
-    listDocuments({
-      page,
-      pageSize: PAGE_SIZE,
-      query: searchTerm === "" ? undefined : searchTerm,
-      categoryId: selectedCategoryId ?? undefined,
-    })
-      .then((result) => {
-        if (!cancelled) {
-          setState((previous) => {
-            if (page === 1 || previous.status !== "ready") {
-              return { status: "ready", items: result.items, total: result.total };
-            }
-            const bySlug = new Map(previous.items.map((document) => [document.slug, document]));
-            for (const document of result.items) bySlug.set(document.slug, document);
-            return { status: "ready", items: [...bySlug.values()], total: result.total };
-          });
-        }
+    listPublicTags()
+      .then((tags) => {
+        if (!cancelled) setTagState({ status: "ready", tags });
       })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            message: error instanceof Error ? error.message : "The library could not be loaded.",
-          });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingMore(false);
+      .catch(() => {
+        if (!cancelled) setTagState({ status: "error" });
       });
     return () => {
       cancelled = true;
     };
-  }, [page, searchTerm, selectedCategoryId]);
+  }, []);
 
-  function resetListing(nextQuery: string, nextCategoryId: string | null) {
-    if (nextQuery.trim() === searchTerm && nextCategoryId === selectedCategoryId && page === 1) {
-      setQuery(nextQuery);
-      return;
-    }
-    setQuery(nextQuery);
-    setSelectedCategoryId(nextCategoryId);
-    setPage(1);
-    setIsLoadingMore(false);
-    setState({ status: "loading" });
+  const listing = useDocumentListing(
+    { tag: tagParam ?? undefined, query: searchTerm === "" ? undefined : searchTerm },
+    page,
+  );
+  const totalPages = listing.status === "ready" ? Math.max(1, Math.ceil(listing.total / listing.pageSize)) : 1;
+
+  function goToPage(nextPage: number) {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (nextPage <= 1) next.delete("page");
+      else next.set("page", String(nextPage));
+      return next;
+    });
   }
 
-  const collectionTotal = categories.reduce((total, category) => total + category.documentCount, 0);
-  const visibleCategories = categories.filter((category) => category.documentCount > 0);
-  const visibleDocuments = state.status === "ready" ? state.items : [];
+  function updateQuery(value: string) {
+    setQuery(value);
+    if (page !== 1) goToPage(1);
+  }
+
+  function clearTag() {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.delete("tag");
+      next.delete("page");
+      return next;
+    });
+  }
+
+  const totalDocuments =
+    categoryState.status === "ready"
+      ? categoryState.tree.reduce((sum, node) => sum + node.descendantDocumentCount, 0)
+      : 0;
+  const visibleDocuments = listing.status === "ready" ? listing.items : [];
   const resultTitle =
-    searchTerm !== ""
-      ? `Matches for “${searchTerm}”`
-      : selectedCategory === null
-        ? "Recently updated"
-        : `Recently updated in ${selectedCategory.name}`;
-
-  function loadMore() {
-    setIsLoadingMore(true);
-    setPage((currentPage) => currentPage + 1);
-  }
+    tagParam !== null
+      ? `Tagged “${tagParam}”`
+      : searchTerm !== ""
+        ? `Matches for “${searchTerm}”`
+        : "Recently updated";
 
   return (
     <div className="min-h-[100dvh] overflow-x-hidden bg-[#f7f5ef] text-[#071e4a]">
@@ -146,14 +150,14 @@ export function Library() {
               id="library-search"
               type="search"
               value={query}
-              onChange={(event) => resetListing(event.target.value, selectedCategoryId)}
+              onChange={(event) => updateQuery(event.target.value)}
               placeholder="Search the collection"
               className="min-w-0 flex-1 bg-transparent px-4 py-4 text-base font-medium text-[#071e4a] placeholder:text-[#526889] focus:outline-none sm:px-5 sm:text-lg"
             />
             {query !== "" && (
               <button
                 type="button"
-                onClick={() => resetListing("", selectedCategoryId)}
+                onClick={() => updateQuery("")}
                 className="border-l-2 border-[#071e4a] px-4 text-sm font-bold hover:bg-[#d9f4eb] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#071e4a]"
               >
                 Clear
@@ -163,88 +167,105 @@ export function Library() {
         </section>
 
         <div className="grid gap-10 py-8 lg:grid-cols-[minmax(13rem,0.72fr)_minmax(0,2fr)] lg:gap-14 lg:py-12">
-          <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Category routes">
-            <div className="flex items-center justify-between border-b-2 border-[#071e4a] pb-3">
-              <h2 className="text-sm font-black uppercase tracking-[0.16em]">Routes through Alexandria</h2>
-              {categories.length > 0 && <span className="text-sm tabular-nums text-[#526889]">{collectionTotal}</span>}
+          {categoryState.status === "error" ? (
+            <div>
+              <p role="status" className="border-b-2 border-[#071e4a] px-1 py-3 text-sm leading-6 text-[#27416c]">
+                Routes are temporarily unavailable.
+              </p>
             </div>
-            <div className="mt-4 space-y-1">
-              <button
-                type="button"
-                aria-pressed={selectedCategoryId === null && searchTerm === ""}
-                onClick={() => resetListing("", null)}
-                className="flex w-full items-center justify-between border-b border-[#071e4a]/20 px-1 py-3 text-left text-sm font-bold hover:bg-[#d9f4eb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-              >
-                <span>All documents</span>
-                {categories.length > 0 && <span className="tabular-nums text-[#526889]">{collectionTotal}</span>}
-              </button>
-              {visibleCategories.map((category, index) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  aria-pressed={selectedCategoryId === category.id}
-                  onClick={() => resetListing("", category.id)}
-                  className="group flex w-full items-center gap-3 border-b border-[#071e4a]/20 px-1 py-3 text-left text-sm font-semibold hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-                >
-                  <span
-                    aria-hidden
-                    className={index % 3 === 0 ? "h-2.5 w-2.5 shrink-0 rounded-full bg-[#f26b21]" : index % 3 === 1 ? "h-2.5 w-2.5 shrink-0 rounded-full bg-[#0e9e85]" : "h-2.5 w-2.5 shrink-0 rounded-full bg-[#7652c8]"}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{category.name}</span>
-                  <span className="tabular-nums text-[#526889] group-hover:text-[#071e4a]">{category.documentCount}</span>
-                </button>
-              ))}
-              {categoryRoutesUnavailable && (
-                <p role="status" className="px-1 py-3 text-sm leading-6 text-[#27416c]">
-                  Routes are temporarily unavailable.
-                </p>
-              )}
-            </div>
-          </aside>
+          ) : (
+            <CategorySidebar
+              categories={categoryState.status === "ready" ? categoryState.tree : []}
+              activeCategoryId={null}
+              totalCount={totalDocuments}
+            />
+          )}
 
           <section id="library-results" aria-labelledby="library-results-title">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[#071e4a] pb-3">
               <h2 id="library-results-title" className="text-2xl font-black tracking-[-0.03em] sm:text-3xl">
                 {resultTitle}
               </h2>
-              {state.status === "ready" && <p className="text-sm font-medium text-[#526889]">{visibleDocuments.length} of {state.total} shown</p>}
+              {listing.status === "ready" && (
+                <p className="text-sm font-medium text-[#526889]">
+                  {visibleDocuments.length} of {listing.total} shown
+                </p>
+              )}
             </div>
 
-            <div aria-live="polite">
-              {state.status === "loading" && <LibrarySkeleton />}
+            {tagParam !== null && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="border border-[#071e4a] bg-[#d9f4eb] px-2 py-1 text-xs font-semibold text-[#071e4a]">{tagParam}</span>
+                <button
+                  type="button"
+                  onClick={clearTag}
+                  className="text-xs font-bold text-[#27416c] underline hover:text-[#071e4a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
+                >
+                  Clear tag filter
+                </button>
+              </div>
+            )}
 
-              {state.status === "error" && (
+            <div aria-live="polite">
+              {listing.status === "loading" && <LibrarySkeleton />}
+
+              {listing.status === "error" && (
                 <p className="border-b border-[#071e4a]/20 py-10 text-sm leading-6 text-[#27416c]" role="alert">
-                  {state.message}
+                  {listing.message}
                 </p>
               )}
 
-              {state.status === "ready" && state.total === 0 && searchTerm === "" && selectedCategoryId === null && (
+              {listing.status === "ready" && listing.total === 0 && searchTerm === "" && tagParam === null && (
                 <p className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]" data-testid="library-empty">
                   Nothing has been published yet.
                 </p>
               )}
 
-              {state.status === "ready" && state.total === 0 && (searchTerm !== "" || selectedCategoryId !== null) && (
+              {listing.status === "ready" && listing.total === 0 && (searchTerm !== "" || tagParam !== null) && (
                 <p className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]">
-                  {searchTerm === "" ? "No documents are published in this category." : "No documents match this search."}
+                  {tagParam !== null ? "No documents carry this tag." : "No documents match this search."}
                 </p>
               )}
 
-              {state.status === "ready" && visibleDocuments.map((document) => <DocumentCard key={document.slug} document={document} />)}
-              {state.status === "ready" && visibleDocuments.length < state.total && (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={isLoadingMore}
-                  className="mt-6 border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-wait disabled:bg-[#e7eaf0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-                >
-                  {isLoadingMore ? "Loading more…" : "Load more documents"}
-                </button>
+              {listing.status === "ready" && visibleDocuments.map((document) => <DocumentCard key={document.slug} document={document} />)}
+
+              {listing.status === "ready" && totalPages > 1 && (
+                <nav aria-label="Pagination" className="mt-6 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => goToPage(page - 1)}
+                    disabled={page <= 1}
+                    className="border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm font-medium text-[#526889]">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => goToPage(page + 1)}
+                    disabled={page >= totalPages}
+                    className="border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
+                  >
+                    Next
+                  </button>
+                </nav>
               )}
             </div>
           </section>
         </div>
+
+        {tagState.status === "ready" && tagState.tags.length > 0 && (
+          <section aria-labelledby="library-tags-title" className="border-y-2 border-[#071e4a] py-5">
+            <h2 id="library-tags-title" className="text-sm font-black uppercase tracking-[0.16em]">
+              Browse by tag
+            </h2>
+            <div className="mt-3">
+              <TagChips tags={tagState.tags.map((tag) => tag.name)} />
+            </div>
+          </section>
+        )}
 
         <aside className="grid gap-4 border-y-2 border-[#071e4a] py-5 sm:grid-cols-[auto_1fr] sm:items-center">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#d9f4eb] text-[#071e4a]" aria-hidden>
