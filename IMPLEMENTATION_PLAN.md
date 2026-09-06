@@ -367,8 +367,8 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G2.6 | DONE | G2.4 | CHECKPOINT B | G2.5 |
 | G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
 | G3.1 | DONE | CHECKPOINT B | G3.2, G3.4 | — |
-| G3.2 | READY | G3.1 | G3.3, G3.5 | — |
-| G3.3 | BLOCKED | G3.2 | G3.5 | G3.4 |
+| G3.2 | DONE | G3.1 | G3.3, G3.5 | — |
+| G3.3 | READY | G3.2 | G3.5 | G3.4 |
 | G3.4 | READY | G3.1 | G3.5 | G3.3 |
 | G3.5 | BLOCKED | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
 | G4.1 | BLOCKED | CHECKPOINT C | G4.2 | — |
@@ -4446,7 +4446,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4600,9 +4600,46 @@ feat(versions): add append-only restore and guarded version deletion
 
 ```text
 Changed:
+  src/domain/versions/version-service.ts  — findVersionRow(), restoreVersion(),
+    deleteVersion(), deleteR2ObjectBestEffort(). Purely additive; G3.1's
+    functions and appendVersion() untouched.
+  src/api/routes/admin/versions.ts        — POST /:slug/restore/:versionNo (201)
+    and DELETE /:slug/versions/:versionNo (200). Guard precedence lives in the
+    domain layer, not the route.
+  tests/integration/version-restore.test.ts — created, 15 tests.
+  tests/integration/version-delete.test.ts  — created, 11 tests.
+
 Tests:
-Verification:
+  323 -> 349 vitest across 19 -> 21 files. Delta exactly +26 / +2.
+
+Verification (orchestrator re-ran every command itself):
+  pnpm typecheck && pnpm lint && pnpm test   exit 0, 349 passed (21 files)
+
+  Read line by line rather than trusted:
+  - the 10-operation monotonicity test is genuinely mixed (four updates, three
+    restores, two deletes, one update) and asserts the pointer after EVERY op,
+    ending at v9
+  - restore passes force: true, so identical bytes still append; the source row
+    and its R2 object are compared before and after and are unchanged
+  - the single-version case asserts LAST_VERSION_CANNOT_DELETE specifically,
+    not merely a 403
+  - the orphan-logging tests parse the actual JSON log line and assert
+    documentId, versionId and r2Key, for both "already missing" and
+    "delete call failed"
+  - no agent route: runtime 404 probes plus a source scan of all four agent
+    route files
+
 Notes:
+  Accepted design decision — deleteR2ObjectBestEffort() does a head() before
+  the delete. R2's delete() does not throw for a missing key, so without the
+  head there is no way to satisfy this node's Edge Case requiring an
+  already-gone object to both succeed AND log the orphan. Cost is one extra R2
+  read on a rare admin operation. Kept.
+
+  A malformed :versionNo path segment (non-numeric, zero, negative,
+  fractional) is reported as VERSION_NOT_FOUND rather than a generic 400. No
+  plan code exists for a malformed version number and such a segment can never
+  match a row. Accepted.
 ```
 
 ---
