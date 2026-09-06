@@ -10,6 +10,7 @@
 //   GET    /api/admin/documents/:slug/versions               -> "/:slug/versions"
 //   POST   /api/admin/documents/:slug/restore/:versionNo    -> "/:slug/restore/:versionNo"
 //   DELETE /api/admin/documents/:slug/versions/:versionNo    -> "/:slug/versions/:versionNo"
+//   GET    /api/admin/documents/:slug/versions/:versionNo/preview-url (G3.4)
 //
 // Neither restore nor version delete is ever mounted under /api/agent —
 // see src/api/routes/agent/index.ts (AGENT.md §6, SPEC.md §18 Agent:
@@ -27,9 +28,17 @@ import { requireAdmin } from "../../middleware/admin-auth";
 import {
   deleteVersion,
   listVersionHistory,
+  resolveVersionIdentity,
   restoreVersion,
   updateDocumentVersion,
 } from "../../../domain/versions/version-service";
+import {
+  DEFAULT_PREVIEW_TTL_SECONDS,
+  buildPreviewUrl,
+  nowSeconds,
+  signPreviewClaim,
+  type PreviewClaim,
+} from "../../../shared/signing";
 
 const versions = new Hono<{ Bindings: Env }>();
 
@@ -172,6 +181,36 @@ versions.delete("/:slug/versions/:versionNo", requireAdmin, async (c) => {
   );
 
   return ok({ deletedVersionNo: result.deletedVersionNo });
+});
+
+// ---------------------------------------------------------------------------
+// GET /:slug/versions/:versionNo/preview-url — node G3.4.
+//
+// Mints a short-lived signed URL on the CONTENT origin for one historical
+// version. Only this URL crosses over; no admin session material is ever
+// handed to the content origin, which is the whole point of keeping the two
+// origins apart (AGENT.md §8).
+//
+// The expiry is computed here from the configured lifetime — a caller
+// cannot ask for a longer-lived link, the same rule signToken() applies to
+// admin sessions.
+// ---------------------------------------------------------------------------
+versions.get("/:slug/versions/:versionNo/preview-url", requireAdmin, async (c) => {
+  const versionNo = parseVersionNo(c.req.param("versionNo"));
+
+  const identity = await resolveVersionIdentity(c.env.DB, c.req.param("slug"), versionNo);
+
+  const claim: PreviewClaim = {
+    documentId: identity.documentId,
+    versionId: identity.versionId,
+    exp: nowSeconds() + DEFAULT_PREVIEW_TTL_SECONDS,
+  };
+  const signature = await signPreviewClaim(claim, c.env.CONTENT_PREVIEW_SIGNING_SECRET);
+
+  return ok({
+    url: buildPreviewUrl(c.env.CONTENT_ORIGIN, claim, signature),
+    expiresAt: new Date(claim.exp * 1000).toISOString(),
+  });
 });
 
 export default versions;

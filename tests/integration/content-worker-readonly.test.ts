@@ -87,7 +87,10 @@ const FORBIDDEN_SECRET_NAMES = [
   "ADMIN_PASSWORD",
   "ADMIN_SESSION_SIGNING_SECRET",
   "AGENT_API_KEY",
-  // Added later by G3.4 — must not exist yet either.
+  // G3.4 gives the content Worker this one secret, but as a runtime secret
+  // set with `wrangler secret put` — never as a name or value in the config
+  // file. It stays on this list so a future change that moves it into
+  // `vars` (where it would be checked in) fails loudly.
   "CONTENT_PREVIEW_SIGNING_SECRET",
 ];
 
@@ -110,9 +113,22 @@ describe("content worker — read-only constraint (source assertion)", () => {
     expect(indexSource.toLowerCase()).not.toContain("set-cookie");
   });
 
-  it("does not import from src/shared/ (Orchestrator clarification on Node G1.9)", () => {
-    expect(handlerSource).not.toMatch(/from\s+["']\.\.\/shared/);
-    expect(indexSource).not.toMatch(/from\s+["']\.\.\/shared/);
+  it("imports nothing from src/shared/ except the signing utility (G1.9 clarification, G3.4 exception)", () => {
+    // The G1.9 ban exists so the content Worker never picks up the JSON API
+    // envelope, the AppError vocabulary or a domain service. Node G3.4
+    // authorized exactly ONE exception — src/shared/signing.ts, which is
+    // pure WebCrypto with no imports, no storage and no environment access
+    // — because the alternative was a second copy of the signature formula
+    // living in the content Worker. The assertion is therefore an
+    // allowlist, not a removal: any OTHER shared import still fails here.
+    const ALLOWED_SHARED_IMPORTS = ["../shared/signing"];
+
+    for (const source of [handlerSource, indexSource]) {
+      const imported = [...source.matchAll(/from\s+["'](\.\.\/shared\/[^"']+)["']/g)].map(
+        (match) => match[1],
+      );
+      expect(imported.every((specifier) => ALLOWED_SHARED_IMPORTS.includes(specifier as string))).toBe(true);
+    }
   });
 });
 

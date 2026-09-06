@@ -608,3 +608,41 @@ export async function deleteVersion(
 
   return { deletedVersionNo: input.versionNo };
 }
+
+// ---------------------------------------------------------------------------
+// Version identity lookup — node G3.4.
+// ---------------------------------------------------------------------------
+
+export interface VersionIdentity {
+  documentId: string;
+  versionId: string;
+  versionNo: number;
+}
+
+/**
+ * Resolves the internal identity of one version of a document, addressed
+ * the way every Admin surface addresses it: stable slug plus version
+ * number.
+ *
+ * Node G3.4 needs this to mint a preview signature, which must bind the
+ * document and the version together. Without it the route would have to
+ * issue its own SQL, and a transport file that knows the schema is exactly
+ * what AGENT.md §10 forbids.
+ */
+export async function resolveVersionIdentity(
+  db: D1Database,
+  slug: string,
+  versionNo: number,
+): Promise<VersionIdentity> {
+  const document = await resolveDocumentBySlug(db, slug);
+
+  const row = await findVersionRow(db, document.id, versionNo);
+  if (row === null) {
+    throw new AppError("VERSION_NOT_FOUND", {
+      message: "No version with that number.",
+      detail: { slug, versionNo },
+    });
+  }
+
+  return { documentId: document.id, versionId: row.id, versionNo };
+}
