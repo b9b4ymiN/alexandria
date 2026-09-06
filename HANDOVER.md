@@ -154,6 +154,33 @@ limit. The full analysis stays in the `G1.4` evidence block of
 
 ---
 
+## 4b. Start here, next session
+
+Everything through M3 is merged, pushed and deployed, `main` is clean and
+equals `origin/main`, and the merged `feat/m3-versioning` branch has been
+deleted. There is no work in flight and nothing half-finished in the tree.
+
+To pick up M4:
+
+```bash
+git switch -c feat/m4-search        # orchestrator owns branching (§12.1)
+sed -n '/^## Node G4.1/,/^## Node G4.2/p' IMPLEMENTATION_PLAN.md
+```
+
+Then dispatch `G4.1` to one `sonnet-executor` with a packet that carries: the
+node contract, the file allowlist, the single-writer STOP list from §6 below,
+"run no git command that writes", and the baseline to beat — **384 vitest
+across 23 files, 63 browser, 10 PWA, clean typecheck, lint and build**. Verify
+the evidence by re-running it yourself before committing, using the node's
+`Suggested Commit` line verbatim as the subject.
+
+**One decision is owed before M5 starts, not before M4:** whether an
+over-long version note should return a new `NOTE_TOO_LONG` code instead of
+`INVALID_HTML`. See §4. It costs one small change now and gets more expensive
+once MCP is surfacing codes to agents.
+
+---
+
 ## 5. What M4 has to do next
 
 `G4.1 → G4.2`, then M5. Full contracts are in `IMPLEMENTATION_PLAN.md`.
