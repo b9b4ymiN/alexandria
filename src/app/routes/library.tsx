@@ -1,14 +1,19 @@
 // The public Library listing.
 //
-// Written by node G1.10. Search was shipped there and stays untouched
-// here — it is out of scope for node G2.6 (the real search box is G4.2).
+// Written by node G1.10. Node G2.6 added: the nested category tree as a
+// sidebar/drawer that navigates to shareable `/category/*` routes instead
+// of filtering in place, a `?tag=` filtered view fed by the same tag chips
+// that appear on every Document Card and on the Reader header, and explicit
+// Prev/Next pagination in place of the old accumulating "Load more" button
+// — so a listing page is always a plain, bookmarkable GET (requirement 6).
 //
-// Node G2.6 adds: the nested category tree as a sidebar/drawer that
-// navigates to shareable `/category/*` routes instead of filtering in
-// place, a `?tag=` filtered view fed by the same tag chips that appear on
-// every Document Card and on the Reader header, and explicit Prev/Next
-// pagination in place of the old accumulating "Load more" button — so a
-// listing page is always a plain, bookmarkable GET (requirement 6).
+// Node G4.2 replaces the vestigial G1.10 search input (it updated no URL
+// and never debounced) with `SearchBox`, syncs the committed query to `?q=`
+// — the canonical parameter node G4.1's API accepts (`?query=` remains a
+// read-only back-compat alias so an old link still resolves) — and adds the
+// two edge-case empty states G1.10 didn't need: a no-match state that offers
+// to clear the query, and a "page beyond the last" state for a page number
+// only reachable by editing the URL by hand.
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
@@ -18,9 +23,11 @@ import {
   type TagSummary,
 } from "../lib/api-client";
 import { DocumentCard } from "../components/DocumentCard";
+import { Pagination } from "../components/Pagination";
 import { CategorySidebar } from "../features/browse/CategorySidebar";
 import { TagChips } from "../features/browse/TagChips";
 import { useDocumentListing } from "../features/browse/useDocumentListing";
+import { SearchBox } from "../features/search/SearchBox";
 
 type CategoryState =
   | { status: "loading" }
@@ -33,12 +40,12 @@ export function Library() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tagParam = searchParams.get("tag");
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  // `q` is the canonical URL parameter this route writes; `query` is read
+  // here only so a link generated before this node still resolves.
+  const q = (searchParams.get("q") ?? searchParams.get("query") ?? "").trim();
 
   const [categoryState, setCategoryState] = useState<CategoryState>({ status: "loading" });
   const [tagState, setTagState] = useState<TagState>({ status: "loading" });
-  const [query, setQuery] = useState("");
-
-  const searchTerm = query.trim();
 
   // The tree and the tag list are each fetched exactly once per page load
   // (requirement 7) — never once per card and never once per chip.
@@ -70,10 +77,7 @@ export function Library() {
     };
   }, []);
 
-  const listing = useDocumentListing(
-    { tag: tagParam ?? undefined, query: searchTerm === "" ? undefined : searchTerm },
-    page,
-  );
+  const listing = useDocumentListing({ tag: tagParam ?? undefined, query: q === "" ? undefined : q }, page);
   const totalPages = listing.status === "ready" ? Math.max(1, Math.ceil(listing.total / listing.pageSize)) : 1;
 
   function goToPage(nextPage: number) {
@@ -85,9 +89,20 @@ export function Library() {
     });
   }
 
-  function updateQuery(value: string) {
-    setQuery(value);
-    if (page !== 1) goToPage(1);
+  // Requirement 1: the committed query lives in `?q=`, shareable and
+  // restorable. Every commit resets to page 1 — a query change makes the
+  // previous page number meaningless (edge case: it could now be well
+  // beyond the new result count).
+  function updateQuery(nextRaw: string) {
+    const next = nextRaw.trim();
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+      if (next === "") params.delete("q");
+      else params.set("q", next);
+      params.delete("query");
+      params.delete("page");
+      return params;
+    });
   }
 
   function clearTag() {
@@ -105,11 +120,7 @@ export function Library() {
       : 0;
   const visibleDocuments = listing.status === "ready" ? listing.items : [];
   const resultTitle =
-    tagParam !== null
-      ? `Tagged “${tagParam}”`
-      : searchTerm !== ""
-        ? `Matches for “${searchTerm}”`
-        : "Recently updated";
+    tagParam !== null ? `Tagged “${tagParam}”` : q !== "" ? `Matches for “${q}”` : "Recently updated";
 
   return (
     <div className="min-h-[100dvh] overflow-x-hidden bg-[#f7f5ef] text-[#071e4a]">
@@ -142,28 +153,13 @@ export function Library() {
             </p>
           </div>
 
-          <div className="mt-8 flex max-w-5xl gap-0 border-2 border-[#071e4a] bg-white shadow-[8px_10px_22px_rgba(7,30,74,0.12)] focus-within:shadow-[10px_12px_28px_rgba(7,30,74,0.18)]">
-            <label className="sr-only" htmlFor="library-search">
-              Search the library
-            </label>
-            <input
-              id="library-search"
-              type="search"
-              value={query}
-              onChange={(event) => updateQuery(event.target.value)}
-              placeholder="Search the collection"
-              className="min-w-0 flex-1 bg-transparent px-4 py-4 text-base font-medium text-[#071e4a] placeholder:text-[#526889] focus:outline-none sm:px-5 sm:text-lg"
-            />
-            {query !== "" && (
-              <button
-                type="button"
-                onClick={() => updateQuery("")}
-                className="border-l-2 border-[#071e4a] px-4 text-sm font-bold hover:bg-[#d9f4eb] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#071e4a]"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          <SearchBox
+            id="library-search"
+            label="Search the library"
+            value={q}
+            onChange={updateQuery}
+            placeholder="Search the collection"
+          />
         </section>
 
         <div className="grid gap-10 py-8 lg:grid-cols-[minmax(13rem,0.72fr)_minmax(0,2fr)] lg:gap-14 lg:py-12">
@@ -215,43 +211,53 @@ export function Library() {
                 </p>
               )}
 
-              {listing.status === "ready" && listing.total === 0 && searchTerm === "" && tagParam === null && (
+              {listing.status === "ready" && listing.total === 0 && q === "" && tagParam === null && (
                 <p className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]" data-testid="library-empty">
                   Nothing has been published yet.
                 </p>
               )}
 
-              {listing.status === "ready" && listing.total === 0 && (searchTerm !== "" || tagParam !== null) && (
-                <p className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]">
-                  {tagParam !== null ? "No documents carry this tag." : "No documents match this search."}
-                </p>
+              {/* Distinct from the empty-library state above (requirement 4): the
+                  library has documents, this filter just does not match any of
+                  them, so the next action is "try something else" rather than
+                  "come back later". A query specifically gets a one-click way
+                  back to the unfiltered view (edge case). */}
+              {listing.status === "ready" && listing.total === 0 && (q !== "" || tagParam !== null) && (
+                <div className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]" data-testid="library-no-match">
+                  <p>{tagParam !== null ? "No documents carry this tag." : "No documents match this search."}</p>
+                  {q !== "" && (
+                    <button
+                      type="button"
+                      onClick={() => updateQuery("")}
+                      className="mt-2 font-bold text-[#071e4a] underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* A page number beyond the last one (only reachable by editing the
+                  URL by hand, since Pagination below never exposes it) has
+                  `total > 0` but an empty `items` — a different shape from either
+                  empty state above, and still needs a working way back
+                  (edge case). */}
+              {listing.status === "ready" && listing.items.length === 0 && listing.total > 0 && (
+                <div className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]" data-testid="library-page-beyond-range">
+                  <p>This page has nothing to show.</p>
+                  <button
+                    type="button"
+                    onClick={() => goToPage(1)}
+                    className="mt-2 font-bold text-[#071e4a] underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
+                  >
+                    Back to the first page
+                  </button>
+                </div>
               )}
 
               {listing.status === "ready" && visibleDocuments.map((document) => <DocumentCard key={document.slug} document={document} />)}
 
-              {listing.status === "ready" && totalPages > 1 && (
-                <nav aria-label="Pagination" className="mt-6 flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => goToPage(page - 1)}
-                    disabled={page <= 1}
-                    className="border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm font-medium text-[#526889]">
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => goToPage(page + 1)}
-                    disabled={page >= totalPages}
-                    className="border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-                  >
-                    Next
-                  </button>
-                </nav>
-              )}
+              {listing.status === "ready" && <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />}
             </div>
           </section>
         </div>
