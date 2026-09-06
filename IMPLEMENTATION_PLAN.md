@@ -302,13 +302,18 @@ Required nodes: `G2.1 … G2.6`
 
 Required nodes: `G3.1 … G3.5`
 
-- [ ] Re-upload of identical bytes returns `UNCHANGED` and creates no version
-- [ ] A modified upload creates a new immutable version and the public URL does not change
-- [ ] Version history lists every version with author, size and timestamp
-- [ ] An old version is previewable by Admin only through a signed, expiring URL
-- [ ] Restore appends a new highest version carrying `restored_from_version_no`
-- [ ] Current-version and last-version deletions are rejected
-- [ ] Document deletion cascades in D1 and best-effort cleans R2, logging any orphan keys
+**PASSED 2026-09-06**, verified by the orchestrator re-running every suite on
+a tree nobody was writing to: 384 vitest across 23 files, 63 browser, 10 PWA,
+clean typecheck, lint and build, admin chunk still split from the public
+entry.
+
+- [x] Re-upload of identical bytes returns `UNCHANGED` and creates no version — asserted against version count, `updated_at` AND R2 object count
+- [x] A modified upload creates a new immutable version and the public URL does not change — plus 20 sequential updates leaving v1's object hash untouched
+- [x] Version history lists every version with author, size and timestamp — and never carries body content
+- [x] An old version is previewable by Admin only through a signed, expiring URL — expired, tampered, cross-version, cross-document, forged, unsigned and secret-less requests all return a bare 403
+- [x] Restore appends a new highest version carrying `restored_from_version_no` — pointer monotonic across a 10-operation mixed sequence
+- [x] Current-version and last-version deletions are rejected — with last-version taking precedence when both apply
+- [x] Document deletion cascades in D1 and best-effort cleans R2, logging any orphan keys — cascade counted in all three tables, orphan log parsed key by key at the 3-of-12 shape
 
 ### CHECKPOINT D — Search complete
 
@@ -370,7 +375,7 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G3.2 | DONE | G3.1 | G3.3, G3.5 | — |
 | G3.3 | DONE | G3.2 | G3.5 | G3.4 |
 | G3.4 | DONE | G3.1 | G3.5 | G3.3 |
-| G3.5 | READY | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
+| G3.5 | DONE | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
 | G4.1 | BLOCKED | CHECKPOINT C | G4.2 | — |
 | G4.2 | BLOCKED | G4.1 | CHECKPOINT D | — |
 | G5.1 | BLOCKED | CHECKPOINT D | G5.2 | — |
@@ -5069,7 +5074,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -5222,9 +5227,54 @@ feat(admin): add version history screen with preview, restore and delete
 
 ```text
 Changed:
+  src/app/features/versions/VersionTable.tsx    — created. Guard reasons are
+    always-visible text, never a title= tooltip, in the server's own
+    precedence (last-version beats current-version).
+  src/app/features/versions/VersionPreview.tsx  — created. Fresh signed URL on
+    every open plus a re-request shortly before expiry; the Reader's exact
+    sandbox attribute, no allow-same-origin.
+  src/app/routes/admin/document-edit.tsx        — upload-with-note, the table,
+    the preview dialog, and document delete gated on typing the slug.
+  src/app/lib/api-client.ts                     — TYPES ONLY (see Notes).
+  tests/browser/admin-versions.spec.ts          — created, 9 tests.
+
 Tests:
-Verification:
+  vitest unchanged at 384 across 23 files (no backend touched).
+  browser 54 -> 63 (+9). PWA unchanged at 10.
+
+Verification (orchestrator re-ran everything on a stable tree):
+  pnpm typecheck && pnpm lint && pnpm test    exit 0, 384 passed (23 files)
+  pnpm exec playwright test                   63 passed
+  pnpm test:pwa                               10 passed
+  pnpm build                                  clean; admin-C5e4Tulo.js 48.49 kB
+                                              still split from index-CKhOcuie.js
+
+  Read rather than trusted: the preview iframe's sandbox string is character
+  for character the Reader's (`allow-scripts allow-popups allow-downloads`,
+  no allow-same-origin); the preview URL is requested on mount and refreshed
+  on a timer derived from expiresAt, never stored; the delete guard reason
+  renders as a paragraph under the row, not a tooltip.
+
 Notes:
+  THE EXECUTOR HIT A REAL TRAP AND REPORTED IT INSTEAD OF HIDING IT. The node
+  said to add the six client functions to api-client.ts. Doing so broke two
+  frozen tests — library.spec.ts and public-browse.spec.ts both assert that
+  browsing never downloads admin code — because api-client.ts is imported by
+  public routes, so a static import of admin-session.ts pulls admin code into
+  every public page load (AGENT.md §25). Only the types stayed; the
+  adminRequest calls live in the admin components, matching categories, tags
+  and upload. api-client.ts now carries a comment saying why.
+
+  Not wired: the preview dialog shows an inline error rather than bouncing to
+  login if the admin session expires mid-request. Outside the node's required
+  tests and not a regression. Left for M6.
+
+  Separately, and committed on its own as 77a9ed2: two raw NUL bytes had been
+  sitting in document-edit.tsx since G2.3, which made git treat the file as
+  binary — so this node's 11KB of new UI arrived as "Bin 9098 -> 20400" with
+  no reviewable diff. Replaced with the equivalent unicode escape, identical
+  behaviour, file is text again. Found while reviewing this node, which is
+  exactly the review the defect was suppressing.
 ```
 
 ---
