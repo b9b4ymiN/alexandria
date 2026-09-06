@@ -14,6 +14,7 @@
 
 import { AppError } from "../../shared/errors";
 import type { PaginatedResult } from "../../shared/types";
+import { normalizeTagName } from "../tags/normalize";
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
@@ -49,11 +50,35 @@ export interface CategoryListEntry {
   documentCount: number;
 }
 
+/**
+ * `"subtree"` (the default) includes documents filed anywhere under
+ * `categoryId`; `"self"` narrows to documents filed directly in it
+ * (IMPLEMENTATION_PLAN.md node G2.4, requirement 1).
+ */
+export type CategoryFilterDepth = "self" | "subtree";
+
 export interface DocumentListParams {
   page?: number;
   pageSize?: number;
   query?: string;
   categoryId?: string;
+  /** Defaults to `"subtree"` when `categoryId` is set. */
+  depth?: CategoryFilterDepth;
+  /** Matched by normalized name (node G2.4 requirement 3). */
+  tag?: string;
+}
+
+export interface CategoryTreeNode {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  /** Documents filed directly in this category. */
+  documentCount: number;
+  /** Documents filed in this category or anywhere in its subtree. */
+  descendantDocumentCount: number;
+  children: CategoryTreeNode[];
 }
 
 /**
@@ -112,6 +137,48 @@ async function tagsFor(db: D1Database, documentIds: readonly string[]): Promise<
 }
 
 /**
+ * Every category id in the filter scope of `categoryId`: just itself for
+ * `depth: "self"`, or itself plus every descendant (the default) — resolved
+ * with ONE recursive query regardless of subtree size, the same pattern
+ * `moveCategory`'s cycle guard uses (src/domain/categories/category-service.ts).
+ * Throws `CATEGORY_NOT_FOUND` when `categoryId` does not exist, since an
+ * empty scope would otherwise be indistinguishable from "category exists
+ * but has nothing in it" (IMPLEMENTATION_PLAN.md node G2.4 edge case).
+ */
+async function resolveCategoryScope(
+  db: D1Database,
+  categoryId: string,
+  depth: CategoryFilterDepth | undefined,
+): Promise<string[]> {
+  if (depth === "self") {
+    const row = await db.prepare("SELECT 1 AS present FROM categories WHERE id = ?").bind(categoryId).first<{
+      present: number;
+    }>();
+    if (row === null) {
+      throw new AppError("CATEGORY_NOT_FOUND", { message: "No category with that id.", detail: { categoryId } });
+    }
+    return [categoryId];
+  }
+
+  const subtree = await db
+    .prepare(
+      `WITH RECURSIVE subtree(id) AS (
+         SELECT id FROM categories WHERE id = ?
+         UNION ALL
+         SELECT c.id FROM categories c JOIN subtree s ON c.parent_id = s.id
+       )
+       SELECT id FROM subtree`,
+    )
+    .bind(categoryId)
+    .all<{ id: string }>();
+
+  if (subtree.results.length === 0) {
+    throw new AppError("CATEGORY_NOT_FOUND", { message: "No category with that id.", detail: { categoryId } });
+  }
+  return subtree.results.map((row) => row.id);
+}
+
+/**
  * One page of publicly visible documents.
  *
  * Ordering is `updated_at DESC, id ASC`: the secondary key makes paging
@@ -122,12 +189,30 @@ export async function listDocuments(db: D1Database, params: DocumentListParams =
   const { page, pageSize } = clampPagination(params.page, params.pageSize);
   const query = params.query?.trim().slice(0, 160);
   const categoryId = params.categoryId?.trim().slice(0, 160);
+  const tag = params.tag?.trim().slice(0, 160);
   const filters = ["d.current_version_id IS NOT NULL"];
   const bindings: string[] = [];
 
   if (categoryId !== undefined && categoryId !== "") {
-    filters.push("d.category_id = ?");
-    bindings.push(categoryId);
+    const scopeIds = await resolveCategoryScope(db, categoryId, params.depth);
+    const placeholders = scopeIds.map(() => "?").join(", ");
+    filters.push(`d.category_id IN (${placeholders})`);
+    bindings.push(...scopeIds);
+  }
+
+  if (tag !== undefined && tag !== "") {
+    // Unknown tag name deliberately raises no error — a tag may simply have
+    // no documents, and that is an empty page, not a failure (edge case).
+    const normalizedTag = normalizeTagName(tag);
+    filters.push(
+      `EXISTS (
+        SELECT 1
+        FROM document_tags dt_scope
+        JOIN tags t_scope ON t_scope.id = dt_scope.tag_id
+        WHERE dt_scope.document_id = d.id AND t_scope.normalized_name = ?
+      )`,
+    );
+    bindings.push(normalizedTag);
   }
 
   if (query !== undefined && query !== "") {
@@ -264,4 +349,81 @@ export async function listCategories(db: D1Database): Promise<CategoryListEntry[
     )
     .all<CategoryListEntry>();
   return rows.results;
+}
+
+/**
+ * The full category tree for the public Library, nested, with both a
+ * direct `documentCount` and a whole-subtree `descendantDocumentCount` on
+ * every node.
+ *
+ * Both counts come from ONE recursive query — never one query per node, so
+ * a deep tree costs the same as a shallow one (IMPLEMENTATION_PLAN.md node
+ * G2.4, requirement 2). `descend` walks every category down to every
+ * descendant once; grouping by `ancestor_id` turns that into a
+ * subtree-aggregate count per category in the same statement. Nesting is
+ * then built in memory from the single flat result set, the same
+ * Map-based approach `categoryTree()` uses in
+ * src/domain/categories/category-service.ts.
+ */
+export async function categoryTreeWithCounts(db: D1Database): Promise<CategoryTreeNode[]> {
+  const rows = await db
+    .prepare(
+      `WITH RECURSIVE descend(ancestor_id, id) AS (
+         SELECT id, id FROM categories
+         UNION ALL
+         SELECT d.ancestor_id, c.id
+         FROM categories c JOIN descend d ON c.parent_id = d.id
+       ),
+       descendant_counts AS (
+         SELECT descend.ancestor_id AS categoryId, COUNT(doc.id) AS total
+         FROM descend
+         LEFT JOIN documents doc
+           ON doc.category_id = descend.id AND doc.current_version_id IS NOT NULL
+         GROUP BY descend.ancestor_id
+       ),
+       direct_counts AS (
+         SELECT category_id AS categoryId, COUNT(*) AS total
+         FROM documents
+         WHERE current_version_id IS NOT NULL
+         GROUP BY category_id
+       )
+       SELECT c.id AS id, c.parent_id AS parentId, c.name AS name, c.slug AS slug,
+              c.sort_order AS sortOrder,
+              COALESCE(dir.total, 0) AS documentCount,
+              COALESCE(dc.total, 0) AS descendantDocumentCount
+       FROM categories c
+       LEFT JOIN direct_counts dir ON dir.categoryId = c.id
+       LEFT JOIN descendant_counts dc ON dc.categoryId = c.id
+       ORDER BY c.sort_order ASC, c.name ASC`,
+    )
+    .all<{
+      id: string;
+      parentId: string | null;
+      name: string;
+      slug: string;
+      sortOrder: number;
+      documentCount: number;
+      descendantDocumentCount: number;
+    }>();
+
+  const nodes = new Map<string, CategoryTreeNode>();
+  for (const row of rows.results) {
+    nodes.set(row.id, { ...row, children: [] });
+  }
+
+  const roots: CategoryTreeNode[] = [];
+  for (const row of rows.results) {
+    const node = nodes.get(row.id);
+    if (node === undefined) continue;
+    const parent = row.parentId !== null ? nodes.get(row.parentId) : undefined;
+    if (parent !== undefined) {
+      parent.children.push(node);
+    } else {
+      // Root, or an orphan that should be impossible under FK RESTRICT —
+      // surfaced rather than silently dropped from the tree either way
+      // (same reasoning as categoryTree() in category-service.ts).
+      roots.push(node);
+    }
+  }
+  return roots;
 }

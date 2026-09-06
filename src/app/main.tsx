@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Library } from "./routes/library";
 import { Reader } from "./routes/reader";
+import { CategoryBrowse } from "./routes/category";
 import { registerOfflineReadingWorker } from "./lib/pwa";
 import "./styles/app.css";
 
@@ -12,6 +13,10 @@ import "./styles/app.css";
 const router = createBrowserRouter([
   { path: "/", element: <Library /> },
   { path: "/docs/:slug", element: <Reader /> },
+  // A splat route: node G2.6, so `/category/stocks/thailand` reads its
+  // full slug path from the `*` param rather than needing one route per
+  // depth.
+  { path: "/category/*", element: <CategoryBrowse /> },
   {
     path: "/admin/*",
     // A fallback is required for a lazy route; without it React Router

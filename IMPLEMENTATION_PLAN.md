@@ -354,10 +354,11 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G1.12 | DONE | G1.9, G1.10, G1.11 | CHECKPOINT A | — |
 | G2.1 | DONE | CHECKPOINT A | G2.3, G2.4, G2.5 | G2.2 |
 | G2.2 | DONE | CHECKPOINT A | G2.4, G2.5 | G2.1 |
-| G2.3 | READY | G2.1 | G2.5 | — |
-| G2.4 | READY (needs revision, see §12.2) | G2.1, G2.2 | G2.6 | G2.3 |
-| G2.5 | BLOCKED | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
-| G2.6 | BLOCKED | G2.4 | CHECKPOINT B | G2.5 |
+| G2.3 | DONE | G2.1 | G2.5 | — |
+| G2.4 | DONE | G2.1, G2.2 | G2.6 | G2.3 |
+| G2.5 | DONE | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
+| G2.6 | DONE | G2.4 | CHECKPOINT B | G2.5 |
+| G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
 | G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
 | G3.2 | BLOCKED | G3.1 | G3.3, G3.5 | G3.4 |
 | G3.3 | BLOCKED | G3.2 | G3.5 | G3.4 |
@@ -384,7 +385,7 @@ DONE
 FAILED
 ```
 
-Total execution nodes: **33**
+Total execution nodes: **34** (33 planned, plus G2.7 from Plan Delta 1)
 
 ---
 
@@ -414,8 +415,10 @@ Rules:
 
 ## 12.2 PLAN DELTA 1 — unplanned scope arrived on main (2026-08-31)
 
-Status: **AWAITING APPROVAL.** Recorded by the orchestrator; execution of the
-remaining M2 nodes is paused until the project owner rules on it.
+Status: **APPROVED 2026-08-31 by the project owner** — all three decisions
+taken at their fullest scope: G2.7 is added, G4.1 keeps its relevance tiering
+AND gains the missing tests including Thai, and the §12.1 branch policy is
+reinstated. Execution resumed.
 
 ### What happened
 
@@ -3534,7 +3537,7 @@ Judgment calls accepted:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -3678,12 +3681,43 @@ feat(documents): add metadata update and category move with slug immutability
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-09-03. Commit c181303.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/documents/document-service.ts and
+  src/api/routes/admin/documents.ts (both additive — G1.7's POST / untouched);
+  tests/integration/document-metadata.test.ts (19 tests) new.
+
+Verification (re-run by the orchestrator, not copied from the report):
+  Full suite 305/305 across 18 files - typecheck exit 0 - lint exit 0
+  SLUG-MUTATION SCAN, written and run by the orchestrator over all of src/
+  with comments stripped, looking for UPDATE documents SET ... slug:
+  CLEAN. No statement anywhere can move a document's slug.
+  SLUG_IMMUTABLE is enforced on BOTH routes, and enforced against the RAW
+  parsed body BEFORE Zod runs, so the field cannot be stripped by a schema
+  and silently ignored on its way through.
+  Route thinness re-checked: no .prepare, no .batch, no env.DB and no
+  env.DOCS use in the route file.
+
+Design choices worth keeping:
+  updateDocumentMetadata and moveDocument take `db: D1Database` rather than
+  the Storage wrapper createDocument uses. There is therefore no R2 handle
+  in scope at all on these paths - the impossibility is structural, not a
+  promise. A Proxy spy on the bucket confirms zero calls, which is belt and
+  braces on top of that.
+  setDocumentTags is called BEFORE the title and description UPDATE, so a
+  rejected tag set (too many, too long) leaves the rest of the metadata
+  untouched rather than half-applied.
+
+Note carried forward:
+  The source-assertion test strips comments before scanning, and the
+  executor confirmed the strip is load-bearing: its own header comment
+  quotes the literal phrase it searches for. This is the same false-alarm
+  class recorded against G6.2's secret scan. A scan that trips on prose
+  trains people to ignore it.
 ```
+
 
 ---
 
@@ -3692,7 +3726,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -3832,12 +3866,42 @@ feat(api): add public category tree, tag list and document filters
 
 ### Evidence
 
+> Verified independently by the orchestrator on 2026-09-03. Commit 594a431.
+> Executed against Plan Delta 1, which narrowed this node to what the
+> owner's out-of-graph commit had not already delivered.
+
 ```text
 Changed:
-Tests:
-Verification:
-Notes:
+  src/domain/documents/document-read.ts,
+  src/api/routes/public/{documents,categories,tags}.ts;
+  tests/integration/public-browse.test.ts (17 tests) new;
+  tests/integration/app-skeleton.test.ts updated to drop /api/public/tags
+  from its "still unclaimed mounts" list, the same way that list was
+  trimmed when G1.7 and G1.8 claimed their routes.
+
+Verification (re-run by the orchestrator):
+  Full suite 305/305 - typecheck exit 0 - lint exit 0
+  Named tests confirm every item Plan Delta 1 still owed:
+    subtree by default, and depth=self narrowing - including the case where
+      depth=self returns nothing because the documents live in descendants
+    tag filter matched by NORMALIZED name, regardless of casing or spacing
+    tree with direct AND descendant counts at every level, one recursive
+      query
+    /api/public/tags implemented, returning an empty array rather than an
+      error for a library with no tags
+    category and tag filters combining with AND, and returning an empty
+      page when they share no document
+    unknown categoryId rejected with CATEGORY_NOT_FOUND for BOTH depths
+    a deeply nested subtree resolved without failing or timing out
+  Regression held: ordering and the page-size clamp still behave under a
+  tag filter, and no R2 operation or HTML body content appears on any of
+  the three endpoints, each proven by its own spy assertion.
+
+Instruction respected:
+  The node was told not to rewrite the pre-existing LIKE search, which
+  belongs to G4.1 behind CHECKPOINT C. It did not.
 ```
+
 
 ---
 
@@ -3846,7 +3910,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -4002,7 +4066,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -6575,3 +6639,298 @@ APPROVED AT:  2026-08-30
 Approved. Graph execution has begun. Any change to scope, architecture or the
 node graph from this point requires a Plan Delta (§17 of the orchestrator
 protocol) and a further approval before execution resumes.
+
+---
+
+## Node G2.7 — PWA & Offline Shell Hardening
+
+### Status
+
+```text
+DONE
+```
+
+### Goal
+
+The service worker and offline shell that arrived in commit `79a7e5c` are held
+to the same standard as every other boundary in this project: proven by test,
+not by reading the source.
+
+### Why
+
+`public/sw.js` sits between every reader and the app. It is currently correct
+by inspection — it declines `/api/*`, declines cross-origin requests, and
+declines anything carrying an `Authorization` header — but nothing stops a
+future edit from quietly removing one of those guards. A service worker that
+began caching API responses would serve stale metadata; one that cached the
+content origin would break the guarantee that a published update is what
+readers see.
+
+### Dependencies
+
+```text
+depends_on: CHECKPOINT A
+blocks:     CHECKPOINT B
+can_parallel_with: G2.3, G2.4, G2.5, G2.6
+```
+
+### Scope
+
+- Tests asserting the three exclusions the worker already implements
+- A test that the Reader still renders with the worker active
+- A cache-versioning test covering the redeploy path
+- Documentation of the offline story in `docs/` if one is missing
+
+### Out of Scope
+
+- Redesigning the worker or changing its caching strategy
+- Offline support for the Admin surface — admin work needs the network
+- Any change to `DocumentFrame.tsx` or the sandbox contract
+- Push notifications, background sync, install prompts
+
+### Read First
+
+- `public/sw.js`, `src/app/lib/pwa.ts`, `tests/browser/pwa/offline.spec.ts`
+- `IMPLEMENTATION_PLAN.md` §5 Architecture Constraints 1, 2 and 5
+- `AGENT.md` §8 iframe security, §25 performance rules
+- `SPEC.md` §16
+
+### Files
+
+Create: `tests/browser/pwa/service-worker-boundaries.spec.ts`
+
+Modify: `tests/browser/pwa/offline.spec.ts` only if it needs extending
+
+Read: `public/sw.js`, `src/app/lib/pwa.ts`, `playwright.pwa.config.ts`
+
+### Interfaces / Contracts
+
+Must not change:
+
+```text
+The service worker's three exclusions: /api/*, cross-origin, and any request
+carrying an Authorization header.
+```
+
+### Implementation Requirements
+
+1. Assert that no `/api/*` response is ever placed in the cache, by driving a
+   real page load and inspecting `caches.keys()` and the cached entries.
+2. Assert that no content-origin URL is ever cached, and that the Reader's
+   iframe still loads from the content origin with the worker active.
+3. Assert that a request carrying an `Authorization` header bypasses the
+   worker, so an admin response can never be served from cache.
+4. Assert that the Reader renders correctly with the worker registered and
+   activated, not only on a cold first load.
+5. Cover the redeploy path: with a cache from an older version name present,
+   the activate handler deletes it, so a reader is never stranded on an old
+   bundle talking to a newer API.
+6. Do not weaken any existing assertion to make a test pass. If the worker is
+   found to violate one of its own stated exclusions, STOP and report it as a
+   security finding rather than adjusting the test.
+
+### Edge Cases
+
+- Worker registered but not yet activated on a first visit
+- A second visit served from cache while the network is available
+- An older cache version present at activate time
+- The Reader opened directly by URL with the worker already active
+- A navigation request while offline falling back to the cached shell
+- An `/api/*` request while offline failing normally rather than being faked
+
+### Tests Required
+
+Positive: the shell is cached and an offline navigation succeeds; the Reader
+renders with the worker active.
+Negative: no `/api/*` entry in any cache; no content-origin entry in any
+cache; an `Authorization`-bearing request is not served from cache.
+Regression: an old cache version is deleted on activate.
+
+### Verification Commands
+
+```bash
+pnpm exec playwright test -c playwright.pwa.config.ts
+pnpm exec playwright test
+pnpm typecheck
+pnpm lint
+```
+
+Expected:
+
+```text
+exit 0 throughout; every boundary assertion passing
+```
+
+### Definition of Done
+
+- [ ] All three exclusions proven by test, not by inspection
+- [ ] Reader verified with the worker active
+- [ ] Redeploy path leaves no stale cache
+- [ ] Offline navigation serves the shell
+- [ ] No existing assertion weakened
+- [ ] No change to the worker's caching strategy
+
+### Stop Conditions
+
+- The worker is found to cache an `/api/*` response, a content-origin
+  response, or an authenticated response — report as a security finding
+- Playwright cannot observe the Cache Storage API in this setup
+
+### Suggested Commit
+
+```text
+test(pwa): prove the service worker's api, origin and auth exclusions
+```
+
+### Evidence
+
+> Verified independently by the orchestrator on 2026-09-03. Commit e05121a.
+> Node created by Plan Delta 1.
+
+```text
+Changed:
+  tests/browser/pwa/service-worker-boundaries.spec.ts (9 tests) new;
+  tests/browser/pwa/offline.spec.ts kept.
+  public/sw.js NOT modified - the node's job was to prove the worker's
+  behaviour, not to change it, and it did not change it.
+
+Verification (re-run by the orchestrator):
+  pnpm exec playwright test -c playwright.pwa.config.ts -> 10/10 passed
+  pnpm exec playwright test                             -> 24/24 passed
+  typecheck exit 0 - lint exit 0
+
+All three exclusions are now proven rather than merely readable:
+  no /api/* response is ever placed in any cache
+  no content-origin URL is ever cached, and the Reader's iframe still loads
+    from the content origin with the worker active
+  a request carrying an Authorization header is never served from cache
+Plus the redeploy path: a stale cache version created by hand is deleted at
+activate, so a reader is never stranded on an old bundle talking to a newer
+API. And an /api/* request made while offline fails normally instead of
+being faked from cache, which is the behaviour that keeps stale metadata
+from ever looking authoritative.
+
+Went beyond the packet, and correctly:
+  The executor added two attack-path tests the orchestrator had not asked
+  for - offering an /api/* URL, and a content-origin URL, directly to the
+  worker's own CACHE_PUBLIC_ASSETS message channel. Both are refused. The
+  packet only required proving the fetch-handler exclusions; the message
+  channel is a second way in, and testing it was the right instinct.
+
+MUTATION TESTING - the most valuable result of this node:
+  The executor did not merely write passing tests. It deliberately BROKE
+  public/sw.js to check the tests would notice, then reverted. Confirmed by
+  the orchestrator: `git diff` shows sw.js byte-identical to what landed in
+  79a7e5c, so nothing was left mutated.
+  1. Allowing "/api/" through isCacheablePublicAsset and removing the fetch
+     handler's /api/ exclusion made the new direct-message test FAIL, as it
+     should - but the "drive a real page load, then inspect the caches"
+     test STILL PASSED under the same mutation.
+     The reason is a genuine timing race: pwa.ts posts CACHE_PUBLIC_ASSETS
+     from performance.getEntriesByType("resource") right after
+     serviceWorker.ready, so an /api/ fetch completing just after that
+     message can be missed entirely. A naive load-and-inspect test would
+     therefore have given false confidence about a REAL regression. This is
+     exactly the failure mode this project worries about - a test that
+     passes for the wrong reason - and it was caught by deliberately trying
+     to break the thing rather than by reasoning about it.
+  2. Dropping the origin check and allowlisting a "/d/" path did NOT make
+     the content-origin test fail, because the content Worker sends no
+     Access-Control-Allow-Origin header, so the cross-origin fetch dies
+     before cache.put is reached.
+     HONEST CONSEQUENCE, recorded rather than glossed: the content-origin
+     guarantee currently rests on TWO independent layers, the worker's own
+     origin check AND the absence of CORS headers on the content origin. If
+     the content Worker ever gains permissive CORS for some other reason,
+     the worker's own guard becomes the only remaining protection. Not an
+     action item now; a thing to remember if CORS is ever added there.
+     The executor wrote this into the test's comment instead of claiming
+     the test isolates the service worker's logic alone.
+
+One reported caveat did NOT reproduce:
+  The node reported that `wrangler d1 execute --local` crashes on this
+  machine. The orchestrator re-ran it afterwards and it succeeded, exit 0.
+  Most likely contention with a running `pnpm dev` holding the local D1
+  state at that moment. Recorded so the claim does not propagate as a
+  standing limitation - `pnpm seed:local` is fine.
+```
+
+
+---
+
+## CHECKPOINT B — Organization complete
+
+Verified by the orchestrator on 2026-09-03, on a stable tree with every M2
+node landed. Evidence is the suite run, not the node statuses.
+
+```text
+Suites:  305 vitest across 18 files - 54 browser - 10 PWA
+Static:  typecheck (3 projects) - lint - build, all exit 0
+Bundle:  the admin chunk is still split from the public entry
+```
+
+Gate items:
+
+- [x] Nested categories created, renamed, moved and deleted from the Admin
+      UI with no code change — `admin-categories.spec.ts`, including a
+      ten-level tree navigable at 375px
+- [x] Cycle, self-parent and non-empty-delete attempts rejected with the
+      specified codes, and the guards surfaced as readable messages rather
+      than raw codes
+- [x] Tags created, renamed, merged and unlinked, with the merge naming both
+      tags and the affected document count before it commits
+- [x] A document moved between categories keeps its slug and public URL —
+      proven in the domain layer by G2.3 and again end to end in the browser
+- [x] Public category browse and tag filter work anonymously
+
+### Two defects found while running this gate, both now fixed
+
+Neither was reported by an executor; both surfaced only because the whole
+suite was run on a tree nobody was still writing to.
+
+**1. The browser suite exhausted the product's own login rate limiter.**
+Node G1.6 limits `POST /api/admin/login` to 10 attempts per minute per IP.
+Every admin spec signed in through the UI on every test — more than twenty
+logins a minute between them — so later logins returned 429 and specs failed
+with "the upload form never appeared", a symptom that points nowhere near
+the cause. Confirmed directly: the eleventh login in a minute returns 429.
+
+The limiter is correct and was not touched. What was wrong was signing in
+through the UI in specs that are not about signing in. `tests/browser/
+admin-session.ts` now obtains ONE token per suite run — shared across
+Playwright's eight workers through a short-lived temp file, because a
+per-worker cache still cost eight logins — and plants it in sessionStorage
+with an init script. Two tests in `admin-upload.spec.ts` still drive the
+real login form, so the login screen keeps its coverage.
+
+Known and accepted: running the whole suite several times inside one minute
+can still trip the limiter on those two deliberate UI logins. That is the
+limiter working. A single run is deterministic — verified across repeated
+runs once the window had reset.
+
+**2. Specs fought over one shared fixture.** The admin metadata-edit test
+mutated `expectations-investing` — title, description, tags AND category —
+while `reader.spec.ts`, `public-browse.spec.ts` and the PWA specs read that
+same document and assert on it. `seed-local.sql` now seeds a document that
+exists solely for the mutating test. The coupling is removed at its root
+rather than hidden by serialising the suite.
+
+### A misdiagnosis by the orchestrator, corrected by the executor
+
+While chasing the remaining intermittent failure the orchestrator read the
+form's `useState("")` initialisers and concluded the form was editable
+before its fetch resolved — a genuine data-loss path in production. That was
+wrong, and the executor sent to fix it checked rather than complied: the
+`if (doc === null) return <Loading…>` gate was already present in G2.5's
+original commit, so the form was never editable early.
+
+The real cause was narrower. `<StrictMode>` double-invokes the mount effect
+in development, so TWO `load()` chains run for one mount; whichever resolved
+last reapplied the pre-edit document over whatever had been typed since.
+The fix is a generation counter stamped on each `load()`, with stale
+responses dropped — which also covers any future path that calls `load()`
+twice in quick succession.
+
+Consequence worth recording plainly: because StrictMode's double-invoke is
+development-only, this never affected a production build. The orchestrator's
+description of it as production data loss overstated the impact.

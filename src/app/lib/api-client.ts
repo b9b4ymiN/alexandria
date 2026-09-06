@@ -86,12 +86,38 @@ export interface CategoryListEntry {
   documentCount: number;
 }
 
-export function listDocuments(params: { page?: number; pageSize?: number; query?: string; categoryId?: string } = {}) {
+/**
+ * A node in the public category tree (`GET /api/public/categories`, node
+ * G2.4). `documentCount` is direct membership; `descendantDocumentCount` is
+ * the whole subtree — the number a "browse this category" click actually
+ * shows, since the category filter defaults to the subtree (node G2.6).
+ */
+export interface CategoryTreeNode {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  documentCount: number;
+  descendantDocumentCount: number;
+  children: CategoryTreeNode[];
+}
+
+export interface TagSummary {
+  id: string;
+  name: string;
+  documentCount: number;
+}
+
+export function listDocuments(
+  params: { page?: number; pageSize?: number; query?: string; categoryId?: string; tag?: string } = {},
+) {
   const query = new URLSearchParams();
   if (params.page !== undefined) query.set("page", String(params.page));
   if (params.pageSize !== undefined) query.set("pageSize", String(params.pageSize));
   if (params.query !== undefined) query.set("query", params.query);
   if (params.categoryId !== undefined) query.set("categoryId", params.categoryId);
+  if (params.tag !== undefined) query.set("tag", params.tag);
   const suffix = query.toString() === "" ? "" : `?${query.toString()}`;
   return request<Paginated<DocumentSummary>>(`/api/public/documents${suffix}`);
 }
@@ -100,6 +126,38 @@ export function getDocument(slug: string) {
   return request<DocumentDetail>(`/api/public/documents/${encodeURIComponent(slug)}`);
 }
 
+/** The nested tree, fetched once per page (node G2.6 requirement 7) — never per node. */
 export function listPublicCategories() {
-  return request<{ categories: CategoryListEntry[] }>("/api/public/categories");
+  return request<{ categories: CategoryTreeNode[] }>("/api/public/categories");
+}
+
+/** Every public tag, fetched once per page — never once per chip. */
+export function listPublicTags() {
+  return request<TagSummary[]>("/api/public/tags");
+}
+
+/**
+ * Walks the tree matching one slug per level, root first. Sibling slugs are
+ * unique (enforced in `categories`, D1 UNIQUE(parent_id, slug) — including
+ * the NULL/root level), so a given path resolves to at most one chain; this
+ * is what makes `/category/*` routing unambiguous (node G2.6 stop
+ * condition). Returns `null` when any segment fails to match, which is the
+ * "unknown category path" case the route renders as not-found.
+ */
+export function findCategoryChain(tree: CategoryTreeNode[], segments: readonly string[]): CategoryTreeNode[] | null {
+  if (segments.length === 0) return null;
+  const chain: CategoryTreeNode[] = [];
+  let level = tree;
+  for (const segment of segments) {
+    const match = level.find((node) => node.slug === segment);
+    if (match === undefined) return null;
+    chain.push(match);
+    level = match.children;
+  }
+  return chain;
+}
+
+/** Builds a shareable `/category/...` URL from an ordered list of slugs. */
+export function categoryPathHref(segments: readonly string[]): string {
+  return `/category/${segments.map(encodeURIComponent).join("/")}`;
 }

@@ -13,6 +13,7 @@ import { Link, useParams } from "react-router";
 import { getDocument, type DocumentDetail } from "../lib/api-client";
 import { DocumentFrame } from "../components/DocumentFrame";
 import { ShareButton } from "../components/ShareButton";
+import { TagChips } from "../features/browse/TagChips";
 
 type Loaded =
   | { status: "ready"; document: DocumentDetail }
@@ -99,6 +100,11 @@ export function Reader() {
                 day: "numeric",
               })}
             </p>
+          )}
+          {document !== null && document.tags.length > 0 && (
+            <div className="mt-1">
+              <TagChips tags={document.tags} variant="dark" />
+            </div>
           )}
         </div>
 
