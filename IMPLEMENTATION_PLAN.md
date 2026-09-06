@@ -305,7 +305,12 @@ Required nodes: `G3.1 … G3.5`
 **PASSED 2026-09-06**, verified by the orchestrator re-running every suite on
 a tree nobody was writing to: 384 vitest across 23 files, 63 browser, 10 PWA,
 clean typecheck, lint and build, admin chunk still split from the public
-entry.
+entry. Merged to `main` as `b3ff2c1` and **deployed the same day** —
+`alexandria` `0f4f5ec6`, `alexandria-content` `a0c978a5`, no migration. The
+live checks are recorded in `HANDOVER.md` §2: every new admin route answers
+401 without a token, every unsigned or malformed preview request answers 403,
+`/d/:slug` is unchanged, and the acceptance document still serves
+byte-identically.
 
 - [x] Re-upload of identical bytes returns `UNCHANGED` and creates no version — asserted against version count, `updated_at` AND R2 object count
 - [x] A modified upload creates a new immutable version and the public URL does not change — plus 20 sequential updates leaving v1's object hash untouched
