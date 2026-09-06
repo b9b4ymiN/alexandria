@@ -25,6 +25,9 @@
 // localStorage, neither of which this app uses for auth — and why the token
 // is planted with an init script instead.
 import type { Page } from "@playwright/test";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const TOKEN_KEY = "alexandria.admin.token";
 const PASSWORD = "local-dev-password-not-a-real-secret";
@@ -32,7 +35,38 @@ const PASSWORD = "local-dev-password-not-a-real-secret";
 /** One token per worker process, fetched on first use. */
 let cachedToken: Promise<string> | null = null;
 
+// ...and one token per SUITE RUN, shared across workers through a file.
+//
+// A per-worker cache is not enough. Playwright runs eight workers by
+// default, so eight logins plus the two the login spec makes deliberately
+// comes to ten — exactly the limiter's budget — and two suite runs inside
+// the same minute then fail in a way that looks like flakiness. Sharing one
+// token across workers brings a whole run down to a single login.
+const TOKEN_FILE = join(tmpdir(), "alexandria-browser-admin-token.json");
+const TOKEN_TTL_MS = 5 * 60 * 1000;
+
+function readSharedToken(): string | null {
+  try {
+    const cached = JSON.parse(readFileSync(TOKEN_FILE, "utf8")) as { token: string; at: number };
+    return Date.now() - cached.at < TOKEN_TTL_MS ? cached.token : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSharedToken(token: string): void {
+  try {
+    mkdirSync(tmpdir(), { recursive: true });
+    writeFileSync(TOKEN_FILE, JSON.stringify({ token, at: Date.now() }));
+  } catch {
+    // A cache miss only costs one extra login; never fail a run over it.
+  }
+}
+
 async function fetchToken(baseURL: string): Promise<string> {
+  const shared = readSharedToken();
+  if (shared !== null) return shared;
+
   const response = await fetch(new URL("/api/admin/login", baseURL), {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -54,6 +88,7 @@ async function fetchToken(baseURL: string): Promise<string> {
   if (!envelope.ok) {
     throw new Error(`Admin login failed in test setup: ${envelope.error.code}`);
   }
+  writeSharedToken(envelope.data.token);
   return envelope.data.token;
 }
 
