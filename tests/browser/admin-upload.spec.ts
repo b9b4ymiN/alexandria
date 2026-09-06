@@ -4,6 +4,7 @@
 // in sessionStorage and nowhere else, and the file must cross the network
 // exactly once.
 import { expect, test } from "@playwright/test";
+import { signInAs } from "./admin-session";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,10 +12,19 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.resolve(here, "../../mauboussin-expectations-investing-summary.html");
 const PASSWORD = "local-dev-password-not-a-real-secret";
 
+// The REAL login form, kept for the two tests that are actually about
+// authentication. Everything else uses signInFast, because node G1.6 rate-
+// limits login to 10 attempts per minute per IP and this suite would
+// otherwise exhaust that budget and fail with misleading symptoms.
 async function signIn(page: import("@playwright/test").Page) {
   await page.goto("/admin");
   await page.getByLabel("Admin password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByLabel("HTML file")).toBeVisible();
+}
+
+async function signInFast(page: import("@playwright/test").Page) {
+  await signInAs(page, "/admin");
   await expect(page.getByLabel("HTML file")).toBeVisible();
 }
 
@@ -49,7 +59,7 @@ test.describe("Admin", () => {
   });
 
   test("previews metadata locally, then publishes with a single upload", async ({ page }) => {
-    await signIn(page);
+    await signInFast(page);
 
     // Count only requests that actually carry the file body.
     let uploadRequests = 0;
@@ -75,7 +85,7 @@ test.describe("Admin", () => {
   });
 
   test("marks a field as edited when the operator overrides it", async ({ page }) => {
-    await signIn(page);
+    await signInFast(page);
     await page.getByLabel("HTML file").setInputFiles(FIXTURE);
 
     await expect(page.getByText("read from the file").first()).toBeVisible();
@@ -84,7 +94,7 @@ test.describe("Admin", () => {
   });
 
   test("blocks a non-.html file before any upload", async ({ page }, testInfo) => {
-    await signIn(page);
+    await signInFast(page);
 
     let uploadRequests = 0;
     page.on("request", (request) => {
@@ -106,7 +116,7 @@ test.describe("Admin", () => {
 
   test("is usable at 375px with no horizontal overflow", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await signIn(page);
+    await signInFast(page);
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
