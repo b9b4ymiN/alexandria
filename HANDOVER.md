@@ -94,10 +94,9 @@ production. `pnpm dev` serves the app; `pnpm seed:local` seeds fixtures.
 
 ## 4. Open items carried forward
 
-**CHECKPOINT A is one item short.** Reading has never been verified on a real
-phone on a different network. 375/768/1440 pass in Playwright, but an
-emulated viewport is not the same test. This belongs to the project owner and
-was never claimed as done.
+**CHECKPOINT A is now complete.** The project owner verified reading on a
+real phone on a different network on 2026-09-06. That was the last outstanding
+gate item; nothing from CHECKPOINT A is carried forward.
 
 **ETag is stripped by Cloudflare's edge.** The content Worker sets one and
 handles `If-None-Match` correctly — proven in the Workers runtime — but the
@@ -107,19 +106,20 @@ This is edge behaviour, not a defect; `cache-control: public, max-age=60`
 still absorbs repeat reads. Worth revisiting with a custom domain, where
 zone-level ETag behaviour is configurable.
 
-**Thai truncation is over-conservative.** The description truncator retreats
-past a legitimate trailing combining mark, because the test asserts on the
-last code point rather than on the cut index falling at a grapheme boundary.
-It can drop one extra syllable at the 300-character limit and never produces
-broken output. The correct fix is to assert the boundary condition directly
-and let the implementation stop over-retreating. Deliberately deferred to M6.
-
 **Running the browser suite several times inside one minute can trip the
 login rate limiter.** Node G1.6 allows 10 login attempts per minute per IP.
 `tests/browser/admin-session.ts` reduces a whole run to a single API login
 shared across workers, but two tests in `admin-upload.spec.ts` still drive
 the real login form on purpose — those are what can trip it. That is the
 limiter working. A single run is deterministic.
+
+**Closed on 2026-09-06 by the project owner, no longer tracked.** The real-phone
+verification above, and the Thai description truncator: its over-conservative
+retreat past a legitimate trailing combining mark is accepted as final
+behaviour, not a deferred M6 fix. It never produces broken output and can only
+drop one extra syllable at the 300-character limit. The full analysis stays in
+the `G1.4` evidence block of `IMPLEMENTATION_PLAN.md` as a documented
+trade-off.
 
 ---
 

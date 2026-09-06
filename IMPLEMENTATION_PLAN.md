@@ -225,7 +225,7 @@ G1.3 || G1.4 || G1.6
 G1.7 || G1.8 || G1.9
 G2.1 || G2.2
 G2.5 || G2.6
-G3.2 || G3.4
+G3.3 || G3.4
 G6.1 || G6.2 || G6.3
 ```
 
@@ -236,7 +236,8 @@ Why each pairing is safe:
 - **G1.7 || G1.8 || G1.9** — safe **only because `G1.2` creates `src/api/app.ts` with empty public and admin routers already mounted**. `G1.7` writes `routes/admin/documents.ts`, `G1.8` writes `routes/public/documents.ts`, `G1.9` writes a different Worker entrypoint with its own wrangler config. No node in this set edits `app.ts`.
 - **G2.1 || G2.2** — `CategoryService` with `routes/admin/categories.ts` versus `TagService` with `routes/admin/tags.ts`. Each mounts itself into the admin router through its own file.
 - **G2.5 || G2.6** — admin surface under `src/app/routes/admin/` versus public surface under `src/app/routes/`. Shared layout files are not modified by either node.
-- **G3.2 || G3.4** — version guards live in `VersionService` and admin routes; signed-URL work lives in `src/shared/signing.ts` and the content Worker.
+- **G3.3 || G3.4** — `document-service.ts` with `routes/admin/documents.ts` versus `src/shared/signing.ts`, `src/content/handler.ts`, `wrangler.content.jsonc` and `routes/admin/versions.ts`. Disjoint files.
+- **CORRECTION, 2026-09-06 — `G3.2 || G3.4` was wrong and is withdrawn.** This section justified the pairing on the grounds that signed-URL work lives in `src/shared/signing.ts` and the content Worker, but `G3.4`'s own Files list also modifies `src/api/routes/admin/versions.ts` for the issuance endpoint — the same file `G3.2` extends. Running them in parallel would have put two executors in one route file. The work cannot be moved to a new leaf file either, because mounting one requires editing `routes/admin/index.ts`, which is single-writer. `G3.4` is therefore serialized after `G3.2` and pairs with `G3.3` instead, which costs no extra wave: M3 still runs `G3.2` → `G3.3 || G3.4` → `G3.5`. Found by the orchestrator while preparing the M3 dispatches, before any executor was launched.
 - **G6.1 || G6.2 || G6.3** — three distinct test suites; none is expected to modify production source. Any node that must change production code stops and reports so the change is reviewed once, serially.
 
 Conflict analysis:
@@ -365,10 +366,10 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G2.5 | DONE | G2.1, G2.2, G2.3 | CHECKPOINT B | G2.6 |
 | G2.6 | DONE | G2.4 | CHECKPOINT B | G2.5 |
 | G2.7 | DONE | CHECKPOINT A | CHECKPOINT B | G2.3, G2.4, G2.5, G2.6 |
-| G3.1 | BLOCKED | CHECKPOINT B | G3.2, G3.4 | — |
-| G3.2 | BLOCKED | G3.1 | G3.3, G3.5 | G3.4 |
+| G3.1 | DONE | CHECKPOINT B | G3.2, G3.4 | — |
+| G3.2 | READY | G3.1 | G3.3, G3.5 | — |
 | G3.3 | BLOCKED | G3.2 | G3.5 | G3.4 |
-| G3.4 | BLOCKED | G3.1 | G3.5 | G3.2, G3.3 |
+| G3.4 | READY | G3.1 | G3.5 | G3.3 |
 | G3.5 | BLOCKED | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
 | G4.1 | BLOCKED | CHECKPOINT C | G4.2 | — |
 | G4.2 | BLOCKED | G4.1 | CHECKPOINT D | — |
@@ -4235,7 +4236,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Orchestrator clarification (2026-08-30)
@@ -4396,9 +4397,46 @@ feat(versions): add document update with immutable versioning and history
 
 ```text
 Changed:
+  src/domain/versions/version-service.ts  — updateDocumentVersion() and
+    listVersionHistory() appended. appendVersion() untouched: the diff is
+    purely additive (one import block, one append after line 278), so the
+    G1.5 contract, its SHA-256 comparison, its R2-then-D1 ordering and its
+    compensation are reused rather than re-implemented.
+  src/api/routes/admin/versions.ts        — POST /:slug/versions and
+    GET /:slug/versions behind requireAdmin. Transport only.
+  tests/integration/document-update.test.ts — created, 18 tests.
+
 Tests:
-Verification:
+  305 -> 323 vitest across 18 -> 19 files. Delta is exactly +18 / +1;
+  nothing else moved.
+
+Verification (orchestrator re-ran every command itself on the same tree):
+  pnpm typecheck && pnpm lint && pnpm test   exit 0, 323 passed (19 files)
+  pnpm build                                 clean, admin chunk still split
+                                             from the public entry
+
+  Four highest-risk tests read line by line rather than trusted:
+  - UNCHANGED returns 200 through ok(), never 409, and writes nothing —
+    asserted against version count, documents.updated_at AND R2 object count
+  - injected D1 batch failure leaves current_version_id on v1, version count
+    at 1, and only v1's object surviving (orphan compensated away)
+  - 20 sequential updates produce 21 distinct R2 keys and leave v1's object
+    sha256 identical
+  - the route-thinness scan strips comments before asserting on source
+
 Notes:
+  A note longer than 500 characters is rejected with INVALID_HTML. That is
+  not this node's invention — the G1.7 create route already uses
+  INVALID_HTML as the catch-all for field validation — but M5 surfaces error
+  codes verbatim to agents (node G5.2 requirement 5), so an agent sending an
+  over-long note would be told to fix its HTML. Decide before G5.1 whether
+  to add a NOTE_TOO_LONG code, for which G2.2's TAG_NAME_TOO_LONG is the
+  precedent. Recorded, not silently fixed.
+
+  The executor also added a defence-in-depth 500-character check inside
+  updateDocumentVersion in addition to the route's zod cap, so the domain
+  function is correct when called directly. Harmless asymmetry with create,
+  left as is.
 ```
 
 ---
@@ -4424,7 +4462,7 @@ Append-only restore is what makes history trustworthy. If restore rewound the po
 ```text
 depends_on: G3.1
 blocks:     G3.3, G3.5
-can_parallel_with: G3.4
+can_parallel_with: — (was G3.4; corrected 2026-09-06, see §9)
 ```
 
 ### Scope
@@ -4751,7 +4789,7 @@ Previewing history is required by GOAL.md §3, but exposing every past version a
 ```text
 depends_on: G3.1
 blocks:     G3.5
-can_parallel_with: G3.2, G3.3
+can_parallel_with: G3.3 (was G3.2, G3.3; corrected 2026-09-06, see §9)
 ```
 
 ### Scope
