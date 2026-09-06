@@ -8,7 +8,12 @@
 // Implements (SPEC.md §18 Admin):
 //   POST   /api/admin/documents/:slug/versions              -> "/:slug/versions"
 //   GET    /api/admin/documents/:slug/versions               -> "/:slug/versions"
-// POST restore/:versionNo and DELETE versions/:versionNo belong to G3.2.
+//   POST   /api/admin/documents/:slug/restore/:versionNo    -> "/:slug/restore/:versionNo"
+//   DELETE /api/admin/documents/:slug/versions/:versionNo    -> "/:slug/versions/:versionNo"
+//
+// Neither restore nor version delete is ever mounted under /api/agent —
+// see src/api/routes/agent/index.ts (AGENT.md §6, SPEC.md §18 Agent:
+// "No destructive Agent routes").
 //
 // TRANSPORT ONLY. This file parses the request, authorizes it, hands off
 // to VersionService, and shapes the response. It contains no SQL and no
@@ -19,12 +24,35 @@ import type { Env } from "../../../shared/types";
 import { AppError } from "../../../shared/errors";
 import { ok } from "../../../shared/envelope";
 import { requireAdmin } from "../../middleware/admin-auth";
-import { listVersionHistory, updateDocumentVersion } from "../../../domain/versions/version-service";
+import {
+  deleteVersion,
+  listVersionHistory,
+  restoreVersion,
+  updateDocumentVersion,
+} from "../../../domain/versions/version-service";
 
 const versions = new Hono<{ Bindings: Env }>();
 
 const MAX_NOTE_LENGTH = 500;
 const noteSchema = z.string().max(MAX_NOTE_LENGTH).optional();
+const versionNoSchema = z.coerce.number().int().positive();
+
+/**
+ * A version-number path segment that fails basic shape validation
+ * (non-numeric, fractional, zero or negative) can never match a real row,
+ * so it is reported the same way an out-of-range number is:
+ * VERSION_NOT_FOUND, not a generic 400.
+ */
+function parseVersionNo(raw: string): number {
+  const parsed = versionNoSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new AppError("VERSION_NOT_FOUND", {
+      message: "Invalid version number.",
+      detail: { raw },
+    });
+  }
+  return parsed.data;
+}
 
 function documentUrl(env: Env, slug: string): string {
   return `${env.APP_ORIGIN.replace(/\/+$/, "")}/docs/${slug}`;
@@ -96,6 +124,54 @@ versions.post("/:slug/versions", requireAdmin, async (c) => {
 versions.get("/:slug/versions", requireAdmin, async (c) => {
   const history = await listVersionHistory(c.env.DB, c.req.param("slug"));
   return ok({ versions: history });
+});
+
+// ---------------------------------------------------------------------------
+// POST /:slug/restore/:versionNo — append a new current version from an
+// older version's bytes (SPEC.md §12 Restore Contract). Always answers
+// through ok() at 201: restoring identical bytes still creates a version
+// (VersionService.restoreVersion never returns `unchanged`), so there is no
+// 200/unchanged branch to handle here, unlike the upload route above.
+// ---------------------------------------------------------------------------
+versions.post("/:slug/restore/:versionNo", requireAdmin, async (c) => {
+  const versionNo = parseVersionNo(c.req.param("versionNo"));
+
+  const result = await restoreVersion(
+    { db: c.env.DB, docs: c.env.DOCS },
+    {
+      slug: c.req.param("slug"),
+      versionNo,
+      createdBy: "admin",
+    },
+  );
+
+  return ok(
+    {
+      versionId: result.versionId,
+      versionNo: result.versionNo,
+      restoredFromVersionNo: result.restoredFromVersionNo,
+    },
+    { status: 201 },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /:slug/versions/:versionNo — permanently remove one non-current,
+// non-last version (SPEC.md §13 Delete Rules). Guard precedence lives in
+// VersionService.deleteVersion, not here.
+// ---------------------------------------------------------------------------
+versions.delete("/:slug/versions/:versionNo", requireAdmin, async (c) => {
+  const versionNo = parseVersionNo(c.req.param("versionNo"));
+
+  const result = await deleteVersion(
+    { db: c.env.DB, docs: c.env.DOCS },
+    {
+      slug: c.req.param("slug"),
+      versionNo,
+    },
+  );
+
+  return ok({ deletedVersionNo: result.deletedVersionNo });
 });
 
 export default versions;
