@@ -23,6 +23,11 @@
 import { AppError } from "../../shared/errors";
 import { buildR2Key } from "./r2-keys";
 import { sha256Hex } from "./hash";
+import {
+  DEFAULT_MAX_UPLOAD_BYTES,
+  validateHtmlUpload,
+  type UploadLimits,
+} from "../documents/html-validation";
 
 /**
  * The two storage bindings the domain layer needs. Services take this
@@ -275,4 +280,138 @@ export async function appendVersion(
     versionNo: await readVersionNo(storage.db, versionId),
     unchanged: false,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Update & version history — node G3.1.
+//
+// Both operations resolve the document by its STABLE SLUG, matching the
+// public update contract (SPEC.md §11: "stable slug + new .html"). Neither
+// function ever writes `documents.slug`; the slug is only ever read back so
+// the caller can echo the unchanged public URL.
+// ---------------------------------------------------------------------------
+
+const MAX_NOTE_LENGTH = 500;
+
+interface DocumentIdentityRow {
+  id: string;
+  currentVersionId: string | null;
+}
+
+/** Resolves a document's internal id (and current pointer) by slug. */
+async function resolveDocumentBySlug(db: D1Database, slug: string): Promise<DocumentIdentityRow> {
+  const row = await db
+    .prepare("SELECT id, current_version_id AS currentVersionId FROM documents WHERE slug = ?")
+    .bind(slug)
+    .first<DocumentIdentityRow>();
+  if (row === null) {
+    throw new AppError("DOCUMENT_NOT_FOUND", {
+      message: "No document with that slug.",
+      detail: { slug },
+    });
+  }
+  return row;
+}
+
+export interface UpdateDocumentVersionInput {
+  slug: string;
+  bytes: ArrayBuffer;
+  filename: string;
+  createdBy: "admin" | "agent";
+  note?: string;
+  limits?: UploadLimits;
+}
+
+export interface UpdateDocumentVersionResult extends AppendVersionResult {
+  slug: string;
+}
+
+/**
+ * Update entry point for an existing document (SPEC.md §11 Update
+ * Contract, steps 1-9). Resolves the document by slug FIRST so an unknown
+ * slug fails with `DOCUMENT_NOT_FOUND` before any byte is even validated,
+ * then runs the incoming file through the identical validation chain a
+ * create goes through (node G3.1 requirement 2) before ever reaching
+ * `appendVersion` — a rejected file therefore never disturbs the current
+ * version, because nothing has been written yet at the point validation
+ * throws.
+ *
+ * `appendVersion`'s SHA-256 comparison (against the CURRENT version only),
+ * `force`-free UNCHANGED short-circuit, R2-then-D1 ordering and
+ * compensation are reused completely unchanged — this function does not
+ * duplicate any of that logic, it only resolves the slug and validates the
+ * incoming bytes first.
+ */
+export async function updateDocumentVersion(
+  storage: Storage,
+  input: UpdateDocumentVersionInput,
+): Promise<UpdateDocumentVersionResult> {
+  const document = await resolveDocumentBySlug(storage.db, input.slug);
+
+  const limits: UploadLimits = input.limits ?? { maxBytes: DEFAULT_MAX_UPLOAD_BYTES };
+  await validateHtmlUpload({ filename: input.filename, bytes: input.bytes }, limits);
+
+  if (input.note !== undefined && input.note.length > MAX_NOTE_LENGTH) {
+    throw new AppError("INVALID_HTML", {
+      message: `Note must be at most ${MAX_NOTE_LENGTH} characters.`,
+    });
+  }
+
+  const result = await appendVersion(storage, {
+    documentId: document.id,
+    bytes: input.bytes,
+    createdBy: input.createdBy,
+    note: input.note,
+  });
+
+  return { ...result, slug: input.slug };
+}
+
+export interface VersionHistoryEntry {
+  versionNo: number;
+  versionId: string;
+  sizeBytes: number;
+  sha256: string;
+  createdBy: "admin" | "agent";
+  createdAt: string;
+  note: string;
+  restoredFromVersionNo: number | null;
+  isCurrent: boolean;
+}
+
+interface VersionHistoryRow {
+  versionId: string;
+  versionNo: number;
+  sizeBytes: number;
+  sha256: string;
+  createdBy: "admin" | "agent";
+  createdAt: string;
+  note: string;
+  restoredFromVersionNo: number | null;
+}
+
+/**
+ * Full version history for a document, resolved by its stable slug, newest
+ * first, flagging the current version. Never selects `r2_key` or reads the
+ * object body — this is metadata only (node G3.1 requirement 7).
+ */
+export async function listVersionHistory(db: D1Database, slug: string): Promise<VersionHistoryEntry[]> {
+  const document = await resolveDocumentBySlug(db, slug);
+
+  const rows = await db
+    .prepare(
+      `SELECT id AS versionId, version_no AS versionNo, size_bytes AS sizeBytes, sha256,
+              created_by AS createdBy, created_at AS createdAt, note,
+              restored_from_version_no AS restoredFromVersionNo
+       FROM document_versions
+       WHERE document_id = ?
+       ORDER BY version_no DESC`,
+    )
+    .bind(document.id)
+    .all<VersionHistoryRow>();
+
+  return rows.results.map((row) => ({
+    ...row,
+    isCurrent: row.versionId === document.currentVersionId,
+  }));
 }
