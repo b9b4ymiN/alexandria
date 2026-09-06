@@ -6,8 +6,8 @@
 //   POST  /api/admin/documents             -> "/"
 //   PATCH /api/admin/documents/:slug       -> "/:slug"             (G2.3)
 //   POST  /api/admin/documents/:slug/move  -> "/:slug/move"        (G2.3)
-// DELETE on /:slug belongs to a later node (G3.3); version sub-routes
-// live in src/api/routes/admin/versions.ts (G3.1).
+//   DELETE /api/admin/documents/:slug      -> "/:slug"             (G3.3)
+// Version sub-routes live in src/api/routes/admin/versions.ts (G3.1, G3.2).
 //
 // TRANSPORT ONLY. This file parses the request, authorizes it, hands off to
 // DocumentService, and shapes the response. It contains no SQL, no R2
@@ -22,6 +22,7 @@ import { ok } from "../../../shared/envelope";
 import { requireAdmin } from "../../middleware/admin-auth";
 import {
   createDocument,
+  deleteDocument,
   moveDocument,
   updateDocumentMetadata,
 } from "../../../domain/documents/document-service";
@@ -184,6 +185,42 @@ documents.post("/:slug/move", requireAdmin, async (c) => {
   const result = await moveDocument(c.env.DB, c.req.param("slug"), parsed.data.categoryId);
 
   return ok({ ...result, url: documentUrl(c.env, result.slug) });
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /:slug — node G3.3.
+//
+// The only irreversible operation in Phase 1 (SPEC.md §13). The body must
+// echo the slug back exactly; the check itself lives in DocumentService, so
+// the Admin UI and any future caller are held to the same contract rather
+// than to whatever each transport remembered to validate.
+//
+// The response reports what actually happened to R2 rather than assuming
+// success, because a failed object delete leaves a paid-for orphan the
+// operator may want to reconcile later.
+// ---------------------------------------------------------------------------
+
+const deleteSchema = z.object({
+  confirmSlug: z.string(),
+});
+
+documents.delete("/:slug", requireAdmin, async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new AppError("CONFIRMATION_MISMATCH", {
+      message: "Deleting a document requires a confirmSlug field repeating its slug. Nothing was deleted.",
+      detail: parsed.error.issues,
+    });
+  }
+
+  const result = await deleteDocument(
+    { db: c.env.DB, docs: c.env.DOCS },
+    { slug: c.req.param("slug"), confirmSlug: parsed.data.confirmSlug },
+  );
+
+  return ok(result);
 });
 
 export default documents;

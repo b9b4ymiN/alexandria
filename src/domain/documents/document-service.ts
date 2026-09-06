@@ -388,3 +388,123 @@ export async function moveDocument(
   const tags = await currentDocumentTags(db, document.id);
   return buildMetadataResult(db, { ...document, categoryId, updatedAt: now }, tags);
 }
+
+// ---------------------------------------------------------------------------
+// Document deletion — node G3.3.
+//
+// This is the only irreversible operation in Phase 1 (SPEC.md §13), so it
+// is deliberately hard to trigger by accident: the caller must echo the
+// exact slug back, and a mismatch deletes nothing at all.
+//
+// Ordering is the mirror image of the create path. Create writes R2 first
+// so a failure leaves an orphaned object rather than metadata pointing at
+// nothing; delete removes D1 first for the same reason — once the rows are
+// gone the objects are unreachable through the API regardless of what R2
+// does next, whereas the opposite order could leave a document that reads
+// as published but whose bytes have already been destroyed.
+//
+// The keys are therefore collected BEFORE the cascade: the version rows are
+// the only record of them, and after the delete there is no way to learn
+// what to clean up (node G3.3, requirement 4).
+// ---------------------------------------------------------------------------
+
+export interface DeleteDocumentInput {
+  slug: string;
+  confirmSlug: string;
+}
+
+export interface DeleteDocumentResult {
+  deleted: true;
+  documentId: string;
+  versionsDeleted: number;
+  r2ObjectsDeleted: number;
+  r2ObjectsFailed: number;
+}
+
+/**
+ * Permanently deletes a document, its versions and its tag links, then
+ * removes every R2 object belonging to it on a best-effort basis.
+ *
+ * R2 failures never fail the request: by the time they can happen the
+ * metadata is already gone and the document is unreachable, so the honest
+ * answer is a success carrying accurate counts plus one structured log line
+ * naming every key that survived (node G3.3, requirement 5). R2's delete is
+ * idempotent, so a key whose object had already vanished counts as deleted —
+ * nothing failed, and reporting a failure there would be the dishonest
+ * answer.
+ *
+ * Tags are NOT garbage-collected when their last document goes: a tag is an
+ * independent entity that Admin manages (SPEC.md §7), and the category is
+ * never touched at all.
+ */
+export async function deleteDocument(
+  storage: Storage,
+  input: DeleteDocumentInput,
+): Promise<DeleteDocumentResult> {
+  // Checked before anything is even looked up, so a caller who has not
+  // confirmed cannot cause a read, let alone a write.
+  if (input.confirmSlug !== input.slug) {
+    throw new AppError("CONFIRMATION_MISMATCH", {
+      message: "The confirmation must repeat the document's slug exactly. Nothing was deleted.",
+      detail: { slug: input.slug },
+    });
+  }
+
+  const document = await getDocumentBySlug(storage.db, input.slug);
+
+  const versionRows = await storage.db
+    .prepare("SELECT id, r2_key AS r2Key FROM document_versions WHERE document_id = ?")
+    .bind(document.id)
+    .all<{ id: string; r2Key: string }>();
+  const keys = versionRows.results.map((row) => row.r2Key);
+
+  // One batch. `document_versions` and `document_tags` both declare
+  // ON DELETE CASCADE on `document_id` (migration 0001), so removing the
+  // parent row removes them; the assertions in
+  // tests/integration/document-delete.test.ts prove the cascade actually
+  // fires rather than assuming the schema's intent.
+  let results: D1Result[];
+  try {
+    results = await storage.db.batch([
+      storage.db.prepare("DELETE FROM documents WHERE id = ?").bind(document.id),
+    ]);
+  } catch (error) {
+    throw new AppError("DATABASE_ERROR", {
+      message: "The document could not be deleted.",
+      detail: { documentId: document.id, cause: String(error) },
+    });
+  }
+
+  // A concurrent caller can win the race between the lookup above and this
+  // delete. `changes === 0` means the row was already gone, so THIS call
+  // deleted nothing: it reports DOCUMENT_NOT_FOUND and, crucially, does not
+  // go on to touch R2 or claim counts for work the winner already did (node
+  // G3.3 Edge Cases).
+  if ((results[0]?.meta.changes ?? 0) === 0) {
+    throw new AppError("DOCUMENT_NOT_FOUND", {
+      message: "The document was deleted by a concurrent request.",
+      detail: { documentId: document.id, slug: input.slug },
+    });
+  }
+
+  const outcomes = await Promise.allSettled(keys.map((key) => storage.docs.delete(key)));
+  const failedKeys = keys.filter((_, index) => outcomes[index]?.status === "rejected");
+
+  if (failedKeys.length > 0) {
+    console.error(
+      JSON.stringify({
+        event: "r2_document_delete_failed",
+        documentId: document.id,
+        failedKeys,
+      }),
+    );
+  }
+
+  return {
+    deleted: true,
+    documentId: document.id,
+    versionsDeleted: keys.length,
+    r2ObjectsDeleted: keys.length - failedKeys.length,
+    r2ObjectsFailed: failedKeys.length,
+  };
+}
