@@ -146,6 +146,57 @@ test.describe("Admin categories", () => {
     await expect(page.getByRole("heading", { name: newTitle })).toBeVisible();
   });
 
+  // Regression for the G2.5 follow-up bug: this screen used to populate its
+  // fields via setState calls made inside load()'s promise, but it rendered
+  // editable inputs before that promise resolved. An operator who typed a
+  // new title during the fetch had it silently overwritten the instant the
+  // fetch resolved, and save() then compared the wiped-out value against
+  // the document unchanged — so the screen reported success while the edit
+  // was gone. Delaying the detail response makes that race deterministic
+  // instead of depending on how fast the network happens to be.
+  test("typing while the document is still loading is never discarded", async ({ page }) => {
+    let releaseResponse: () => void = () => {};
+    const responseDelayed = new Promise<void>((resolve) => {
+      releaseResponse = resolve;
+    });
+    await page.route(`**/api/public/documents/${EDITABLE_SLUG}`, async (route) => {
+      await responseDelayed;
+      await route.continue();
+    });
+
+    await signInAt(page, `/admin/documents/${EDITABLE_SLUG}`);
+
+    // Prove the fetch is genuinely still pending and no editable Title
+    // field exists yet — a form that renders inputs before the document
+    // has loaded is exactly the earlier bug, and this is where it fires.
+    await expect(page.getByRole("textbox", { name: "Title" })).toHaveCount(0);
+
+    const raceTitle = `Raced While Loading ${RUN}`;
+    releaseResponse();
+    // No manual wait for the fetch: fill() auto-waits for the field to
+    // exist, which is the earliest possible moment a real operator could
+    // type into it. If the field ever appears before the loaded value is
+    // shown, this keystroke lands in the race window and gets wiped.
+    await page.getByRole("textbox", { name: "Title" }).fill(raceTitle);
+    await page.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.getByText(/slug and public URL did not change/i)).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "Title" })).toHaveValue(raceTitle);
+  });
+
+  // The both-false branch ("Nothing was changed.") already existed before
+  // this fix, but the bug it is paired with here is a false metadataChanged
+  // produced by the race above, not a genuine no-op save — so this locks
+  // down that an honest no-op still reports itself as one.
+  test("saving without changing anything reports that nothing was saved", async ({ page }) => {
+    await signInAt(page, `/admin/documents/${EDITABLE_SLUG}`);
+    await expect(page.getByRole("textbox", { name: "Title" })).not.toHaveValue("");
+
+    await page.getByRole("button", { name: "Save changes" }).click();
+    await expect(page.getByText(/nothing was changed/i)).toBeVisible();
+  });
+
   test("moving a category into its own descendant shows the guard and leaves the tree unchanged", async ({ page }) => {
     await signInAt(page, "/admin/categories");
     const parent = `Cycle Parent ${RUN}`;
