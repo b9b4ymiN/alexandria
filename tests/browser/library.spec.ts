@@ -104,6 +104,47 @@ test.describe("Library", () => {
     expect(apiWasCached).toBe(false);
   });
 
+  test("keeps a large tag collection compact and searchable", async ({ page }) => {
+    const tags = Array.from({ length: 30 }, (_, index) => ({
+      id: `tag-${index + 1}`,
+      name: `topic-${String(index + 1).padStart(2, "0")}`,
+      documentCount: 30 - index,
+    }));
+    await page.route("**/api/public/tags", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, data: tags }),
+      }),
+    );
+
+    await page.goto("/");
+
+    const explorer = page.getByTestId("tag-explorer");
+    await expect(explorer.getByRole("link")).toHaveCount(12);
+
+    const filter = explorer.getByRole("searchbox", { name: "Filter topics" });
+    await filter.fill("topic-29");
+    await expect(explorer.getByRole("link", { name: /topic-29/ })).toBeVisible();
+    await expect(explorer.getByRole("link")).toHaveCount(1);
+  });
+
+  test("treats the mobile category drawer as a keyboard-contained surface", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/");
+
+    const trigger = page.getByRole("button", { name: /Browse categories/ });
+    await trigger.click();
+
+    const drawer = page.getByRole("dialog", { name: "Category routes" });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "Close categories" })).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(drawer).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
   test("uses a category route as a category filter", async ({ page }) => {
     // Node G2.6: category selection now navigates to the shareable
     // `/category/*` route (tests/browser/public-browse.spec.ts covers that
@@ -113,6 +154,8 @@ test.describe("Library", () => {
     // Disambiguated by href: migration 0002 seeds its own unrelated
     // "Books" category (slug "books"), alongside this spec's own "Books"
     // fixture (slug "books-seed") — both share the display name "Books".
+    const categoryFilter = page.getByRole("searchbox", { name: "Filter categories" });
+    if (await categoryFilter.isVisible()) await categoryFilter.fill("Books");
     await page.locator('a[href="/category/books-seed"]').click();
     await expect(page).toHaveURL(/\/category\/books-seed$/);
     await expect(page.getByRole("heading", { name: "Books", level: 2 })).toBeVisible();

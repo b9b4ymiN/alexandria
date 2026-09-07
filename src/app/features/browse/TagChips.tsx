@@ -17,8 +17,8 @@ export function TagChips({ tags, variant = "light" }: TagChipsProps) {
 
   const chipClassName =
     variant === "dark"
-      ? "border border-white/30 px-2 py-1 text-xs font-semibold text-[#bcefe1] hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]"
-      : "border border-[#071e4a]/25 px-2 py-1 text-xs font-semibold text-[#27416c] hover:bg-[#d9f4eb] hover:text-[#071e4a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]";
+      ? "inline-flex min-h-11 items-center border border-white/30 px-2.5 py-2 text-xs font-semibold text-[#bcefe1] hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]"
+      : "inline-flex min-h-11 items-center border border-[#071e4a]/25 px-2.5 py-2 text-xs font-semibold text-[#27416c] hover:bg-[#d9f4eb] hover:text-[#071e4a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]";
 
   return (
     <div className="flex flex-wrap gap-2">

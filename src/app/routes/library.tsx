@@ -25,7 +25,7 @@ import {
 import { DocumentCard } from "../components/DocumentCard";
 import { Pagination } from "../components/Pagination";
 import { CategorySidebar } from "../features/browse/CategorySidebar";
-import { TagChips } from "../features/browse/TagChips";
+import { TagExplorer } from "../features/browse/TagExplorer";
 import { useDocumentListing } from "../features/browse/useDocumentListing";
 import { SearchBox } from "../features/search/SearchBox";
 
@@ -124,31 +124,32 @@ export function Library() {
 
   return (
     <div className="min-h-[100dvh] overflow-x-hidden bg-[#f7f5ef] text-[#071e4a]">
-      <header className="border-b-4 border-[#071e4a] bg-[#071e4a] text-[#f7f5ef]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-4 sm:px-8 lg:px-12">
-          <h1 className="text-xl font-black tracking-[-0.03em] sm:text-2xl">
-            <a href="/" className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d6be]">
-              Alexandria
+      <header className="app-safe-top sticky top-0 z-30 border-b-2 border-[#f26b21] bg-[#071e4a] text-[#f7f5ef] shadow-[0_8px_22px_rgba(7,30,74,0.14)]">
+        <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-4 px-4 py-2 sm:min-h-16 sm:px-8 lg:px-12">
+          <h1 className="text-lg font-black tracking-[-0.025em] sm:text-xl">
+            <a href="/" className="flex items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d6be]">
+              <img src="/icons/alexandria-192.png" alt="" className="h-8 w-8" />
+              <span className="alexandria-wordmark">Alexandria</span>
             </a>
           </h1>
-          <nav aria-label="Library navigation" className="flex items-center gap-4 text-sm font-semibold">
-            <a href="#library-results" className="rounded px-2 py-1 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]">
+          <nav aria-label="Library navigation" className="flex items-center gap-1 text-sm font-bold sm:gap-3">
+            <a href="#library-results" className="inline-flex min-h-11 items-center px-2 py-2 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]">
               Browse
             </a>
-            <a href="/admin/" className="rounded px-2 py-1 text-[#bcefe1] hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]">
+            <a href="/admin/" className="inline-flex min-h-11 items-center px-2 py-2 text-[#bcefe1] hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]">
               Admin
             </a>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12 lg:px-12">
-        <section className="border-b border-[#071e4a]/30 pb-8 sm:pb-10">
+      <main className="app-safe-bottom mx-auto max-w-7xl px-4 py-5 sm:px-8 sm:py-10 lg:px-12">
+        <section className="border-b border-[#071e4a]/30 pb-5 sm:pb-8">
           <div className="max-w-3xl">
-            <p className="max-w-2xl text-4xl font-black leading-[0.94] tracking-[-0.045em] text-[#071e4a] sm:text-6xl">
+            <p className="max-w-2xl text-4xl font-black leading-[0.96] tracking-[-0.04em] text-[#071e4a] text-balance sm:text-5xl lg:text-6xl">
               Find a clear route into the collection.
             </p>
-            <p className="mt-4 max-w-xl text-base leading-7 text-[#27416c] sm:text-lg">
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[#27416c] sm:mt-4 sm:text-base sm:leading-7">
               A public reading library for original documents. Open anything without signing in.
             </p>
           </div>
@@ -162,7 +163,7 @@ export function Library() {
           />
         </section>
 
-        <div className="grid gap-10 py-8 lg:grid-cols-[minmax(13rem,0.72fr)_minmax(0,2fr)] lg:gap-14 lg:py-12">
+        <div className="grid gap-6 py-5 sm:py-8 lg:grid-cols-[minmax(13rem,0.72fr)_minmax(0,2fr)] lg:gap-12 lg:py-10">
           {categoryState.status === "error" ? (
             <div>
               <p role="status" className="border-b-2 border-[#071e4a] px-1 py-3 text-sm leading-6 text-[#27416c]">
@@ -179,7 +180,7 @@ export function Library() {
 
           <section id="library-results" aria-labelledby="library-results-title">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[#071e4a] pb-3">
-              <h2 id="library-results-title" className="text-2xl font-black tracking-[-0.03em] sm:text-3xl">
+              <h2 id="library-results-title" className="text-2xl font-black leading-tight tracking-[-0.03em] sm:text-3xl">
                 {resultTitle}
               </h2>
               {listing.status === "ready" && (
@@ -262,19 +263,10 @@ export function Library() {
           </section>
         </div>
 
-        {tagState.status === "ready" && tagState.tags.length > 0 && (
-          <section aria-labelledby="library-tags-title" className="border-y-2 border-[#071e4a] py-5">
-            <h2 id="library-tags-title" className="text-sm font-black uppercase tracking-[0.16em]">
-              Browse by tag
-            </h2>
-            <div className="mt-3">
-              <TagChips tags={tagState.tags.map((tag) => tag.name)} />
-            </div>
-          </section>
-        )}
+        {tagState.status === "ready" && tagState.tags.length > 0 && <TagExplorer tags={tagState.tags} activeTag={tagParam} />}
 
-        <aside className="grid gap-4 border-y-2 border-[#071e4a] py-5 sm:grid-cols-[auto_1fr] sm:items-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#d9f4eb] text-[#071e4a]" aria-hidden>
+        <aside className="grid gap-3 border-b-2 border-[#071e4a] py-5 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d9f4eb] text-[#071e4a]" aria-hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5">
               <path d="m5 12 4.2 4.2L19 6.5" />
             </svg>

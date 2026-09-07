@@ -99,10 +99,16 @@ export function SearchBox({ id, label, value, onChange, placeholder }: SearchBox
   }
 
   return (
-    <div className="mt-8 flex max-w-5xl gap-0 border-2 border-[#071e4a] bg-white shadow-[8px_10px_22px_rgba(7,30,74,0.12)] focus-within:shadow-[10px_12px_28px_rgba(7,30,74,0.18)]">
+    <div className="mt-5 flex min-h-12 max-w-5xl gap-0 border-2 border-[#071e4a] bg-white shadow-[8px_10px_22px_rgba(7,30,74,0.12)] focus-within:shadow-[10px_12px_28px_rgba(7,30,74,0.18)] sm:mt-7">
       <label className="sr-only" htmlFor={id}>
         {label}
       </label>
+      <span className="flex items-center pl-3.5 text-[#526889]" aria-hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+          <circle cx="11" cy="11" r="6" />
+          <path d="m16 16 4 4" />
+        </svg>
+      </span>
       <input
         id={id}
         type="search"
@@ -112,7 +118,7 @@ export function SearchBox({ id, label, value, onChange, placeholder }: SearchBox
         onCompositionStart={handleCompositionStart}
         onCompositionEnd={handleCompositionEnd}
         placeholder={placeholder}
-        className="min-w-0 flex-1 bg-transparent px-4 py-4 text-base font-medium text-[#071e4a] placeholder:text-[#526889] focus:outline-none sm:px-5 sm:text-lg"
+        className="min-w-0 flex-1 bg-transparent px-3 py-3 text-base font-semibold text-[#071e4a] placeholder:font-normal placeholder:text-[#526889] focus:outline-none sm:px-4 sm:text-lg"
       />
       {draft !== "" && (
         <button

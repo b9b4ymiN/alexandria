@@ -12,12 +12,35 @@
 
 html {
   background: #f7f5ef;
+  scroll-behavior: smooth;
 }
 
 body {
   min-width: 320px;
   margin: 0;
   background: #f7f5ef;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.alexandria-wordmark {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.app-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.app-safe-bottom {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 button,

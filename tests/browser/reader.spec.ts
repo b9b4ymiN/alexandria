@@ -12,7 +12,7 @@ test.describe("Reader", () => {
   test("shows the document header and frames the content", async ({ page }) => {
     await page.goto(`/docs/${SEEDED_SLUG}`);
 
-    await expect(page.getByRole("link", { name: "← Library" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Library" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/Expectations Investing/i);
     await expect(page.locator("iframe")).toHaveCount(1);
   });

@@ -74,13 +74,17 @@ export function Reader() {
     // The header keeps its own height and the frame takes the rest, so the
     // document scrolls inside the frame and the header never scrolls away.
     <div className="flex h-[100dvh] flex-col bg-[#f7f5ef] text-[#071e4a]">
-      <header className="shrink-0 border-b-2 border-[#071e4a] bg-[#071e4a] px-3 py-3 text-[#f7f5ef] sm:px-5">
+      <header className="app-safe-top shrink-0 border-b-2 border-[#f26b21] bg-[#071e4a] px-2 py-2 text-[#f7f5ef] shadow-[0_8px_22px_rgba(7,30,74,0.14)] sm:px-5 sm:py-3">
         <div className="mx-auto flex max-w-[110rem] items-center gap-3">
         <Link
           to="/"
-          className="shrink-0 px-2 py-1 text-sm font-bold text-[#bcefe1] transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]"
+          aria-label="Library"
+          className="flex min-h-10 shrink-0 items-center gap-1 px-2 text-sm font-bold text-[#bcefe1] transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d6be]"
         >
-          ← Library
+          <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          <span className="hidden sm:inline">Library</span>
         </Link>
 
         <div className="min-w-0 flex-1">
@@ -102,8 +106,11 @@ export function Reader() {
             </p>
           )}
           {document !== null && document.tags.length > 0 && (
-            <div className="mt-1">
-              <TagChips tags={document.tags} variant="dark" />
+            <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden">
+              <TagChips tags={document.tags.slice(0, 2)} variant="dark" />
+              {document.tags.length > 2 && (
+                <span className="shrink-0 text-xs font-bold text-[#b9c5dc]">+{document.tags.length - 2}</span>
+              )}
             </div>
           )}
         </div>

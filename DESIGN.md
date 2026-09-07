@@ -6,12 +6,19 @@ colors:
   mineral-white: "#f7f5ef"
   route-orange: "#f26b21"
   route-mint: "#d9f4eb"
+  route-violet: "#8a4fc6"
   focus-mint: "#71d6be"
   annotation-green: "#087465"
   reading-blue: "#27416c"
   muted-blue: "#526889"
   field-white: "#ffffff"
 typography:
+  wordmark:
+    fontFamily: '"Iowan Old Style", "Palatino Linotype", Georgia, serif'
+    fontSize: "1.25rem"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "-0.03em"
   display:
     fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "3.75rem"
@@ -119,7 +126,7 @@ The palette is a public-signage system: dark ink establishes authority, mineral 
 - **Body:** 16px copy with generous 1.75 line-height for summaries and instructional text.
 - **Label:** 14px bold labels; route and category labels may use uppercase with tracked letters.
 
-**The One-Voice Rule.** Do not introduce a display serif or decorative font. Alexandria’s authority comes from hierarchy, rules, and spacing.
+**The Wordmark Exception.** Alexandria’s name alone uses a high-contrast book face, echoing the approved composition and PWA launcher mark. Interface headings, labels, controls, and reading support remain in the system sans; do not extend the serif beyond the wordmark.
 
 ## Layout
 
