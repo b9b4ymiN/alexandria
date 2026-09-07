@@ -1,0 +1,18 @@
+{
+  // Type-checks mcp/tests/, which the build project deliberately excludes:
+  // tsconfig.json sets rootDir "src" so its emit maps cleanly to dist/, and
+  // adding tests/ there would break that layout. Mirrors how the repo root
+  // splits tsconfig.json / tsconfig.worker.json / tsconfig.browser-tests.json
+  // and type-checks all three in one script.
+  //
+  // This project exists because node G5.1 shipped six type errors that lived
+  // ONLY in a test file: vitest does not type-check, so a green test run
+  // proves nothing about tsc. A test directory outside every tsconfig is a
+  // permanent blind spot of exactly that shape.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src", "tests"]
+}
