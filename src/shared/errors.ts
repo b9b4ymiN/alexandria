@@ -43,6 +43,14 @@ export type ErrorCode =
   | "VERSION_IS_CURRENT"
   | "LAST_VERSION_CANNOT_DELETE"
   | "UNCHANGED"
+  // A version note over 500 characters. Added by PLAN DELTA 2, approved
+  // 2026-09-06, on the same footing as the TAG_* codes and
+  // CONFIRMATION_MISMATCH. Until now this returned the INVALID_HTML
+  // catch-all, which node G5.2 surfaces to MCP agents verbatim — an agent
+  // that sent a long note would be told to go fix its HTML. G4.1 answered
+  // the identical question with SEARCH_QUERY_TOO_LONG; this is the same
+  // answer for the same reason.
+  | "NOTE_TOO_LONG"
   // Tag (IMPLEMENTATION_PLAN.md node G2.2, authorized 2026-08-30: SPEC.md
   // §24 opens with "At minimum," and lists no TAG_* code — these six are
   // additive extensions the orchestrator approved for G2.2, not codes
@@ -116,6 +124,8 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   // A search query over the 200-character cap. Invalid on its face, and
   // truncating it silently would return results the caller did not ask for.
   SEARCH_QUERY_TOO_LONG: 400,
+  // A version note over the 500-character cap. Same band, same reasoning.
+  NOTE_TOO_LONG: 400,
 
   // 413 — request body exceeds an accepted size
   FILE_TOO_LARGE: 413,

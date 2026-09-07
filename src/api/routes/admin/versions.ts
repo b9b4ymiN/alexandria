@@ -95,8 +95,13 @@ versions.post("/:slug/versions", requireAdmin, async (c) => {
     typeof noteRaw === "string" ? noteRaw : undefined,
   );
   if (!parsedNote.success) {
-    throw new AppError("INVALID_HTML", {
-      message: "Note failed validation.",
+    // Length is the only way this schema can fail — the value reaching it is
+    // already narrowed to string | undefined above — so the code says so
+    // (PLAN DELTA 2). It used to be the INVALID_HTML catch-all, which node
+    // G5.2 hands to MCP agents verbatim: an agent that sent a long note was
+    // told to fix its HTML.
+    throw new AppError("NOTE_TOO_LONG", {
+      message: `Version note must be ${MAX_NOTE_LENGTH} characters or fewer.`,
       detail: parsedNote.error.issues,
     });
   }

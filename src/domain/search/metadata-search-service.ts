@@ -14,7 +14,9 @@
 // with NO full HTML text search. AGENT.md §15 rejects embeddings/AI ranking.
 // IMPLEMENTATION_PLAN.md node G4.1 rejects SQLite FTS5 outright: its
 // tokenizer cannot segment Thai (no word boundaries), which would make a
-// Thai query match nothing. Every match here is a plain substring `LIKE`.
+// Thai query match nothing. Every match here is a plain substring test via
+// SQLite's `instr()` — see the block comment above buildSearchWhereClause
+// for why it is `instr` and not the `LIKE` the node originally specified.
 
 import { AppError } from "../../shared/errors";
 
@@ -63,30 +65,34 @@ export function validateSearchQuery(raw: string | undefined): string {
 // non-Latin script untouched by construction — proven by a test in
 // tests/integration/search.test.ts rather than assumed.
 //
-// SCOPE NOTE (finding from implementing this node): D1 enforces SQLite's
-// expression-tree depth limit at 100 nodes PER EXPRESSION, and a correlated
-// `EXISTS(...)` subquery (needed for the tag match) costs FAR more of that
-// budget than a plain REPLACE chain does — confirmed empirically:
-//   - a bare `SELECT LOWER(REPLACE(REPLACE(...)))`: 98 nested REPLACEs
-//     succeed, 99 fail ("D1_ERROR: Expression tree is too large (maximum
-//     depth 100)").
-//   - the SAME chain used inside `EXISTS (SELECT ... WHERE tag LIKE ...)`:
-//     the ceiling drops to 40 REPLACEs (41 fails) — the subquery's own
-//     structure consumes most of the budget.
-//   - the FULL real query shape (title/description/category LIKE OR'd with
-//     a tag EXISTS in WHERE, PLUS the same four again in the ORDER BY
-//     relevance CASE): ceiling is 43 REPLACEs (44 fails) — combining
-//     everything costs barely more than the bare EXISTS case above.
+// SCOPE NOTE: D1 enforces SQLite's expression-tree depth limit at 100 nodes
+// PER EXPRESSION, and a correlated `EXISTS(...)` subquery (needed for the
+// tag match) costs FAR more of that budget than a plain REPLACE chain does.
+// Measured, not estimated — the numbers below are from a probe run against a
+// real D1 binding, and each was re-run after PLAN DELTA 2 changed the query
+// shape from `LIKE` to `instr()`:
+//   - a bare `SELECT LOWER(REPLACE(REPLACE(...)))`: 97 nested REPLACEs
+//     succeed, 98 fails ("Expression tree is too large (maximum depth 100)").
+//   - the FULL real query shape (title/description/category OR'd with a tag
+//     EXISTS in WHERE, PLUS the same four again in the ORDER BY relevance
+//     CASE): 41 REPLACEs succeed, 42 fails. It was 42 with the old `LIKE`
+//     form, so the switch to `instr` cost one link and changed nothing that
+//     matters here.
+//   - hoisting the tag match out of its correlated EXISTS into a CTE was
+//     tried and measured too: 43. One extra link, for a materially more
+//     complicated query — rejected.
 // A table covering Latin-1 Supplement AND Latin Extended-A (~178 entries)
 // was the original plan and is nowhere close to fitting. Even the full
-// Latin-1 Supplement alone (55 entries) exceeds the EXISTS-bounded ceiling.
-// There is no dependency-free way to raise D1's limit (no ICU, no custom
-// collation without a C extension), so the table below is deliberately cut
-// to 24 entries (12 accented letters × two cases) — comfortable margin
-// below the empirical 43-entry ceiling for the exact query shape this
-// service builds. Latin Extended-A, and several Latin-1 letters that didn't
-// make this shortlist (â/ê/î/ô/û, ã/õ, å/ø, ý/ÿ), are out of scope for this
-// node as a result; see this node's evidence report, "Findings".
+// Latin-1 Supplement alone (55 entries) exceeds the ceiling. There is no
+// dependency-free way to raise D1's limit (no ICU, no custom collation
+// without a C extension), so the table below is deliberately cut to 24
+// entries (12 accented letters × two cases) — comfortable margin below the
+// empirical 41-entry ceiling for the exact query shape this service builds.
+// Latin Extended-A, and several Latin-1 letters that didn't make this
+// shortlist (â/ê/î/ô/û, ã/õ, å/ø, ý/ÿ), are out of scope as a result. The
+// complete fix is a normalized comparison column, which G4.1 requirement 9
+// defers until search measures slow; it needs a migration, so it is a future
+// node rather than a quiet widening of this one.
 // ---------------------------------------------------------------------------
 
 /**
@@ -161,25 +167,31 @@ export function accentInsensitiveColumnExpr(columnExpr: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Wildcard escaping (requirement 2)
-// ---------------------------------------------------------------------------
-
-/** Escapes `%`, `_` and the escape character `\` itself so a query containing them is matched literally. */
-export function escapeLikeWildcards(term: string): string {
-  return term.replace(/[\\%_]/g, "\\$&");
-}
-
-// ---------------------------------------------------------------------------
 // WHERE predicate (requirements 1, 2, 6, 8) and relevance ordering (requirement 5)
 //
 // Both assume `term` is already validated and non-empty — callers only
 // invoke these once `term !== ""` (see listDocuments). Each returns a
 // self-contained SQL fragment plus the bound values its `?`s need, in the
 // exact order those `?`s appear in `sql`.
+//
+// SUBSTRING MATCHING USES `instr()`, NOT `LIKE` — see PLAN DELTA 2. Node
+// G4.1 requirement 1 prescribed `LIKE '%' || ? || '%'`, and that shipped and
+// broke in production while passing every local test: D1's SQLite is built
+// with SQLITE_MAX_LIKE_PATTERN_LENGTH = 50 BYTES, so any term over 48 bytes
+// (16 Thai characters, since Thai is 3 bytes per character in UTF-8) failed
+// the whole request with "LIKE or GLOB pattern too complex: SQLITE_ERROR
+// [code: 7500]". The miniflare D1 the test suite runs against does not
+// enforce that limit, so no local test could see it. `instr(haystack,
+// needle) > 0` is the same substring semantics with no pattern-length limit,
+// and it needs no wildcard escaping at all: `%` and `_` are ordinary
+// characters to `instr`, so requirement 2 is satisfied by construction
+// rather than by an ESCAPE clause. There is a test asserting the generated
+// SQL contains no `LIKE`, because the environment that would catch a
+// regression here is not the one the tests run in.
 // ---------------------------------------------------------------------------
 
-function likePattern(term: string): string {
-  return `%${escapeLikeWildcards(normalizeSearchText(term))}%`;
+function searchNeedle(term: string): string {
+  return normalizeSearchText(term);
 }
 
 /**
@@ -190,23 +202,23 @@ function likePattern(term: string): string {
  * rows.
  */
 export function buildSearchWhereClause(term: string): SqlFragment {
-  const pattern = likePattern(term);
+  const needle = searchNeedle(term);
   const titleExpr = accentInsensitiveColumnExpr("d.title");
   const descriptionExpr = accentInsensitiveColumnExpr("d.description");
   const categoryExpr = accentInsensitiveColumnExpr("c.name");
   const tagExpr = accentInsensitiveColumnExpr("t_search.name");
   const sql = `(
-    ${titleExpr} LIKE ? ESCAPE '\\'
-    OR ${descriptionExpr} LIKE ? ESCAPE '\\'
-    OR ${categoryExpr} LIKE ? ESCAPE '\\'
+    instr(${titleExpr}, ?) > 0
+    OR instr(${descriptionExpr}, ?) > 0
+    OR instr(${categoryExpr}, ?) > 0
     OR EXISTS (
       SELECT 1
       FROM document_tags dt_search
       JOIN tags t_search ON t_search.id = dt_search.tag_id
-      WHERE dt_search.document_id = d.id AND ${tagExpr} LIKE ? ESCAPE '\\'
+      WHERE dt_search.document_id = d.id AND instr(${tagExpr}, ?) > 0
     )
   )`;
-  return { sql, bindings: [pattern, pattern, pattern, pattern] };
+  return { sql, bindings: [needle, needle, needle, needle] };
 }
 
 /**
@@ -216,22 +228,22 @@ export function buildSearchWhereClause(term: string): SqlFragment {
  * within-tier ordering and final stable tiebreaker.
  */
 export function buildRelevanceOrderBy(term: string): SqlFragment {
-  const pattern = likePattern(term);
+  const needle = searchNeedle(term);
   const titleExpr = accentInsensitiveColumnExpr("d.title");
   const tagExpr = accentInsensitiveColumnExpr("t_rank.name");
   const categoryExpr = accentInsensitiveColumnExpr("c.name");
   const descriptionExpr = accentInsensitiveColumnExpr("d.description");
   const sql = `CASE
-    WHEN ${titleExpr} LIKE ? ESCAPE '\\' THEN 0
+    WHEN instr(${titleExpr}, ?) > 0 THEN 0
     WHEN EXISTS (
       SELECT 1
       FROM document_tags dt_rank
       JOIN tags t_rank ON t_rank.id = dt_rank.tag_id
-      WHERE dt_rank.document_id = d.id AND ${tagExpr} LIKE ? ESCAPE '\\'
+      WHERE dt_rank.document_id = d.id AND instr(${tagExpr}, ?) > 0
     ) THEN 1
-    WHEN ${categoryExpr} LIKE ? ESCAPE '\\' THEN 2
-    WHEN ${descriptionExpr} LIKE ? ESCAPE '\\' THEN 3
+    WHEN instr(${categoryExpr}, ?) > 0 THEN 2
+    WHEN instr(${descriptionExpr}, ?) > 0 THEN 3
     ELSE 4
   END`;
-  return { sql, bindings: [pattern, pattern, pattern, pattern] };
+  return { sql, bindings: [needle, needle, needle, needle] };
 }
