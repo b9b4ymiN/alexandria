@@ -324,9 +324,30 @@ byte-identically.
 
 Required nodes: `G4.1 G4.2`
 
-- [ ] Search returns correct results for Thai and English queries across title, description, category and tags
-- [ ] Search and list responses never contain HTML body bytes
-- [ ] Listing is paginated with a stable, documented ordering contract
+- [x] Search returns correct results for Thai and English queries across title, description, category and tags
+- [x] Search and list responses never contain HTML body bytes
+- [x] Listing is paginated with a stable, documented ordering contract
+
+**PASSED 2026-09-06.** Verified by the orchestrator on a stable tree with
+nobody writing to it: 409 vitest across 24 files, 76 browser, 10 PWA, clean
+typecheck, lint and build, and the admin chunk still split from the public
+entry.
+
+Thai and English both proven by `tests/integration/search.test.ts` rather
+than argued: a Thai substring query finds a Thai-titled document, and title,
+description, category-name and tag matches are each covered by their own
+test. Body bytes are asserted absent three ways in a search response — a
+distinctive marker string planted in the fixture, `<body`, and `<!doctype` —
+and a spy proves R2 is never touched while searching. Ordering is documented
+in `listDocuments`: `updated_at DESC, id ASC` with no term, relevance tier
+first with one, and the tier test crafts four documents that each match in
+exactly ONE field so tier is the only thing that can explain the order.
+
+Carried into M5 rather than fixed here: accent folding covers 12 Latin
+letters, not Latin Extended-A, because D1's expression-tree depth limit caps
+the REPLACE chain at 42 links in this query shape — measured by the
+orchestrator directly, and a CTE redesign was tested and bought only one more
+link. See node G4.1's Evidence.
 
 ### CHECKPOINT E — Agent integration complete
 
@@ -381,8 +402,8 @@ Required nodes: `G5.1 G5.2 G5.3`
 | G3.3 | DONE | G3.2 | G3.5 | G3.4 |
 | G3.4 | DONE | G3.1 | G3.5 | G3.3 |
 | G3.5 | DONE | G3.2, G3.3, G3.4 | CHECKPOINT C | — |
-| G4.1 | BLOCKED | CHECKPOINT C | G4.2 | — |
-| G4.2 | BLOCKED | G4.1 | CHECKPOINT D | — |
+| G4.1 | DONE | CHECKPOINT C | G4.2 | — |
+| G4.2 | DONE | G4.1 | CHECKPOINT D | — |
 | G5.1 | BLOCKED | CHECKPOINT D | G5.2 | — |
 | G5.2 | BLOCKED | G5.1 | G5.3 | — |
 | G5.3 | BLOCKED | G5.2 | CHECKPOINT E | — |
@@ -5289,7 +5310,7 @@ Notes:
 ### Status
 
 ```text
-BLOCKED
+DONE
 ```
 
 ### Goal
@@ -5445,10 +5466,62 @@ feat(search): add metadata search with thai-safe substring matching
 ### Evidence
 
 ```text
+Committed as f710356 on feat/m4-search.
+
 Changed:
+  src/domain/search/metadata-search-service.ts  — created. Owns every search
+    semantic as pure functions with NO D1 dependency: validation and the
+    200-character cap, accent-insensitive normalization (both halves from one
+    table), wildcard escaping, the WHERE predicate, the relevance CASE.
+  src/domain/documents/document-read.ts         — listDocuments consumes those
+    builders and stays the ONE place that executes the listing SQL.
+  src/api/routes/public/documents.ts            — `q` canonical, `query` alias,
+    the term echoed in the 200 envelope.
+  src/shared/errors.ts, tests/unit/errors.test.ts — SEARCH_QUERY_TOO_LONG (400),
+    added by the ORCHESTRATOR before dispatch (single-writer file).
+  tests/integration/search.test.ts              — created, 25 tests.
+
 Tests:
-Verification:
+  vitest 384 across 23 files -> 409 across 24 (+25). Browser and PWA untouched.
+
+Verification (orchestrator re-ran everything on a stable tree):
+  pnpm test                exit 0, 409 passed (24 files)
+  pnpm typecheck           exit 0 across all three tsconfig projects
+  pnpm lint                exit 0
+  pnpm build               clean; admin-C5e4Tulo.js still split from index-*.js
+  control-character scan   clean (the G2.3 NUL-byte class of defect)
+
+  Read rather than trusted: the relevance-tier test crafts four documents that
+  each match "zzyzx" in exactly ONE field, so tier is the only thing that can
+  explain the order; the bind order is WHERE bindings, then ORDER BY bindings,
+  then LIMIT/OFFSET, matching placeholder order in the built SQL, and the COUNT
+  query binds the WHERE set only; the tag match is an EXISTS and never a JOIN,
+  so a multi-field match cannot multiply rows.
+
 Notes:
+  THE NODE WAS NOT GREENFIELD. G1.8 and G2.4 had already shipped a substring
+  predicate inside listDocuments. Lifting it out rather than writing a second
+  copy required adding document-read.ts to the file allowlist, which this node
+  lists as read-only. Authorized by the orchestrator before dispatch: G4.1 runs
+  alone, the file is not single-writer, and the alternative was two copies of
+  the listing SQL (AGENT.md §9). Same class of catch as the §9 G3.2 || G3.4
+  correction — found by checking the Files list against the code first.
+
+  FINDING, VERIFIED INDEPENDENTLY: D1 enforces SQLite's expression-tree depth
+  limit, which caps the accent-folding REPLACE chain. Orchestrator's own probe
+  against real D1, not the executor's numbers: a bare chain takes 97 links, the
+  real query shape takes 42, and hoisting the tag match out of its correlated
+  EXISTS into a CTE takes 43 — one more, so that redesign was rejected. The
+  table is therefore 12 letters (é è á à ä í ó ö ú ü ñ ç, both cases). It covers
+  requirement 3's own example, Résumé -> resume, but NOT â ê î ô û ã õ å ø ý or
+  any of Latin Extended-A. The complete fix is a normalized comparison column,
+  which requirement 9 defers until search measures slow; it would need a
+  migration and is therefore a future node, not a silent widening of this one.
+
+  Requirement 7 needed a validation error, and the INVALID_HTML catch-all it
+  would otherwise have reused is exactly what G5.1 hands to an MCP agent
+  verbatim — the same problem HANDOVER §4 records for an over-long version
+  note. SEARCH_QUERY_TOO_LONG joins the union on the G2.2 / G3.3 footing.
 ```
 
 ---
@@ -5608,10 +5681,65 @@ feat(app): add library search, pagination and recently updated sections
 ### Evidence
 
 ```text
+Committed as 015d5b7 on feat/m4-search.
+
 Changed:
+  src/app/features/search/SearchBox.tsx    — created. 250ms debounce, commit
+    gated on compositionend so an IME never searches a half-typed syllable,
+    maxLength 200 so SEARCH_QUERY_TOO_LONG is unreachable by typing.
+  src/app/components/Pagination.tsx        — created. Extracted from the
+    near-identical JSX library.tsx and category.tsx each carried since G2.6;
+    renders nothing at one page, both buttons always-visible tap targets.
+  src/app/routes/library.tsx               — `?q=` is the committed query
+    (`?query=` still READ for old links), three listing states, SearchBox.
+  src/app/routes/category.tsx              — Pagination, same third state.
+  src/app/features/browse/useDocumentListing.ts — AbortController.
+  src/app/lib/api-client.ts                — sends `q`, threads AbortSignal.
+  tests/browser/library-search.spec.ts     — created, 13 tests (12 from the
+    executor, 1 added by the orchestrator with the fix below).
+
 Tests:
-Verification:
+  browser 63 -> 76 (+13). vitest unchanged at 409 across 24 files (no backend
+  touched). PWA unchanged at 10.
+
+Verification (orchestrator re-ran everything on a stable tree):
+  pnpm test                exit 0, 409 passed (24 files)
+  pnpm test:browser        76 passed
+  pnpm test:pwa            10 passed
+  pnpm typecheck           exit 0
+  pnpm lint                exit 0
+  pnpm build               clean; admin-Ckx1_2se.js 48.49 kB still split from
+                           index-vIKUKtpN.js
+  control-character scan   clean
+
+  375 / 768 / 1440: the new spec covers 375 explicitly for pagination
+  (visibility plus a documentElement overflow check); tests/browser/
+  library.spec.ts already iterates all three viewports over the Library route
+  and now exercises the new SearchBox and Pagination inside that loop.
+
 Notes:
+  ALLOWLIST AMENDED BEFORE DISPATCH, second time this milestone. The node
+  lists api-client.ts as read-only and does not mention useDocumentListing at
+  all, but requirement 2 (cancel a superseded request) and requirement 6 (no
+  redundant request on load) both live in the fetch layer, and that hook is
+  the fetch layer library.tsx and category.tsx already share. The alternative
+  was a second copy of the listing fetch. Same class of catch as G4.1's.
+
+  A THIRD LISTING STATE was added beyond requirement 4's two. `clampPagination`
+  clamps a page against 1 but never against the total, so a hand-edited page
+  number past the end returns `total > 0` with no items — a different shape
+  from both an empty library and a query with no matches, and it is in the
+  node's own Edge Cases list. Applied to category.tsx as well, since both
+  routes share the hook and the failure mode.
+
+  DEFECT FOUND BY THE ORCHESTRATOR REVIEWING THE DIFF, reproduced in a real
+  browser before it was fixed. A commit sends the TRIMMED term, so pausing
+  for the debounce right after typing a space made the committed value differ
+  from the draft by exactly that space, and SearchBox's draft resync then
+  deleted it: "expectations investing" became "expectationsinvesting" for any
+  reader who thinks for 250ms between two words. The resync now runs only for
+  a genuinely external change — deep link, back button, Clear. The test added
+  with the fix fails without it; that was confirmed, not assumed.
 ```
 
 ---
