@@ -1,7 +1,7 @@
 # HANDOVER — Alexandria
 
 **Written:** 2026-09-07 · **Branch:** `main` · **Phase:** 1, milestones 1-5
-complete and merged. **M1-M4 are deployed; M5 is NOT** — see §2.
+complete, merged, pushed and deployed
 
 Read this first, then `IMPLEMENTATION_PLAN.md` for the node graph. `AGENT.md`
 still governs how the work is done; nothing here overrides it.
@@ -45,29 +45,67 @@ surface changes.
 
 ---
 
-## 2. Production is BEHIND `main` — M5 is not deployed
+## 2. Production is current with `main`
 
-**Production currently runs M4.** M5 is merged into `main` but has never been
-deployed, and until it is, the live `/api/agent` routes do not exist: an MCP
-client pointed at the production origin will get 404 from every tool. The MCP
-server itself works today against a locally served Worker, which is how the
-G5.3 end-to-end test exercises it.
+M5 was deployed on 2026-09-07. The Agent API is live and an MCP client
+pointed at the production origin works.
 
-Deploying M5 is the app Worker alone. It carries **no migration** — the schema
-is still `0002`, unchanged since M2 — and nothing under `src/content/` or
-`wrangler.content.jsonc` changed, so the content Worker stays as it is:
+```text
+alexandria          version 5e874f79-71a4-4c35-b3e3-ddd67108dd38
+alexandria-content  version a0c978a5-ac24-49d5-9cd6-9ebafca06103  (unchanged)
+```
+
+M5 carries **no migration** — the schema is still `0002`, unchanged since M2,
+so no D1 snapshot was needed — and touches nothing under `src/content/` or
+`wrangler.content.jsonc`, so the deploy was the app Worker alone:
 
 ```bash
 pnpm build
 pnpm exec wrangler deploy -c dist/alexandria/wrangler.json
 ```
 
-Before deploying, set the production `AGENT_API_KEY` if it is not already
-set, and afterwards **verify by exercising the feature, not by reading status
-codes** — that rule was written after M4's deploy returned 200s while search
-was broken. For M5 that means: a wrong key is rejected, a correct key lists
-documents, `DELETE /api/agent/documents/:slug` is 404, and one real publish
-through the MCP server against the production origin.
+Verified against production after deploying, by exercising the feature
+rather than checking that it answered — 18 HTTP checks, then the same
+surface again through the built MCP server driven over real stdio by a real
+MCP client:
+
+```text
+no Authorization header                       401 AUTH_REQUIRED
+wrong key                                     401 AGENT_KEY_INVALID
+agent key on an admin route                   401 AUTH_INVALID
+correct key, list documents                   200, 3 real documents
+search on a term taken from a live title      200, finds that document
+get by slug                                   200, contentUrl, no HTML body
+categories and tags                           200, 6 and 6
+DELETE document / version, POST restore       404 — no such route
+POST/PATCH/DELETE category                    404 — no such route
+PATCH body carrying slug                      403 SLUG_IMMUTABLE, title unchanged
+upload into a non-existent category           404 CATEGORY_NOT_FOUND, count unmoved
+/api/public/documents, /categories, /tags     200 — public surface untouched
+
+through the MCP server over stdio, against production:
+tools/list                                    exactly the nine, no forbidden name
+list, search, get, categories, tags           all succeed on live data
+get_document                                  carries no HTML body
+unknown slug                                  DOCUMENT_NOT_FOUND surfaced verbatim
+the agent key                                 absent from every tool result
+```
+
+**Not verified against production: a real publish.** Every write path was
+exercised up to the point where the domain layer rejects
+(`CATEGORY_NOT_FOUND`, with the document count confirmed unmoved), but no
+document was created in the live library, because an agent cannot delete one
+afterwards — that is the permission boundary working as designed, and it
+makes a throwaway probe document permanent until an admin removes it. The
+full publish path is covered end to end by `mcp/tests/e2e.test.ts` against a
+real local Worker with real D1 and R2. Worth doing by hand once, with a
+document worth keeping.
+
+**Read the key from `.secrets.local`, never from a shell argument.** The
+verification scripts loaded `ALEXANDRIA_API_URL` and `ALEXANDRIA_AGENT_KEY`
+from that file and redacted the key from every line they printed. The same
+file is exactly what the MCP server reads, so the wiring in `docs/MCP.md`
+needs no second copy of the key anywhere.
 
 ### What M4's deployment verified, still true
 
@@ -279,12 +317,9 @@ it is a change to the agent route, not to the MCP server.
 Everything through M5 is merged into `main` and the tree is clean. There is no
 work in flight and nothing half-finished.
 
-**Two things are owed before M6 work starts, and neither is a code change:**
-
-1. **`main` has not been pushed since the M5 merge.** Check
-   `git log origin/main..main` before assuming anything about the remote.
-2. **M5 is not deployed.** See §2. The deploy is the app Worker alone and
-   carries no migration.
+`main` is pushed and equals `origin/main`, and M5 is deployed and verified
+live (§2). Nothing is owed before M6 starts. `feat/m5-mcp` is merged and can
+be deleted.
 
 To pick up M6:
 
@@ -321,9 +356,9 @@ contracts are in `IMPLEMENTATION_PLAN.md`. Three things to carry in:
   thing to audit that did not exist before: the agent key. It lives in the
   `Authorization` header and nowhere else, and `mcp/` has tests asserting its
   absence from every tool result — confirm that still holds after any change.
-- **G6.4 is the production release.** M5 must be deployed by then if it has
-  not been already (§2), and the deploy must be verified by exercising the
-  feature.
+- **G6.4 is the production release.** M5 is already deployed and verified
+  (§2); what G6.4 still owes is the one thing that deploy deliberately did
+  not do — a real publish through MCP against production.
 
 The production `AGENT_API_KEY` is in the git-ignored `.secrets.local`.
 
