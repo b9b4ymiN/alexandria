@@ -33,6 +33,16 @@ export interface ListingFilters {
  * effect. The latter causes a cascading extra render on every filter/page
  * change; this mirrors the same derived-state shape the Reader route
  * already uses for its own load state (src/app/routes/reader.tsx).
+ *
+ * Node G4.2 requirement 2: a superseded request must be genuinely
+ * CANCELLED, not merely ignored on arrival — a boolean `cancelled` flag (the
+ * previous shape here) still lets a stale response's network round-trip run
+ * to completion. An `AbortController` is torn down by the same effect
+ * cleanup that reacts to `key` changing, so a query, filter or page change
+ * — search typing included — aborts whatever request came before it. An
+ * aborted fetch rejects; that rejection must never surface as an "error"
+ * state (there is nothing wrong — a newer request simply won), so the
+ * catch handler checks `controller.signal.aborted` first and returns.
  */
 export function useDocumentListing(filters: ListingFilters, page: number): ListingState {
   const { categoryId, tag, query } = filters;
@@ -40,29 +50,26 @@ export function useDocumentListing(filters: ListingFilters, page: number): Listi
   const [loaded, setLoaded] = useState<{ key: string; state: ListingState } | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    listDocuments({ page, pageSize: PAGE_SIZE, categoryId, tag, query })
+    const controller = new AbortController();
+    listDocuments({ page, pageSize: PAGE_SIZE, categoryId, tag, query }, controller.signal)
       .then((result) => {
-        if (!cancelled) {
-          setLoaded({
-            key,
-            state: { status: "ready", items: result.items, total: result.total, pageSize: result.pageSize },
-          });
-        }
+        setLoaded({
+          key,
+          state: { status: "ready", items: result.items, total: result.total, pageSize: result.pageSize },
+        });
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
-          setLoaded({
-            key,
-            state: {
-              status: "error",
-              message: error instanceof Error ? error.message : "The library could not be loaded.",
-            },
-          });
-        }
+        if (controller.signal.aborted) return;
+        setLoaded({
+          key,
+          state: {
+            status: "error",
+            message: error instanceof Error ? error.message : "The library could not be loaded.",
+          },
+        });
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [key, categoryId, tag, query, page]);
 

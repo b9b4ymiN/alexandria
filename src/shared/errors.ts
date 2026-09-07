@@ -57,6 +57,16 @@ export type ErrorCode =
   | "TAG_NAME_CONFLICT"
   | "TAG_SELF_MERGE"
   | "TAG_LIMIT_EXCEEDED"
+  // Search (IMPLEMENTATION_PLAN.md node G4.1, authorized by the
+  // orchestrator 2026-09-06 on the same footing as the TAG_* codes and
+  // CONFIRMATION_MISMATCH above: SPEC.md §24 opens with "At minimum").
+  // Node G4.1 requirement 7 caps a search query at 200 characters and
+  // rejects a longer one. The alternative was the INVALID_HTML catch-all,
+  // which node G5.1 will surface verbatim to MCP agents through
+  // `search_documents` — telling an agent to fix its HTML when it sent an
+  // over-long query string. 400, like every other request that is invalid
+  // on its face regardless of what else exists.
+  | "SEARCH_QUERY_TOO_LONG"
   // Storage / infra
   | "R2_WRITE_FAILED"
   | "R2_READ_FAILED"
@@ -103,6 +113,9 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   // The caller asked to delete a document but did not confirm the exact
   // slug. Nothing is deleted, and the request can never succeed as sent.
   CONFIRMATION_MISMATCH: 400,
+  // A search query over the 200-character cap. Invalid on its face, and
+  // truncating it silently would return results the caller did not ask for.
+  SEARCH_QUERY_TOO_LONG: 400,
 
   // 413 — request body exceeds an accepted size
   FILE_TOO_LARGE: 413,

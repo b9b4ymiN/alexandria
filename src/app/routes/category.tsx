@@ -15,6 +15,7 @@ import {
 } from "../lib/api-client";
 import { DocumentCard } from "../components/DocumentCard";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { Pagination } from "../components/Pagination";
 import { CategorySidebar } from "../features/browse/CategorySidebar";
 import { useDocumentListing } from "../features/browse/useDocumentListing";
 
@@ -174,31 +175,26 @@ function CategoryListing({
         </p>
       )}
 
+      {/* Same shape as the Library's own "page beyond the last" state (node
+          G4.2): `total > 0` but an empty `items` means the page number itself
+          — only reachable by editing the URL — is out of range, not that the
+          category is empty. */}
+      {listing.status === "ready" && listing.items.length === 0 && listing.total > 0 && (
+        <div className="border-b border-[#071e4a]/20 py-12 text-sm leading-6 text-[#27416c]" data-testid="category-page-beyond-range">
+          <p>This page has nothing to show.</p>
+          <button
+            type="button"
+            onClick={() => onPageChange(1)}
+            className="mt-2 font-bold text-[#071e4a] underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
+          >
+            Back to the first page
+          </button>
+        </div>
+      )}
+
       {listing.status === "ready" && listing.items.map((document) => <DocumentCard key={document.slug} document={document} />)}
 
-      {listing.status === "ready" && totalPages > 1 && (
-        <nav aria-label="Pagination" className="mt-6 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => onPageChange(page - 1)}
-            disabled={page <= 1}
-            className="border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-          >
-            Previous
-          </button>
-          <span className="text-sm font-medium text-[#526889]">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() => onPageChange(page + 1)}
-            disabled={page >= totalPages}
-            className="border-2 border-[#071e4a] px-4 py-2 text-sm font-black text-[#071e4a] hover:bg-[#d9f4eb] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071e4a]"
-          >
-            Next
-          </button>
-        </nav>
-      )}
+      {listing.status === "ready" && <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />}
     </div>
   );
 }

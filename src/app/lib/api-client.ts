@@ -119,15 +119,18 @@ export interface TagSummary {
 
 export function listDocuments(
   params: { page?: number; pageSize?: number; query?: string; categoryId?: string; tag?: string } = {},
+  signal?: AbortSignal,
 ) {
   const query = new URLSearchParams();
   if (params.page !== undefined) query.set("page", String(params.page));
   if (params.pageSize !== undefined) query.set("pageSize", String(params.pageSize));
-  if (params.query !== undefined) query.set("query", params.query);
+  // `q` is the canonical search parameter (node G4.1) — new client code
+  // sends it directly rather than the back-compat `query` alias.
+  if (params.query !== undefined) query.set("q", params.query);
   if (params.categoryId !== undefined) query.set("categoryId", params.categoryId);
   if (params.tag !== undefined) query.set("tag", params.tag);
   const suffix = query.toString() === "" ? "" : `?${query.toString()}`;
-  return request<Paginated<DocumentSummary>>(`/api/public/documents${suffix}`);
+  return request<Paginated<DocumentSummary>>(`/api/public/documents${suffix}`, signal ? { signal } : undefined);
 }
 
 export function getDocument(slug: string) {

@@ -15,6 +15,11 @@
 import { AppError } from "../../shared/errors";
 import type { PaginatedResult } from "../../shared/types";
 import { normalizeTagName } from "../tags/normalize";
+import {
+  buildRelevanceOrderBy,
+  buildSearchWhereClause,
+  validateSearchQuery,
+} from "../search/metadata-search-service";
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
@@ -181,13 +186,20 @@ async function resolveCategoryScope(
 /**
  * One page of publicly visible documents.
  *
- * Ordering is `updated_at DESC, id ASC`: the secondary key makes paging
- * stable when several documents share a timestamp, which is common when a
- * batch is published together.
+ * With no `query`, ordering is `updated_at DESC, id ASC`: the secondary key
+ * makes paging stable when several documents share a timestamp, which is
+ * common when a batch is published together. With a `query`, results are
+ * ordered by relevance tier first (title, then tag, then category, then
+ * description — node G4.1 requirement 5), and `updated_at DESC, id ASC`
+ * remains the tiebreaker within a tier.
  */
 export async function listDocuments(db: D1Database, params: DocumentListParams = {}): Promise<PaginatedResult<DocumentSummary>> {
   const { page, pageSize } = clampPagination(params.page, params.pageSize);
-  const query = params.query?.trim().slice(0, 160);
+  // Delegates every search semantic (validation, normalization, escaping,
+  // predicate and relevance-order SQL) to the Metadata Search Service
+  // (node G4.1) — this function stays the ONE place that executes the
+  // listing SQL, never a second copy of it (AGENT.md §9).
+  const query = validateSearchQuery(params.query);
   const categoryId = params.categoryId?.trim().slice(0, 160);
   const tag = params.tag?.trim().slice(0, 160);
   const filters = ["d.current_version_id IS NOT NULL"];
@@ -215,23 +227,24 @@ export async function listDocuments(db: D1Database, params: DocumentListParams =
     bindings.push(normalizedTag);
   }
 
-  if (query !== undefined && query !== "") {
-    const pattern = `%${query.toLocaleLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
-    filters.push(`(
-      LOWER(d.title) LIKE ? ESCAPE '\\'
-      OR LOWER(d.description) LIKE ? ESCAPE '\\'
-      OR LOWER(c.name) LIKE ? ESCAPE '\\'
-      OR EXISTS (
-        SELECT 1
-        FROM document_tags dt
-        JOIN tags t ON t.id = dt.tag_id
-        WHERE dt.document_id = d.id AND LOWER(t.name) LIKE ? ESCAPE '\\'
-      )
-    )`);
-    bindings.push(pattern, pattern, pattern, pattern);
+  if (query !== "") {
+    const predicate = buildSearchWhereClause(query);
+    filters.push(predicate.sql);
+    bindings.push(...predicate.bindings);
   }
 
   const where = filters.join(" AND ");
+
+  // Relevance-tier ordering only applies when there is a search term to rank
+  // against (requirement 5); an unfiltered listing keeps the plain
+  // recency-then-id order G1.8 shipped, unchanged (regression requirement).
+  let orderBy = "d.updated_at DESC, d.id ASC";
+  let orderByBindings: string[] = [];
+  if (query !== "") {
+    const relevance = buildRelevanceOrderBy(query);
+    orderBy = `${relevance.sql} ASC, d.updated_at DESC, d.id ASC`;
+    orderByBindings = relevance.bindings;
+  }
 
   const totalRow = await db
     .prepare(`SELECT COUNT(*) AS total FROM documents d JOIN categories c ON c.id = d.category_id WHERE ${where}`)
@@ -244,10 +257,10 @@ export async function listDocuments(db: D1Database, params: DocumentListParams =
       `SELECT d.id, d.slug, d.title, d.description, d.category_id AS categoryId, d.updated_at AS updatedAt
        FROM documents d JOIN categories c ON c.id = d.category_id
        WHERE ${where}
-       ORDER BY d.updated_at DESC, d.id ASC
+       ORDER BY ${orderBy}
        LIMIT ? OFFSET ?`,
     )
-    .bind(...bindings, pageSize, (page - 1) * pageSize)
+    .bind(...bindings, ...orderByBindings, pageSize, (page - 1) * pageSize)
     .all<{
       id: string;
       slug: string;
