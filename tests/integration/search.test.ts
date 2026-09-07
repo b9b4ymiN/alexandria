@@ -6,10 +6,12 @@
 // This node extends the `GET /api/public/documents` listing G1.8 shipped
 // (and G2.4 extended with category/tag filters) with a `q` search
 // parameter. The search SEMANTICS (validation, accent-insensitive
-// normalization, wildcard escaping, relevance ordering) live in
+// normalization, substring matching, relevance ordering) live in
 // src/domain/search/metadata-search-service.ts; this file proves the
-// contract end to end, plus one unit-level check that the TypeScript-side
-// and SQL-side normalization tables agree.
+// contract end to end, plus unit-level checks that the TypeScript-side and
+// SQL-side normalization tables agree and that the generated SQL never uses
+// `LIKE` — see PLAN DELTA 2, and the comment on that test for why the
+// difference between local and production D1 makes it necessary.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // @ts-expect-error - "cloudflare:test" has no ambient type outside the
 // package's optional "./types" subpath
@@ -25,6 +27,8 @@ import type { Env } from "../../src/shared/types";
 import {
   LATIN_DIACRITIC_MAP,
   accentInsensitiveColumnExpr,
+  buildRelevanceOrderBy,
+  buildSearchWhereClause,
   normalizeSearchText,
 } from "../../src/domain/search/metadata-search-service";
 
@@ -577,6 +581,41 @@ describe("Metadata Search Service — TS/SQL normalization agreement (unit-level
   it("maps every table entry to a lower-case ASCII base letter", () => {
     for (const [, base] of LATIN_DIACRITIC_MAP) {
       expect(base).toMatch(/^[a-z]$/);
+    }
+  });
+
+  // PLAN DELTA 2. This asserts on the generated SQL rather than on behaviour
+  // because the failure it guards against CANNOT be reproduced here: D1 in
+  // production is built with SQLITE_MAX_LIKE_PATTERN_LENGTH = 50 BYTES and
+  // answers "LIKE or GLOB pattern too complex: SQLITE_ERROR [code: 7500]"
+  // for anything longer, while the miniflare D1 these tests run against has
+  // no such limit. The LIKE form node G4.1 originally specified therefore
+  // passed every test here and returned 500 in production for any term over
+  // 48 bytes — 16 Thai characters, since Thai is 3 bytes per character.
+  // `instr()` has no pattern-length limit, so the guard is "no LIKE".
+  it("builds substring matching with instr(), never LIKE (D1 caps LIKE patterns at 50 bytes)", () => {
+    const term = "x".repeat(200);
+    for (const fragment of [buildSearchWhereClause(term), buildRelevanceOrderBy(term)]) {
+      expect(fragment.sql).toContain("instr(");
+      expect(fragment.sql).not.toMatch(/\bLIKE\b/);
+      expect(fragment.sql).not.toContain("ESCAPE");
+      // The needle is bound, never interpolated, and carries no wildcards to
+      // escape — `%` and `_` are ordinary characters to instr().
+      for (const binding of fragment.bindings) {
+        expect(binding).toBe(term);
+      }
+    }
+  });
+
+  it("passes a 200-character term straight through as one bound needle", () => {
+    const term = "ก".repeat(200);
+    const { bindings } = buildSearchWhereClause(term);
+    expect(bindings).toHaveLength(4);
+    for (const binding of bindings) {
+      expect(binding).toBe(term);
+      // 600 bytes in UTF-8 — twelve times over what a LIKE pattern could
+      // carry on D1, which is the whole point of PLAN DELTA 2.
+      expect(new TextEncoder().encode(binding).length).toBe(600);
     }
   });
 });

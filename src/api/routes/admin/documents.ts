@@ -88,8 +88,16 @@ documents.post("/", requireAdmin, async (c) => {
     note: typeof form.get("note") === "string" ? String(form.get("note")) : undefined,
   });
   if (!parsed.success) {
-    throw new AppError("INVALID_HTML", {
-      message: "Upload fields failed validation.",
+    // An over-long note gets its own code (PLAN DELTA 2) rather than the
+    // INVALID_HTML catch-all this schema uses for every other field, because
+    // node G5.2 hands codes to MCP agents verbatim. Only the note is singled
+    // out: the other fields here genuinely are "the request is malformed",
+    // and inventing a code per field would be churn.
+    const noteIssue = parsed.error.issues.some((issue) => issue.path[0] === "note");
+    throw new AppError(noteIssue ? "NOTE_TOO_LONG" : "INVALID_HTML", {
+      message: noteIssue
+        ? `Version note must be ${MAX_NOTE_LENGTH} characters or fewer.`
+        : "Upload fields failed validation.",
       detail: parsed.error.issues,
     });
   }

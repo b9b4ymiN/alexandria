@@ -534,6 +534,87 @@ None.
 
 ---
 
+## 12.3 PLAN DELTA 2 — M4 search broke in production only (2026-09-06)
+
+Status: **APPROVED 2026-09-06 by the project owner.** Both changes below were
+authorized: fix the search matching, and give an over-long version note its
+own error code. Execution resumed.
+
+### What happened
+
+M4 was merged, pushed and deployed. Verifying the deploy against production —
+not against the test suite — found `GET /api/public/documents?q=…` answering
+**HTTP 500 for any term longer than 48 bytes**, which is 48 ASCII characters
+or **16 Thai characters**, since Thai is 3 bytes per character in UTF-8.
+
+The cause, reproduced directly against the production D1 with
+`wrangler d1 execute --remote`:
+
+```text
+LIKE or GLOB pattern too complex: SQLITE_ERROR [code: 7500]
+```
+
+D1's SQLite is built with `SQLITE_MAX_LIKE_PATTERN_LENGTH = 50` bytes. The
+pattern is `%` + term + `%`, so a 48-byte term is the last one that fits. The
+miniflare D1 the test suite runs against does **not** enforce that limit, so
+all 409 tests passed on a build that could not serve a two-word search.
+
+This is not an M4 regression. Node G1.8 shipped the same `LIKE` matching with
+a 160-character cap, so the defect has been latent in production since M1.
+What M4 changed is reachability: before M4 the only way to hit it was to type
+49+ characters into a search box that did not update the URL; after M4 there
+is a real search box and the cap is 200.
+
+### INVALIDATED NODES
+
+None. No verified behaviour was undone — the requirement G4.1 stated was
+simply not satisfiable by the implementation G4.1 prescribed.
+
+### NEEDS REVISION
+
+| Node | Why | What changed |
+|---|---|---|
+| G4.1 requirement 1 | It prescribes `LIKE '%' \|\| ? \|\| '%'`, which D1 cannot execute for a term over 48 bytes — so the node's own edge case "200-character query → accepted" was unsatisfiable as specified | Matching is now `instr(<expr>, ?) > 0`. Identical substring semantics, no pattern-length limit |
+| G4.1 requirement 2 | Wildcard escaping existed to stop `%` and `_` behaving as `LIKE` wildcards | `instr` has no wildcards, so `%` and `_` are literal by construction. `escapeLikeWildcards` is deleted rather than left as dead code; the tests proving literal treatment stay and still pass |
+| G3.1 / G3.2 note validation | An over-long version note returned the `INVALID_HTML` catch-all, and G5.2 hands codes to MCP agents verbatim | `NOTE_TOO_LONG` (400), on the same footing as G2.2's `TAG_*`, G3.3's `CONFIRMATION_MISMATCH` and G4.1's `SEARCH_QUERY_TOO_LONG`. This closes the decision HANDOVER §4 had owed since M3 |
+
+### NEW NODES
+
+None.
+
+### PROCESS FINDINGS
+
+1. **The test environment is not the production environment, and this is the
+   first defect that turned on the difference.** miniflare's D1 and
+   Cloudflare's D1 do not enforce the same SQLite compile-time limits. Any
+   invariant that depends on one cannot be proven by the suite; the guard has
+   to be an assertion on the generated SQL plus a check against the real
+   thing. `tests/integration/search.test.ts` now asserts the built SQL
+   contains no `LIKE`, and says in a comment why it cannot assert behaviour.
+2. **Verifying a deploy means exercising the deployed feature, not checking
+   that it responded.** M3's deploy verification was a list of status codes.
+   Had M4's been the same, this would have shipped silently — a 200 on the
+   unfiltered listing says nothing about a 49-character query.
+3. **Windows shells mangle Thai on the command line.** The first production
+   check reported Thai search returning zero results, which was the shell,
+   not the Worker. Thai test input has to stay inside the script; the
+   confirmation came from a script that took its search term out of a title
+   the API itself had just returned.
+
+### DECISIONS TAKEN
+
+1. `instr()` replaces `LIKE` for all four metadata fields, in both the WHERE
+   predicate and the ORDER BY relevance CASE. Re-measured against the depth
+   limit afterwards: the ceiling moved from 42 to 41 REPLACE links, so the
+   24-entry diacritic table still has margin and is unchanged.
+2. The 200-character search cap stays. It was never the binding constraint —
+   D1's 50-byte LIKE limit was — and `instr` accepts the full 200 characters
+   even in Thai, which is 600 bytes.
+3. `NOTE_TOO_LONG` is added rather than deferred, because G5.1 is the next
+   node and the code would otherwise reach agents as `INVALID_HTML`.
+
+---
+
 # Nodes
 
 ---

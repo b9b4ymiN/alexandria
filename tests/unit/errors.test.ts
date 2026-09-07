@@ -11,9 +11,10 @@ import { ok, fail } from "../../src/shared/envelope";
 // SPEC.md §24 "at minimum" list, Phase 1 subset, PLUS the six TAG_* codes
 // node G2.2 was authorized to add additively on 2026-08-30, PLUS
 // CONFIRMATION_MISMATCH, authorized for node G3.3 on 2026-09-06, PLUS
-// SEARCH_QUERY_TOO_LONG, authorized for node G4.1 on 2026-09-06, all on the
-// same footing (SPEC.md §24 opens with "At minimum," so these are authorized
-// extensions, not deviations — see the block comments in
+// SEARCH_QUERY_TOO_LONG (node G4.1) and NOTE_TOO_LONG (PLAN DELTA 2), both
+// authorized 2026-09-06 — all on the same footing (SPEC.md §24 opens with
+// "At minimum," so these are authorized extensions, not deviations — see the
+// block comments in
 // src/shared/errors.ts). DRIA_* and AI_* codes are the Phase 1.5 Dria
 // contract (AGENT.md §3, §19) and must be absent.
 //
@@ -50,6 +51,7 @@ const SPEC_PHASE_1_CODES: ErrorCode[] = [
   "TAG_SELF_MERGE",
   "TAG_LIMIT_EXCEEDED",
   "SEARCH_QUERY_TOO_LONG",
+  "NOTE_TOO_LONG",
   "R2_WRITE_FAILED",
   "R2_READ_FAILED",
   "R2_DELETE_FAILED",
@@ -109,6 +111,7 @@ describe("status mapping (total)", () => {
       TAG_LIMIT_EXCEEDED: 400,
       CONFIRMATION_MISMATCH: 400,
       SEARCH_QUERY_TOO_LONG: 400,
+      NOTE_TOO_LONG: 400,
       // size -> 413
       FILE_TOO_LARGE: 413,
       // not-found -> 404

@@ -420,7 +420,10 @@ describe("Admin API — update document & version history (G3.1)", () => {
       expect(documentRow?.currentVersionId).toBe(created.versionId);
     });
 
-    it("rejects a note longer than 500 characters with a validation error", async () => {
+    // PLAN DELTA 2 gave this its own code. It used to answer with the
+    // INVALID_HTML catch-all, which node G5.2 hands to MCP agents verbatim —
+    // an agent that sent a long note was told to go fix its HTML.
+    it("rejects a note longer than 500 characters with NOTE_TOO_LONG, not INVALID_HTML", async () => {
       const categoryId = await seedCategory(db());
       const store = storage();
       const created = await createDocument(store, {
@@ -438,7 +441,9 @@ describe("Admin API — update document & version history (G3.1)", () => {
         }),
         testEnv(),
       );
-      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { ok: false; error: { code: string } };
+      expect(body.error.code).toBe("NOTE_TOO_LONG");
 
       const count = await db()
         .prepare("SELECT COUNT(*) AS c FROM document_versions WHERE document_id = ?")
