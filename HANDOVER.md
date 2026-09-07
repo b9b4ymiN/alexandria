@@ -1,7 +1,7 @@
 # HANDOVER — Alexandria
 
 **Written:** 2026-09-06 · **Branch:** `main` · **Phase:** 1, milestones 1-4
-complete; 1-3 deployed, **M4 is merged and pushed but NOT yet deployed**
+complete, merged, pushed and deployed
 
 Read this first, then `IMPLEMENTATION_PLAN.md` for the node graph. `AGENT.md`
 still governs how the work is done; nothing here overrides it.
@@ -18,7 +18,7 @@ pushed. No other branch carries work — each milestone branch is merged with
 M1  Vertical Slice          ✅ 13 nodes   CHECKPOINT A passed
 M2  Categories & Tags       ✅  7 nodes   CHECKPOINT B passed
 M3  Versioning              ✅  5 nodes   CHECKPOINT C passed
-M4  Search                  ✅  2 nodes   CHECKPOINT D passed   (not deployed)
+M4  Search                  ✅  2 nodes   CHECKPOINT D passed
 M5  Agent API & MCP         ⬜  3 nodes   G5.1 … G5.3            ← next
 M6  Security, QA & Release  ⬜  4 nodes   G6.1 … G6.4
 ```
@@ -26,7 +26,7 @@ M6  Security, QA & Release  ⬜  4 nodes   G6.1 … G6.4
 Current suite state on `main`:
 
 ```text
-409 vitest across 24 files · 76 browser · 10 PWA
+411 vitest across 24 files · 76 browser · 10 PWA
 typecheck (3 tsconfig projects) · lint · build — all clean
 the admin chunk is still split from the public entry
 ```
@@ -38,13 +38,19 @@ so `G5.1` is now unblocked and is the next node.
 
 ---
 
-## 2. Production is one milestone BEHIND `main`
+## 2. Production is current with `main`
 
-**Production still runs M3.** M4 is merged and pushed but was deliberately
-not deployed in the session that built it — the decision was left to the
-project owner. Nothing about M4 needs a migration (the schema is unchanged
-since `0002`), and M4 touches only the app Worker, never the content Worker,
-so deploying it is the app Worker alone:
+M4 was deployed on 2026-09-06, and the deploy immediately exposed a defect
+that no test could have caught — see §4's D1 note and PLAN DELTA 2. The
+fix was deployed straight after.
+
+```text
+alexandria          version b8513740-94f6-4c5d-8c03-43b296fbda60
+alexandria-content  version a0c978a5-ac24-49d5-9cd6-9ebafca06103  (unchanged)
+```
+
+M4 carries no migration (the schema is unchanged since `0002`) and touches
+only the app Worker, so the deploy was the app Worker alone:
 
 ```bash
 pnpm build
@@ -52,16 +58,30 @@ pnpm exec wrangler deploy -c dist/alexandria/wrangler.json
 ```
 
 Deploy the content Worker too ONLY if something under `src/content/` or
-`wrangler.content.jsonc` has changed since; M4 changed neither. The app
-Worker must be deployed from the config the BUILD emits, not from
-`wrangler.jsonc`: the Cloudflare Vite plugin supplies `assets.directory` at
-build time, so the source config alone fails with "missing the required
-`directory` property".
+`wrangler.content.jsonc` has changed. The app Worker must be deployed from
+the config the BUILD emits, not from `wrangler.jsonc`: the Cloudflare Vite
+plugin supplies `assets.directory` at build time, so the source config alone
+fails with "missing the required `directory` property".
 
-Worth checking by hand after deploying M4, since no test can prove it in
-production: a Thai query and an English query from the live Library search
-box, a shared `?q=…&page=2` link opening on the right page, and the
-`?query=` alias still resolving for any old link.
+Verified against production after the second deploy, by exercising the
+feature rather than checking that it answered:
+
+```text
+Thai query taken out of a live title      200, finds the right document
+40-char Thai slice (90 bytes)             200, finds it — this returned 500 before
+mixed EN+TH term (94 bytes)               200, one match
+200 Thai characters (600 bytes)           200, no error
+query over 200 characters                 400 SEARCH_QUERY_TOO_LONG
+literal "%" as the whole query            total 0, not everything
+?query= alias, relevance order, paging    all correct
+search response contains no HTML body     asserted on the raw bytes
+```
+
+**How to check the Thai path without fooling yourself.** The first attempt
+reported Thai search returning nothing, and that was the Windows shell
+mangling the term on its way into `curl`, not the Worker. Keep Thai inside a
+script: the script in this session took its search term straight out of a
+title the API had just returned, so no shell ever touched it.
 
 ### What M3's deployment verified, still true
 
@@ -115,8 +135,9 @@ pnpm exec wrangler deploy -c dist/alexandria/wrangler.json
 ```
 
 Take a `wrangler d1 export --remote` snapshot before any deploy that carries
-a migration. M4 adds search; if it adds an index it becomes the first
-migration since M2, so snapshot before deploying it.
+a migration. M4 carried none — it added no index, deliberately (G4.1
+requirement 9 defers that until search measures slow), so the schema is still
+`0002` and no M4 snapshot was needed.
 
 ---
 
@@ -143,21 +164,27 @@ production. `pnpm dev` serves the app; `pnpm seed:local` seeds fixtures.
 
 ## 4. Open items carried forward
 
-**A version note longer than 500 characters is rejected with
-`INVALID_HTML`.** This is not a G3.1 invention — the G1.7 create route
-already uses `INVALID_HTML` as the catch-all for field validation — but node
-G5.2 requires MCP to surface error codes verbatim to agents, so an agent that
-sends an over-long note would be told to fix its HTML. **This is now DUE:
-decide it before G5.1, which is the next node.** The precedents are G2.2's
-`TAG_NAME_TOO_LONG`, G3.3's `CONFIRMATION_MISMATCH` and now G4.1's
-`SEARCH_QUERY_TOO_LONG`: SPEC §24 opens with "At minimum", so additive codes
-are authorized extensions, not deviations. G4.1 settled the identical
-question the same way, for the same reason, one milestone earlier — the
-recommendation is to add `NOTE_TOO_LONG` (400) and be consistent. Adding a
-code means editing `src/shared/errors.ts` AND the hand-written list in
-`tests/unit/errors.test.ts`, which has TWO places to update: the
-`SPEC_PHASE_1_CODES` array and the `expected` status map. That test is
-designed to fail when only one is changed; that is the review gate working.
+**CLOSED — `NOTE_TOO_LONG` exists.** The decision owed since M3 was taken in
+PLAN DELTA 2 and implemented: an over-long version note now returns
+`NOTE_TOO_LONG` (400) from both the update route and the version route,
+instead of the `INVALID_HTML` catch-all that G5.2 would have handed to an
+agent verbatim. Nothing is owed here any more. If a future node adds another
+code, note that it means editing `src/shared/errors.ts` AND **two** places in
+`tests/unit/errors.test.ts` — the `SPEC_PHASE_1_CODES` array and the
+`expected` status map. That test is designed to fail when only one is
+changed; that is the review gate working.
+
+**D1's SQLite is not miniflare's SQLite, and search is where that first
+bit.** Production D1 is built with `SQLITE_MAX_LIKE_PATTERN_LENGTH = 50`
+bytes and answers `LIKE or GLOB pattern too complex: SQLITE_ERROR [code:
+7500]` past it; the miniflare D1 the suite runs against enforces no such
+limit. The `LIKE` matching G1.8 shipped and G4.1 kept therefore passed every
+local test and returned 500 in production for any term over 48 bytes — 16
+Thai characters. Fixed in PLAN DELTA 2 by matching with `instr()`, which has
+no pattern-length limit. **The lesson generalizes: any invariant that depends
+on a SQLite compile-time limit cannot be proven by the suite.** The guard
+that exists now is an assertion on the generated SQL, in
+`tests/integration/search.test.ts`, with the reason written on the test.
 
 **Accent folding in search covers 12 Latin letters, not the full set.**
 `LATIN_DIACRITIC_MAP` in `src/domain/search/metadata-search-service.ts` folds
@@ -202,11 +229,10 @@ limit. The full analysis stays in the `G1.4` evidence block of
 
 ## 4b. Start here, next session
 
-Everything through M4 is merged and pushed, `main` is clean and equals
-`origin/main`, and the merged `feat/m4-search` branch has been deleted. There
-is no work in flight and nothing half-finished in the tree. The one thing
-NOT done is deploying M4 — see §2, and settle it with the project owner
-before or after M5 as they prefer; M5 does not depend on it.
+Everything through M4 is merged, pushed and deployed, `main` is clean and
+equals `origin/main`, and both merged branches — `feat/m4-search` and
+`fix/m4-search-d1-like-limit` — have been deleted. There is no work in flight
+and nothing half-finished in the tree.
 
 To pick up M5:
 
@@ -217,12 +243,13 @@ sed -n '/^## Node G5.1/,/^## Node G5.2/p' IMPLEMENTATION_PLAN.md
 
 Then dispatch `G5.1` to one `sonnet-executor` with a packet that carries: the
 node contract, the file allowlist, the single-writer STOP list from §6 below,
-"run no git command that writes", and the baseline to beat — **409 vitest
+"run no git command that writes", and the baseline to beat — **411 vitest
 across 24 files, 76 browser, 10 PWA, clean typecheck, lint and build**. Verify
 the evidence by re-running it yourself before committing, using the node's
 `Suggested Commit` line verbatim as the subject.
 
-**Settle the `NOTE_TOO_LONG` decision first — it is now due.** See §4.
+No decision is owed before starting. The `NOTE_TOO_LONG` question M3 left
+open was settled and implemented in PLAN DELTA 2 — see §4.
 
 ---
 
@@ -240,8 +267,10 @@ the evidence by re-running it yourself before committing, using the node's
   `search_documents` is served by
   `src/domain/search/metadata-search-service.ts` through `listDocuments`; do
   not write a second search path for agents.
-- **Error codes go to agents verbatim**, which is why §4's `NOTE_TOO_LONG`
-  decision is due before G5.1 rather than after it.
+- **Error codes go to agents verbatim.** That is why `NOTE_TOO_LONG` and
+  `SEARCH_QUERY_TOO_LONG` exist rather than the `INVALID_HTML` catch-all, and
+  it is the test to apply to any new code M5 needs: would this string help an
+  agent fix its own request?
 
 The production `AGENT_API_KEY` is in the git-ignored `.secrets.local`; node
 G5.2 will need it.
@@ -292,7 +321,17 @@ Two things M3 added to this list:
   `77a9ed2`. If `git diff --stat` says `Bin` for a source file, stop and find
   out why before reviewing anything else in that node.
 
-Four things M4 added:
+Six things M4 added:
+
+- **Verifying a deploy means exercising the deployed feature, not checking
+  that it responded.** M3's deploy verification was a list of status codes,
+  and M4's would have passed the same list while search was returning 500 for
+  every two-word query. The defect surfaced only because the check typed real
+  terms at the live endpoint. Do that for every deploy from now on.
+- **The suite runs against miniflare, production runs against D1, and they do
+  not enforce the same SQLite limits.** See §4. When a change depends on a
+  database limit, the suite cannot prove it — assert on what the code
+  generates, and check the real thing after deploying.
 
 - **A green suite from an executor is not proof the feature is right. Read
   the diff.** G4.2 arrived with 12 passing browser tests and a correct-looking
