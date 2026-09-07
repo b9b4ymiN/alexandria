@@ -317,9 +317,28 @@ it is a change to the agent route, not to the MCP server.
 Everything through M5 is merged into `main` and the tree is clean. There is no
 work in flight and nothing half-finished.
 
-`main` is pushed and equals `origin/main`, and M5 is deployed and verified
-live (§2). Nothing is owed before M6 starts. `feat/m5-mcp` is merged and can
-be deleted.
+`main` is pushed and equals `origin/main`, M5 is deployed and verified live
+(§2), and `feat/m5-mcp` is merged and deleted. Nothing blocks M6.
+
+**First, though — publish one real document through MCP.** It is the only
+thing CHECKPOINT E's live evidence is missing (§2), and the tooling to do it
+is already in place: the `alexandria` MCP server is registered in Claude Code
+at **user scope**, so its nine tools are available from any project, not only
+this repo. It runs `node <repo>/mcp/dist/server.js` and takes
+`ALEXANDRIA_API_URL` and `ALEXANDRIA_AGENT_KEY` from the Claude Code config,
+whose values came from the git-ignored `.secrets.local`.
+
+Use a document worth keeping rather than a throwaway probe: an agent cannot
+delete a document afterwards — that is the permission boundary working — so
+anything published stays in the live library until an admin removes it.
+
+Two things that bite when using it:
+
+- `mcp/dist/` is git-ignored and the config points at it. A fresh clone, or
+  any edit under `mcp/src/`, needs `pnpm --filter alexandria-mcp build`
+  before the running tools reflect the change.
+- `claude mcp get alexandria` prints the agent key in plaintext. Do not run
+  it while sharing a screen, and do not paste its output anywhere.
 
 To pick up M6:
 
