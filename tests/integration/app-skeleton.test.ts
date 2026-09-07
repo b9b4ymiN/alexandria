@@ -40,12 +40,18 @@ describe("routing skeleton — JSON 404 under /api/**", () => {
   // handler (see tests/integration/public-browse.test.ts), so it is
   // dropped from this "still unclaimed" list the same way G1.7/G1.8's
   // routes were.
+  //
+  // Node G5.1 update (2026-09-07): the three /api/agent mounts now have
+  // real GET handlers behind requireAgent, so unauthenticated they answer
+  // 401 AUTH_REQUIRED, not 404 — the third time this list has had to shed
+  // a path a node implemented. Rather than delete them outright as the two
+  // updates above did, they move to the test below: the invariant this
+  // file exists to defend is that nothing under /api/** ever answers with
+  // the SPA HTML shell, and that is worth asserting on a claimed route as
+  // much as an unclaimed one.
   it("returns a JSON 404 envelope for unclaimed mounts and unrouted /api paths", async () => {
     const app = createApp();
     const paths = [
-      "/api/agent/documents",
-      "/api/agent/categories",
-      "/api/agent/tags",
       "/api/public/documents/not-a-real-route/deeper",
       "/api/admin/nothing-here",
       "/api/nothing-here-either",
@@ -54,6 +60,17 @@ describe("routing skeleton — JSON 404 under /api/**", () => {
       const res = await app.fetch(new Request(`https://example.com${path}`));
       expect(res.status).toBe(404);
       expect(res.headers.get("content-type")).toContain("application/json");
+    }
+  });
+
+  it("answers a claimed but unauthenticated /api/agent mount with a JSON envelope, never the SPA shell", async () => {
+    const app = createApp();
+    for (const path of ["/api/agent/documents", "/api/agent/categories", "/api/agent/tags"]) {
+      const res = await app.fetch(new Request(`https://example.com${path}`));
+      expect(res.status).toBe(401);
+      expect(res.headers.get("content-type")).toContain("application/json");
+      const body = await res.json();
+      expect(body).toMatchObject({ ok: false, error: { code: "AUTH_REQUIRED" } });
     }
   });
 });
