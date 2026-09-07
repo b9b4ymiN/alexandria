@@ -116,6 +116,80 @@ export interface DocumentMetadataData {
   url: string;
 }
 
+// ---------------------------------------------------------------------------
+// Read tools (node G5.3) — GET /api/agent/documents[/:slug], /categories,
+// /tags. Every shape below mirrors its route's actual response exactly
+// (src/api/routes/agent/documents.ts, categories.ts, tags.ts) rather than
+// reusing DocumentMetadataData above: GET /:slug returns a DocumentDetail
+// (`contentUrl`, no `createdAt`), a different shape from the
+// DocumentMetadataResult the write routes return (`url`, `createdAt`) —
+// node G5.3 requirement 3.
+// ---------------------------------------------------------------------------
+
+export interface CategoryPathEntryData {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface DocumentSummaryData {
+  slug: string;
+  title: string;
+  description: string;
+  categoryPath: CategoryPathEntryData[];
+  tags: string[];
+  updatedAt: string;
+}
+
+/** GET /api/agent/documents/:slug — metadata and the public content URL
+ * only. No field here ever carries HTML body bytes (requirement 3). */
+export interface GetDocumentData extends DocumentSummaryData {
+  documentId: string;
+  categoryId: string;
+  currentVersionId: string;
+  contentUrl: string;
+}
+
+export interface ListDocumentsInput {
+  page?: number;
+  pageSize?: number;
+  /** Omitted (or empty) for `list_documents`; set for `search_documents`.
+   * Both tools share this one method (requirement 4) — the presence of a
+   * query is the only thing that distinguishes them. */
+  query?: string;
+  categoryId?: string;
+  tag?: string;
+  /** Defaults to `"subtree"` on the API side when `categoryId` is set. */
+  depth?: "self" | "subtree";
+}
+
+export interface ListDocumentsData {
+  items: DocumentSummaryData[];
+  page: number;
+  pageSize: number;
+  total: number;
+  query: string;
+}
+
+export interface CategoryEntryData {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  documentCount: number;
+}
+
+export interface ListCategoriesData {
+  categories: CategoryEntryData[];
+}
+
+export interface TagEntryData {
+  id: string;
+  name: string;
+  documentCount: number;
+}
+
 /**
  * Narrows to a well-formed error envelope. `ok === false` alone is NOT
  * enough: the guard also proves `error.code` and `error.message` are
@@ -242,6 +316,39 @@ export class AgentApiClient {
         body: JSON.stringify({ categoryId: input.categoryId }),
       },
     );
+  }
+
+  async getDocument(slug: string): Promise<ApiResult<GetDocumentData>> {
+    return this.send<GetDocumentData>(`/api/agent/documents/${encodeURIComponent(slug)}`, {
+      method: "GET",
+    });
+  }
+
+  /** Backs both `list_documents` and `search_documents` (requirement 4) —
+   * the one place that builds the querystring for
+   * GET /api/agent/documents, so the two tools can never drift into two
+   * different implementations of the same contract. */
+  async listDocuments(input: ListDocumentsInput = {}): Promise<ApiResult<ListDocumentsData>> {
+    const params = new URLSearchParams();
+    if (input.page !== undefined) params.set("page", String(input.page));
+    if (input.pageSize !== undefined) params.set("pageSize", String(input.pageSize));
+    if (input.query !== undefined && input.query !== "") params.set("q", input.query);
+    if (input.categoryId !== undefined) params.set("categoryId", input.categoryId);
+    if (input.tag !== undefined) params.set("tag", input.tag);
+    if (input.depth !== undefined) params.set("depth", input.depth);
+
+    const qs = params.toString();
+    return this.send<ListDocumentsData>(`/api/agent/documents${qs.length > 0 ? `?${qs}` : ""}`, {
+      method: "GET",
+    });
+  }
+
+  async listCategories(): Promise<ApiResult<ListCategoriesData>> {
+    return this.send<ListCategoriesData>("/api/agent/categories", { method: "GET" });
+  }
+
+  async listTags(): Promise<ApiResult<TagEntryData[]>> {
+    return this.send<TagEntryData[]>("/api/agent/tags", { method: "GET" });
   }
 }
 
