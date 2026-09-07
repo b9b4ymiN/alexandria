@@ -1,6 +1,7 @@
 # HANDOVER — Alexandria
 
-**Written:** 2026-09-06 · **Branch:** `main` · **Phase:** 1, milestones 1-3 complete and deployed
+**Written:** 2026-09-06 · **Branch:** `main` · **Phase:** 1, milestones 1-4
+complete; 1-3 deployed, **M4 is merged and pushed but NOT yet deployed**
 
 Read this first, then `IMPLEMENTATION_PLAN.md` for the node graph. `AGENT.md`
 still governs how the work is done; nothing here overrides it.
@@ -9,7 +10,7 @@ still governs how the work is done; nothing here overrides it.
 
 ## 1. Where things stand
 
-**25 of 34 nodes are DONE.** Milestones 1, 2 and 3 are merged into `main` and
+**27 of 34 nodes are DONE.** Milestones 1 through 4 are merged into `main` and
 pushed. No other branch carries work — each milestone branch is merged with
 `--no-ff` and every commit stays reachable under its merge commit.
 
@@ -17,26 +18,52 @@ pushed. No other branch carries work — each milestone branch is merged with
 M1  Vertical Slice          ✅ 13 nodes   CHECKPOINT A passed
 M2  Categories & Tags       ✅  7 nodes   CHECKPOINT B passed
 M3  Versioning              ✅  5 nodes   CHECKPOINT C passed
-M4  Search                  ⬜  2 nodes   G4.1, G4.2            ← next
-M5  Agent API & MCP         ⬜  3 nodes   G5.1 … G5.3
+M4  Search                  ✅  2 nodes   CHECKPOINT D passed   (not deployed)
+M5  Agent API & MCP         ⬜  3 nodes   G5.1 … G5.3            ← next
 M6  Security, QA & Release  ⬜  4 nodes   G6.1 … G6.4
 ```
 
 Current suite state on `main`:
 
 ```text
-384 vitest across 23 files · 63 browser · 10 PWA
+409 vitest across 24 files · 76 browser · 10 PWA
 typecheck (3 tsconfig projects) · lint · build — all clean
 the admin chunk is still split from the public entry
 ```
 
-**The project owner wants M5 (MCP) as early as possible.** A fast path that
-pulls M5 forward was costed and declined on 2026-09-06 in favour of the
-normal order, so M4 is the only milestone standing between here and MCP.
+**The project owner wants M5 (MCP) as early as possible, and nothing stands
+in front of it any more.** A fast path that pulled M5 forward was costed and
+declined on 2026-09-06 in favour of the normal order; M4 has since completed,
+so `G5.1` is now unblocked and is the next node.
 
 ---
 
-## 2. Production is current with `main`
+## 2. Production is one milestone BEHIND `main`
+
+**Production still runs M3.** M4 is merged and pushed but was deliberately
+not deployed in the session that built it — the decision was left to the
+project owner. Nothing about M4 needs a migration (the schema is unchanged
+since `0002`), and M4 touches only the app Worker, never the content Worker,
+so deploying it is the app Worker alone:
+
+```bash
+pnpm build
+pnpm exec wrangler deploy -c dist/alexandria/wrangler.json
+```
+
+Deploy the content Worker too ONLY if something under `src/content/` or
+`wrangler.content.jsonc` has changed since; M4 changed neither. The app
+Worker must be deployed from the config the BUILD emits, not from
+`wrangler.jsonc`: the Cloudflare Vite plugin supplies `assets.directory` at
+build time, so the source config alone fails with "missing the required
+`directory` property".
+
+Worth checking by hand after deploying M4, since no test can prove it in
+production: a Thai query and an English query from the live Library search
+box, a shared `?q=…&page=2` link opening on the right page, and the
+`?query=` alias still resolving for any old link.
+
+### What M3's deployment verified, still true
 
 M3 was deployed on 2026-09-06 and verified live immediately afterwards.
 
@@ -120,10 +147,29 @@ production. `pnpm dev` serves the app; `pnpm seed:local` seeds fixtures.
 `INVALID_HTML`.** This is not a G3.1 invention — the G1.7 create route
 already uses `INVALID_HTML` as the catch-all for field validation — but node
 G5.2 requires MCP to surface error codes verbatim to agents, so an agent that
-sends an over-long note would be told to fix its HTML. **Decide before G5.1**
-whether to add a `NOTE_TOO_LONG` code. The precedents are G2.2's
-`TAG_NAME_TOO_LONG` and G3.3's `CONFIRMATION_MISMATCH`: SPEC §24 opens with
-"At minimum", so additive codes are authorized extensions, not deviations.
+sends an over-long note would be told to fix its HTML. **This is now DUE:
+decide it before G5.1, which is the next node.** The precedents are G2.2's
+`TAG_NAME_TOO_LONG`, G3.3's `CONFIRMATION_MISMATCH` and now G4.1's
+`SEARCH_QUERY_TOO_LONG`: SPEC §24 opens with "At minimum", so additive codes
+are authorized extensions, not deviations. G4.1 settled the identical
+question the same way, for the same reason, one milestone earlier — the
+recommendation is to add `NOTE_TOO_LONG` (400) and be consistent. Adding a
+code means editing `src/shared/errors.ts` AND the hand-written list in
+`tests/unit/errors.test.ts`, which has TWO places to update: the
+`SPEC_PHASE_1_CODES` array and the `expected` status map. That test is
+designed to fail when only one is changed; that is the review gate working.
+
+**Accent folding in search covers 12 Latin letters, not the full set.**
+`LATIN_DIACRITIC_MAP` in `src/domain/search/metadata-search-service.ts` folds
+é è á à ä í ó ö ú ü ñ ç in both cases. D1 enforces SQLite's expression-tree
+depth limit, and the limit is what caps it — measured directly rather than
+guessed: a bare REPLACE chain takes 97 links, the real search query shape
+takes 42, and hoisting the tag match out of its correlated `EXISTS` into a
+CTE was tried and takes 43, so that redesign bought one link and was
+rejected. â ê î ô û, ã õ, å ø, ý ÿ and all of Latin Extended-A therefore do
+not fold. The complete fix is a normalized comparison column, which G4.1
+requirement 9 defers until search measures slow; it needs a migration, so it
+is a future node and a Plan Delta, not a quiet widening of G4.1.
 
 **ETag is stripped by Cloudflare's edge.** The content Worker sets one and
 handles `If-None-Match` correctly — proven in the Workers runtime — but the
@@ -156,45 +202,49 @@ limit. The full analysis stays in the `G1.4` evidence block of
 
 ## 4b. Start here, next session
 
-Everything through M3 is merged, pushed and deployed, `main` is clean and
-equals `origin/main`, and the merged `feat/m3-versioning` branch has been
-deleted. There is no work in flight and nothing half-finished in the tree.
+Everything through M4 is merged and pushed, `main` is clean and equals
+`origin/main`, and the merged `feat/m4-search` branch has been deleted. There
+is no work in flight and nothing half-finished in the tree. The one thing
+NOT done is deploying M4 — see §2, and settle it with the project owner
+before or after M5 as they prefer; M5 does not depend on it.
 
-To pick up M4:
+To pick up M5:
 
 ```bash
-git switch -c feat/m4-search        # orchestrator owns branching (§12.1)
-sed -n '/^## Node G4.1/,/^## Node G4.2/p' IMPLEMENTATION_PLAN.md
+git switch -c feat/m5-mcp           # orchestrator owns branching (§12.1)
+sed -n '/^## Node G5.1/,/^## Node G5.2/p' IMPLEMENTATION_PLAN.md
 ```
 
-Then dispatch `G4.1` to one `sonnet-executor` with a packet that carries: the
+Then dispatch `G5.1` to one `sonnet-executor` with a packet that carries: the
 node contract, the file allowlist, the single-writer STOP list from §6 below,
-"run no git command that writes", and the baseline to beat — **384 vitest
-across 23 files, 63 browser, 10 PWA, clean typecheck, lint and build**. Verify
+"run no git command that writes", and the baseline to beat — **409 vitest
+across 24 files, 76 browser, 10 PWA, clean typecheck, lint and build**. Verify
 the evidence by re-running it yourself before committing, using the node's
 `Suggested Commit` line verbatim as the subject.
 
-**One decision is owed before M5 starts, not before M4:** whether an
-over-long version note should return a new `NOTE_TOO_LONG` code instead of
-`INVALID_HTML`. See §4. It costs one small change now and gets more expensive
-once MCP is surfacing codes to agents.
+**Settle the `NOTE_TOO_LONG` decision first — it is now due.** See §4.
 
 ---
 
-## 5. What M4 has to do next
+## 5. What M5 has to do next
 
-`G4.1 → G4.2`, then M5. Full contracts are in `IMPLEMENTATION_PLAN.md`.
+`G5.1 → G5.2 → G5.3`, then CHECKPOINT E. Full contracts are in
+`IMPLEMENTATION_PLAN.md`. Three things to carry into the work:
 
-`src/domain/search/` exists and is empty — G4.1 owns it. Two things to carry
-into the work:
+- **The permission boundary is the whole point.** AGENT.md §6 lists exactly
+  nine tools MCP may expose and eight it must not. `delete_document`,
+  `delete_version`, `restore_version`, the four `*_category` writes and
+  `change_slug` are forbidden, and CHECKPOINT E requires a test asserting all
+  eight names are absent — not merely unrouted.
+- **Search is already built and is what M5 consumes.** The MCP tool
+  `search_documents` is served by
+  `src/domain/search/metadata-search-service.ts` through `listDocuments`; do
+  not write a second search path for agents.
+- **Error codes go to agents verbatim**, which is why §4's `NOTE_TOO_LONG`
+  decision is due before G5.1 rather than after it.
 
-- **Metadata search only.** Title, description, category and tags. No
-  embeddings, no AI Search — that is Dria infrastructure and belongs to
-  Phase 1.5 (AGENT.md §15). Do not merge the two implementations.
-- **G4.1 is what M5 actually needs from M4.** The MCP tool
-  `search_documents` is served by the same metadata search, and node G5.1
-  reads `src/domain/search/metadata-search-service.ts` directly. G4.2 is the
-  library UI and blocks nothing in M5.
+The production `AGENT_API_KEY` is in the git-ignored `.secrets.local`; node
+G5.2 will need it.
 
 ---
 
@@ -241,6 +291,38 @@ Two things M3 added to this list:
   so an 11KB screen arrived as `Bin 9098 -> 20400` with no diff. Fixed in
   `77a9ed2`. If `git diff --stat` says `Bin` for a source file, stop and find
   out why before reviewing anything else in that node.
+
+Four things M4 added:
+
+- **A green suite from an executor is not proof the feature is right. Read
+  the diff.** G4.2 arrived with 12 passing browser tests and a correct-looking
+  DoD, and the search box was still deleting a space the reader had just
+  typed whenever the debounce committed mid-phrase. It was found by reading
+  the resync branch in `SearchBox.tsx`, reproduced in a real browser, then
+  fixed. No test the executor wrote could have caught it, because the bug
+  only shows in the input's own value between two commits.
+- **Check the node's Files list against the code BEFORE dispatch, every
+  time.** Both M4 nodes had a wrong one. G4.1 said `document-read.ts` was
+  read-only, but the search predicate it had to lift already lived there;
+  G4.2 did not mention `useDocumentListing.ts` at all, but request
+  cancellation has to live in the fetch layer. In both cases the boundary as
+  written would have forced a second copy of existing code. Amend the
+  allowlist explicitly in the dispatch packet and record why — do not let an
+  executor discover it and improvise.
+- **Verify a load-bearing empirical claim yourself.** G4.1's executor
+  justified cutting the accent table with measured D1 depth-limit numbers.
+  The orchestrator wrote its own probe against real D1 and got 97 / 42 / 43
+  against the reported 98 / 43 — close enough to accept, and the probe also
+  killed the orchestrator's own better-sounding CTE idea. A claim that
+  justifies not meeting a numbered requirement deserves its own measurement.
+- **Never `git pull --rebase` on `main` after a `--no-ff` milestone merge.**
+  Doing it flattens the merge commit — rebase replays commits linearly and
+  drops it — which silently breaks the §12.1 history shape. It happened at
+  the end of M4 and was caught by reading the push output: the tip pushed was
+  the branch's last node commit, not the merge. Recovering was clean and
+  needed no force push, because the branch tip is a parent of the merge
+  commit, so `git reset --hard <merge>` and a plain push is a fast-forward.
+  The `--rebase` habit is for feature branches; `main` receives merges.
 
 Branch policy (§12.1 of the plan): one branch per milestone, one commit per
 node using the node's `Suggested Commit`, merged to `main` with `--no-ff`
